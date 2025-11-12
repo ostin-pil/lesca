@@ -1,0 +1,14 @@
+{
+  "name": "@lesca/converters",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@lesca/shared-types": "*",
+    "turndown": "^7.1.2",
+    "@types/turndown": "^5.0.4"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@lesca/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "lesca": "./src/index.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@lesca/core": "*",
+    "@lesca/shared-types": "*",
+    "@lesca/shared-config": "*",
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "inquirer": "^9.2.12"
+  }
+}

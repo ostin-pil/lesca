@@ -1,0 +1,13 @@
+{
+  "name": "@lesca/browser-automation",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@lesca/shared-types": "*",
+    "playwright": "^1.40.1"
+  }
+}
