@@ -1,0 +1,21 @@
+{
+  "cookies": [
+    {
+      "name": "LEETCODE_SESSION",
+      "value": "your_leetcode_session_cookie_value_here",
+      "domain": ".leetcode.com",
+      "path": "/",
+      "expires": 1735689600,
+      "httpOnly": true,
+      "secure": true
+    },
+    {
+      "name": "csrftoken",
+      "value": "your_csrf_token_value_here",
+      "domain": "leetcode.com",
+      "path": "/",
+      "httpOnly": false,
+      "secure": false
+    }
+  ]
+}
