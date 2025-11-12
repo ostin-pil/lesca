@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+*.tsbuildinfo
+*.js
+*.mjs
+*.cjs
+!.eslintrc.cjs
+!vitest.config.ts
+
+# Testing
+coverage/
+.vitest/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+cookies.json
+*.cookie
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temp & Cache
+.cache/
+.temp/
+*.tmp
+
+# GraphQL test outputs
+graphql-test-*.json
+
+# Output directories
+output/
+vault/
+leetcode-*/
+
+# Archive
+archive/
+
+# Local config
+.lesca/

@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    // Language and Environment
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // Type Checking
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+
+    // Emit
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": true,
+    "newLine": "lf",
+
+    // Interop Constraints
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    // Skip Lib Check
+    "skipLibCheck": true,
+
+    // Paths (for monorepo packages)
+    "baseUrl": ".",
+    "paths": {
+      "@lesca/core": ["./packages/core/src"],
+      "@lesca/auth": ["./packages/auth/src"],
+      "@lesca/api-client": ["./packages/api-client/src"],
+      "@lesca/browser-automation": ["./packages/browser-automation/src"],
+      "@lesca/scrapers": ["./packages/scrapers/src"],
+      "@lesca/converters": ["./packages/converters/src"],
+      "@lesca/storage": ["./packages/storage/src"],
+      "@lesca/cli": ["./packages/cli/src"],
+      "@lesca/shared/*": ["./shared/*/src"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
