@@ -1,5 +1,5 @@
 import TurndownService from 'turndown'
-import type { Converter, ConverterOptions } from '@lesca/shared-types'
+import type { Converter, ConverterOptions } from '../../../shared/types/src/index.js'
 
 /**
  * HTML to Markdown converter

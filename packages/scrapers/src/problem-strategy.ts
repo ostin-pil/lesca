@@ -4,9 +4,9 @@ import type {
   ProblemScrapeRequest,
   RawData,
   Problem,
-} from '@lesca/shared-types'
-import { GraphQLError } from '@lesca/shared-types'
-import type { GraphQLClient } from '@lesca/api-client'
+} from '../../../shared/types/src/index.js'
+import { GraphQLError } from '../../../shared/types/src/index.js'
+import type { GraphQLClient } from '../../api-client/src/graphql-client.js'
 
 /**
  * Problem scraper strategy

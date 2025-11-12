@@ -1,7 +1,7 @@
 import { mkdir, writeFile, readFile, unlink, access, readdir } from 'fs/promises'
 import { join, dirname, basename } from 'path'
-import type { StorageAdapter } from '@lesca/shared-types'
-import { StorageError } from '@lesca/shared-types'
+import type { StorageAdapter } from '../../../shared/types/src/index.js'
+import { StorageError } from '../../../shared/types/src/index.js'
 
 /**
  * File system storage adapter

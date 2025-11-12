@@ -5,9 +5,9 @@ import type {
   RawData,
   Problem,
   StorageAdapter,
-} from '@lesca/shared-types'
-import { LescaError } from '@lesca/shared-types'
-import { HtmlToMarkdownConverter, ObsidianConverter } from '@lesca/converters'
+} from '../../../shared/types/src/index.js'
+import { LescaError } from '../../../shared/types/src/index.js'
+import { HtmlToMarkdownConverter, ObsidianConverter } from '../../converters/src/index.js'
 
 /**
  * Main LeetCode scraper facade

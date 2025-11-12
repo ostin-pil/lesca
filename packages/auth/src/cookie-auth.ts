@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises'
-import type { AuthStrategy, AuthCredentials, Cookie } from '@lesca/shared-types'
-import { AuthError } from '@lesca/shared-types'
+import type { AuthStrategy, AuthCredentials, Cookie } from '../../../shared/types/src/index.js'
+import { AuthError } from '../../../shared/types/src/index.js'
 
 /**
  * Cookie file format

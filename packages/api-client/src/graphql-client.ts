@@ -4,8 +4,8 @@ import type {
   ProblemListFilters,
   AuthCredentials,
   GraphQLError as GraphQLErrorType,
-} from '@lesca/shared-types'
-import { GraphQLError, RateLimitError } from '@lesca/shared-types'
+} from '../../../shared/types/src/index.js'
+import { GraphQLError, RateLimitError } from '../../../shared/types/src/index.js'
 
 /**
  * GraphQL response wrapper

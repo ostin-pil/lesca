@@ -1,4 +1,4 @@
-import type { Problem, ParsedProblem, Difficulty } from '@lesca/shared-types'
+import type { Problem, ParsedProblem, Difficulty } from '../../../shared/types/src/index.js'
 
 /**
  * Obsidian-specific frontmatter and formatting
@@ -197,7 +197,7 @@ export class ObsidianConverter {
    */
   private convertToWikiLinks(content: string): string {
     // Only convert internal links (titleSlugs)
-    return content.replace(/\[([^\]]+)\]\(\/problems\/([^)]+)\/?)\)/g, '[[$2|$1]]')
+    return content.replace(/\[([^\]]+)\]\(\/problems\/([^)]+)\/?\)/g, '[[$2|$1]]')
   }
 
   /**
