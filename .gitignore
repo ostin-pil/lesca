@@ -59,3 +59,4 @@ archive/
 
 # Local config
 .lesca/
+test-output/
