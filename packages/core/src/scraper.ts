@@ -5,9 +5,16 @@ import type {
   RawData,
   Problem,
   StorageAdapter,
+  DiscussionList,
+  EditorialContent,
 } from '../../../shared/types/src/index.js'
 import { LescaError } from '../../../shared/types/src/index.js'
-import { HtmlToMarkdownConverter, ObsidianConverter } from '../../converters/src/index.js'
+import {
+  HtmlToMarkdownConverter,
+  ObsidianConverter,
+  EditorialConverter,
+  DiscussionConverter,
+} from '../../converters/src/index.js'
 
 /**
  * Main LeetCode scraper facade
@@ -103,11 +110,7 @@ export class LeetCodeScraper {
       }
     }
 
-    throw new LescaError(
-      `No strategy can handle request type: ${request.type}`,
-      'NO_STRATEGY',
-      400
-    )
+    throw new LescaError(`No strategy can handle request type: ${request.type}`, 'NO_STRATEGY', 400)
   }
 
   /**
@@ -143,10 +146,40 @@ export class LeetCodeScraper {
       return { markdown: finalMarkdown, filename }
     }
 
-    throw new LescaError(
-      `Cannot process data type: ${rawData.type}`,
-      'UNSUPPORTED_TYPE',
-      400
-    )
+    if (rawData.type === 'editorial') {
+      const editorial = rawData.data as EditorialContent
+      const editorialConverter = new EditorialConverter()
+
+      // Apply format-specific conversion
+      let finalMarkdown: string
+      const filename = `${editorial.titleSlug}-editorial.md`
+
+      if (this.options.format === 'obsidian') {
+        finalMarkdown = await editorialConverter.convertToObsidian(editorial)
+      } else {
+        finalMarkdown = await editorialConverter.convert(editorial)
+      }
+
+      return { markdown: finalMarkdown, filename }
+    }
+
+    if (rawData.type === 'discussion') {
+      const discussionList = rawData.data as DiscussionList
+      const discussionConverter = new DiscussionConverter()
+
+      // Apply format-specific conversion
+      let finalMarkdown: string
+      const filename = `${discussionList.titleSlug}-discussions.md`
+
+      if (this.options.format === 'obsidian') {
+        finalMarkdown = await discussionConverter.convertToObsidian(discussionList)
+      } else {
+        finalMarkdown = await discussionConverter.convert(discussionList)
+      }
+
+      return { markdown: finalMarkdown, filename }
+    }
+
+    throw new LescaError(`Cannot process data type: ${rawData.type}`, 'UNSUPPORTED_TYPE', 400)
   }
 }
