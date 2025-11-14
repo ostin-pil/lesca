@@ -1,0 +1,78 @@
+# Batch Scraping Configuration
+# Optimized for scraping large numbers of problems at once
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 30000
+  retries: 3
+  retryDelay: 1000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 40
+    minDelay: 1500
+    maxDelay: 3000
+    jitter: true
+
+storage:
+  path: ./batch-output
+
+output:
+  format: markdown
+  pattern: "{id}-{slug}.md"     # Include ID for easy sorting
+  frontmatter: true
+  images:
+    download: false             # Skip images for faster scraping
+
+scraping:
+  concurrency: 4                # Good balance of speed and safety
+  batchSize: 50                 # Larger batches
+  delay: 1000
+  timeout: 60000
+  discussion:
+    defaultLimit: 5             # Fewer discussions per problem
+    defaultSort: most-votes
+
+cache:
+  enabled: true
+  directory: ~/.lesca/cache
+  memorySize: 100               # Large memory cache
+  ttl:
+    problem: 2592000000         # 30 days
+    list: 604800000             # 7 days
+    editorial: 2592000000       # 30 days
+    discussion: 86400000        # 1 day
+  maxSize: 1073741824           # 1 GB
+  compression: true
+
+browser:
+  headless: true
+  timeout: 45000
+  blockedResources:
+    - image
+    - font
+    - media
+
+logging:
+  level: info
+  output: console
+
+# Usage Tips:
+# - Always use --resume flag for large batches:
+#   npm run dev -- scrape-list --limit 500 --resume
+#
+# - Progress saved to .lesca-progress.json
+#
+# - If interrupted, resume with same command:
+#   npm run dev -- scrape-list --limit 500 --resume
+#
+# - Example commands:
+#   # All Easy problems
+#   npm run dev -- scrape-list --difficulty Easy --resume
+#
+#   # First 200 Medium problems  #   npm run dev -- scrape-list --difficulty Medium --limit 200 --resume
+#
+#   # Dynamic Programming problems
+#   npm run dev -- scrape-list --tags "dynamic-programming" --resume

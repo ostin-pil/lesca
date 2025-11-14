@@ -1,0 +1,62 @@
+# No-Cache Configuration
+# Always fetch fresh data from LeetCode
+# Useful when problems/discussions are frequently updated
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 30000
+  retries: 3
+  retryDelay: 1000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 30
+    minDelay: 2000
+    maxDelay: 10000
+    jitter: true
+
+storage:
+  path: ./fresh-output
+
+output:
+  format: markdown
+  frontmatter: true
+
+scraping:
+  concurrency: 3
+  batchSize: 10
+  delay: 1000
+  discussion:
+    defaultLimit: 10
+    defaultSort: recent         # Get latest discussions
+
+cache:
+  enabled: false                # Caching disabled
+
+browser:
+  headless: true
+  timeout: 30000
+  blockedResources:
+    - image
+    - font
+    - media
+
+logging:
+  level: info
+  output: console
+
+# Notes:
+# - All data fetched fresh from LeetCode every time
+# - Slower than with caching enabled
+# - Good for:
+#   * Tracking daily problems
+#   * Following active discussions
+#   * Ensuring latest editorial content
+#   * Verifying problem updates
+#
+# - Not recommended for:
+#   * Large batch scraping
+#   * Frequent re-scraping of same problems
+#   * Situations where speed matters more than freshness

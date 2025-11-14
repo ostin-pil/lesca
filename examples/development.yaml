@@ -1,0 +1,54 @@
+# Development/Debug Configuration
+# For troubleshooting and development work
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 60000
+  retries: 1                    # Fail fast for debugging
+  retryDelay: 1000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 30
+    minDelay: 2000
+    maxDelay: 10000
+    jitter: false               # Predictable timing for debugging
+
+storage:
+  path: ./debug-output
+
+output:
+  format: markdown
+  frontmatter: true
+
+scraping:
+  concurrency: 1                # Sequential for easier debugging
+  batchSize: 5
+  delay: 1000
+  timeout: 120000               # Long timeout for debugging
+
+cache:
+  enabled: false                # Disable cache for fresh data every time
+  directory: ~/.lesca/cache-debug
+
+browser:
+  headless: false               # Visible browser for debugging
+  timeout: 120000               # Long timeout
+  blockedResources: []          # Don't block anything
+
+logging:
+  level: debug                  # Maximum verbosity
+  output: both                  # Log to console and file
+  file: ./lesca-debug.log
+  format: text
+
+# Notes:
+# - Browser runs in visible mode - you'll see what it's doing
+# - Debug logging enabled - very verbose output
+# - Cache disabled - always fresh data
+# - Sequential scraping - easier to follow
+# - Long timeouts - good for slow connections/debugging
+# - Output saved to ./debug-output
+# - Logs saved to ./lesca-debug.log

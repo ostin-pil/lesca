@@ -1,0 +1,54 @@
+# Standard Markdown Configuration
+# GitHub-flavored markdown for documentation and repositories
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+storage:
+  type: filesystem
+  path: ./leetcode-problems
+
+output:
+  format: markdown
+  pattern: "{slug}.md"
+  frontmatter: true
+  images:
+    download: true              # Download images for offline use
+    directory: images
+    pattern: "{slug}-{index}.{ext}"
+
+scraping:
+  concurrency: 3
+  batchSize: 10
+  delay: 1000
+  discussion:
+    defaultLimit: 5
+    defaultSort: hot
+
+cache:
+  enabled: true
+  directory: ~/.lesca/cache
+  memorySize: 50
+  ttl:
+    problem: 604800000          # 7 days
+    list: 86400000              # 1 day
+    editorial: 604800000        # 7 days
+    discussion: 3600000         # 1 hour
+  maxSize: 524288000            # 500 MB
+  compression: true
+
+browser:
+  headless: true
+  timeout: 30000
+  blockedResources:
+    - font
+    - media
+
+logging:
+  level: info
+  output: console
+
+# Notes:
+# - Compatible with GitHub, GitLab, static site generators
+# - Images downloaded locally for offline access
+# - Standard GFM (GitHub Flavored Markdown) syntax

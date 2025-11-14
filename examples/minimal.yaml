@@ -1,0 +1,8 @@
+# Minimal Lesca Configuration
+# Just the essentials to get started
+
+storage:
+  path: ./output
+
+output:
+  format: markdown

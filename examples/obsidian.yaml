@@ -1,0 +1,56 @@
+# Obsidian Vault Configuration
+# Optimized for creating an Obsidian knowledge base
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+storage:
+  type: filesystem
+  path: ./LeetCode-Vault
+
+output:
+  format: obsidian
+  pattern: "{id} - {title}.md"  # Includes problem ID for sorting
+  frontmatter: true             # Enable YAML frontmatter
+  images:
+    download: false             # Set to true to download images locally
+    directory: assets/images
+    pattern: "{slug}-{index}.{ext}"
+
+scraping:
+  concurrency: 3
+  batchSize: 10
+  delay: 1000
+  discussion:
+    defaultLimit: 10
+    defaultSort: most-votes     # Get best solutions first
+
+cache:
+  enabled: true
+  directory: ~/.lesca/cache
+  memorySize: 50
+  ttl:
+    problem: 2592000000         # 30 days - problems don't change often
+    list: 604800000             # 7 days
+    editorial: 2592000000       # 30 days
+    discussion: 86400000        # 1 day - discussions update more frequently
+  maxSize: 524288000            # 500 MB
+  compression: true
+
+browser:
+  headless: true
+  timeout: 30000
+  blockedResources:
+    - image
+    - font
+    - media
+
+logging:
+  level: info
+  output: console
+
+# Notes:
+# - Create vault: mkdir -p LeetCode-Vault
+# - Open in Obsidian: File → Open Vault → Choose LeetCode-Vault
+# - Files will have [[wikilinks]] and YAML frontmatter
+# - Tag-based filtering works in Obsidian graph view

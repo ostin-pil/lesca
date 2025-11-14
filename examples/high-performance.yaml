@@ -1,0 +1,60 @@
+# High-Performance Configuration
+# Fast scraping with aggressive settings
+# Warning: Higher risk of rate limiting
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 30000
+  retries: 3
+  retryDelay: 1000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 60       # Increased from default 30
+    minDelay: 1000              # Reduced from default 2000
+    maxDelay: 2000              # Reduced from default 10000
+    jitter: true
+
+storage:
+  path: ./output
+
+output:
+  format: markdown
+  frontmatter: true
+
+scraping:
+  concurrency: 5                # Increased from default 3
+  batchSize: 20                 # Increased from default 10
+  delay: 500                    # Reduced from default 1000
+  timeout: 60000
+
+cache:
+  enabled: true
+  directory: ~/.lesca/cache
+  memorySize: 100               # Increased from default 50
+  ttl:
+    problem: 604800000
+    list: 86400000
+  maxSize: 1073741824           # 1 GB (increased from 500 MB)
+  compression: false            # Disabled for speed
+
+browser:
+  headless: true
+  timeout: 30000
+  blockedResources:
+    - image                     # Block everything possible for speed
+    - font
+    - media
+    - stylesheet
+
+logging:
+  level: warn                   # Reduce logging overhead
+  output: console
+
+# Notes:
+# - Scrapes ~2-3x faster than default config
+# - Monitor for rate limit errors
+# - Reduce concurrency/increase delays if you get rate limited
+# - Best for one-time large scrapes, not frequent updates

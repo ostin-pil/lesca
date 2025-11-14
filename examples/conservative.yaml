@@ -1,0 +1,59 @@
+# Conservative Configuration
+# Safe scraping with low risk of rate limiting
+# Recommended for frequent updates or shared networks
+
+auth:
+  cookiePath: ~/.lesca/cookies.json
+
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 60000                # Longer timeout for slow connections
+  retries: 5                    # More retries
+  retryDelay: 2000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 20       # Reduced from default 30
+    minDelay: 3000              # Increased from default 2000
+    maxDelay: 5000              # Reduced from default 10000
+    jitter: true
+
+storage:
+  path: ./output
+
+output:
+  format: markdown
+  frontmatter: true
+
+scraping:
+  concurrency: 2                # Reduced from default 3
+  batchSize: 5                  # Reduced from default 10
+  delay: 2000                   # Increased from default 1000
+  timeout: 90000                # Longer timeout
+
+cache:
+  enabled: true
+  directory: ~/.lesca/cache
+  memorySize: 30                # Reduced from default 50
+  ttl:
+    problem: 604800000
+    list: 86400000
+  maxSize: 262144000            # 250 MB (reduced from 500 MB)
+  compression: true
+
+browser:
+  headless: true
+  timeout: 60000                # Longer timeout
+  blockedResources:
+    - image
+    - font
+    - media
+
+logging:
+  level: info
+  output: console
+
+# Notes:
+# - Very low risk of rate limiting
+# - Slower but more reliable
+# - Good for running on shared/restricted networks
+# - Suitable for automated/scheduled scraping
