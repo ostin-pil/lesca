@@ -44,6 +44,7 @@ npm-debug.log*
 .cache/
 .temp/
 *.tmp
+.chats/
 
 # GraphQL test outputs
 graphql-test-*.json

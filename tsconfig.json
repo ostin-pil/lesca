@@ -2,7 +2,7 @@
   "compilerOptions": {
     // Language and Environment
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
 
@@ -49,11 +49,5 @@
       "@lesca/shared/*": ["./shared/*/src"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["node_modules", "dist", "**/dist", "**/*.test.ts", "**/*.spec.ts"]
 }

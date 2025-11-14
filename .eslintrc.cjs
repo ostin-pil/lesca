@@ -16,12 +16,14 @@ module.exports = {
     'prettier',
   ],
   rules: {
-    // TypeScript specific
+    // TypeScript specific - ZERO TOLERANCE
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-explicit-any': 'error', // Changed from 'warn'
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'error', // Changed from 'warn'
+    '@typescript-eslint/no-floating-promises': 'error', // Added
+    '@typescript-eslint/require-await': 'error', // Added
     '@typescript-eslint/consistent-type-imports': [
       'error',
       { prefer: 'type-imports' },
@@ -45,13 +47,16 @@ module.exports = {
     ],
     'import/no-unresolved': 'off', // TypeScript handles this
 
-    // General code quality
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    // General code quality - ZERO TOLERANCE
+    'no-console': 'error', // No console statements allowed
     'prefer-const': 'error',
     'no-var': 'error',
   },
   settings: {
     'import/resolver': {
+      node: {
+        extensions: ['.ts', '.tsx', '.js', '.json'],
+      },
       typescript: {
         alwaysTryTypes: true,
         project: './tsconfig.json',
@@ -65,5 +70,7 @@ module.exports = {
     '*.mjs',
     'archive',
     'graphql-test-*.json',
+    '**/*.test.ts',
+    '**/*.spec.ts',
   ],
 }
