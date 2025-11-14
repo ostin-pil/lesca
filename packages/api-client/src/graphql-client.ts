@@ -3,7 +3,6 @@ import type {
   ProblemList,
   ProblemListFilters,
   AuthCredentials,
-  GraphQLError as GraphQLErrorType,
 } from '../../../shared/types/src/index.js'
 import { GraphQLError, RateLimitError } from '../../../shared/types/src/index.js'
 
@@ -25,7 +24,8 @@ interface GraphQLResponse<T> {
  */
 export class GraphQLClient {
   private readonly endpoint = 'https://leetcode.com/graphql'
-  private readonly userAgent = 'Lesca/0.1.0 LeetCode Scraper'
+  private readonly userAgent =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
   constructor(
     private auth?: AuthCredentials,
@@ -74,14 +74,11 @@ export class GraphQLClient {
 
       // Check for other HTTP errors
       if (!response.ok) {
-        throw new GraphQLError(
-          `HTTP ${response.status}: ${response.statusText}`,
-          response.status
-        )
+        throw new GraphQLError(`HTTP ${response.status}: ${response.statusText}`, response.status)
       }
 
       // Parse response
-      const result: GraphQLResponse<T> = await response.json()
+      const result = await response.json() as GraphQLResponse<T>
 
       // Check for GraphQL errors
       if (result.errors && result.errors.length > 0) {
@@ -166,11 +163,7 @@ export class GraphQLClient {
   /**
    * Get a list of problems with optional filtering
    */
-  async getProblemList(
-    filters?: ProblemListFilters,
-    limit = 50,
-    offset = 0
-  ): Promise<ProblemList> {
+  async getProblemList(filters?: ProblemListFilters, limit = 50, offset = 0): Promise<ProblemList> {
     const query = `
       query problemsetQuestionList(
         $categorySlug: String
@@ -246,7 +239,7 @@ export class GraphQLClient {
   async getAllProblems(filters?: ProblemListFilters): Promise<ProblemList> {
     const pageSize = 100
     let offset = 0
-    let allQuestions: ProblemList['questions'] = []
+    const allQuestions: ProblemList['questions'] = []
     let total = 0
 
     // Fetch first page to get total

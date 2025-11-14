@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'fs/promises'
+
 import type { AuthStrategy, AuthCredentials, Cookie } from '../../../shared/types/src/index.js'
 import { AuthError } from '../../../shared/types/src/index.js'
 
@@ -66,9 +67,9 @@ export class CookieFileAuth implements AuthStrategy {
    * Check if credentials are valid
    * Basic validation - checks for required cookies
    */
-  async isValid(): Promise<boolean> {
+  isValid(): Promise<boolean> {
     if (!this.credentials) {
-      return false
+      return Promise.resolve(false)
     }
 
     // Check for required cookies
@@ -77,7 +78,7 @@ export class CookieFileAuth implements AuthStrategy {
     )
 
     if (!hasSessionCookie) {
-      return false
+      return Promise.resolve(false)
     }
 
     // Check if cookies are expired
@@ -89,7 +90,7 @@ export class CookieFileAuth implements AuthStrategy {
       return cookie.expires > now
     })
 
-    return allValid
+    return Promise.resolve(allValid)
   }
 
   /**
@@ -122,7 +123,7 @@ export class CookieFileAuth implements AuthStrategy {
   async load(path: string): Promise<void> {
     try {
       const content = await readFile(path, 'utf-8')
-      const data: CookieFile = JSON.parse(content)
+      const data = JSON.parse(content) as CookieFile
 
       if (!data.cookies || !Array.isArray(data.cookies)) {
         throw new AuthError('Invalid cookie file format: missing or invalid cookies array')
@@ -140,7 +141,7 @@ export class CookieFileAuth implements AuthStrategy {
       }
 
       this.credentials = {
-        cookies: data.cookies.map(this.normalizeCookie),
+        cookies: data.cookies.map((cookie) => this.normalizeCookie(cookie)),
         csrfToken: csrfToken || '',
       }
 
@@ -190,15 +191,25 @@ export class CookieFileAuth implements AuthStrategy {
    * Normalize cookie format
    */
   private normalizeCookie(cookie: CookieFile['cookies'][0]): Cookie {
-    return {
+    const normalized: Cookie = {
       name: cookie.name,
       value: cookie.value,
       domain: cookie.domain,
       path: cookie.path || '/',
-      expires: cookie.expires,
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
     }
+
+    // Conditionally add optional properties
+    if (cookie.expires !== undefined) {
+      normalized.expires = cookie.expires
+    }
+    if (cookie.httpOnly !== undefined) {
+      normalized.httpOnly = cookie.httpOnly
+    }
+    if (cookie.secure !== undefined) {
+      normalized.secure = cookie.secure
+    }
+
+    return normalized
   }
 
   /**
@@ -209,13 +220,7 @@ export class CookieFileAuth implements AuthStrategy {
     const cookies: Cookie[] = []
 
     // Standard LeetCode cookies
-    const cookieNames = [
-      'LEETCODE_SESSION',
-      'csrftoken',
-      'cf_clearance',
-      'INGRESSCOOKIE',
-      '__cflb',
-    ]
+    const cookieNames = ['LEETCODE_SESSION', 'csrftoken', 'cf_clearance', 'INGRESSCOOKIE', '__cflb']
 
     for (const name of cookieNames) {
       const value = process.env[name.toUpperCase()]
@@ -293,7 +298,10 @@ export function parseCookieString(cookieString: string, domain = 'leetcode.com')
 /**
  * Helper function to export cookies to various formats
  */
-export function exportCookies(credentials: AuthCredentials, format: 'json' | 'netscape' = 'json'): string {
+export function exportCookies(
+  credentials: AuthCredentials,
+  format: 'json' | 'netscape' = 'json'
+): string {
   if (format === 'json') {
     const data: CookieFile = {
       cookies: credentials.cookies,
@@ -329,5 +337,5 @@ export function exportCookies(credentials: AuthCredentials, format: 'json' | 'ne
     return lines.join('\n')
   }
 
-  throw new Error(`Unsupported export format: ${format}`)
+  throw new Error(`Unsupported export format: ${String(format)}`)
 }

@@ -1,6 +1,20 @@
 import type { Problem, ParsedProblem, Difficulty } from '../../../shared/types/src/index.js'
 
 /**
+ * Type definitions for JSON parsed data
+ */
+interface ProblemStats {
+  acRate?: string
+  totalAccepted?: string
+  totalSubmission?: string
+}
+
+interface SimilarQuestion {
+  titleSlug: string
+  title?: string
+}
+
+/**
  * Obsidian-specific frontmatter and formatting
  */
 export interface ObsidianFrontmatter {
@@ -28,11 +42,15 @@ export class ObsidianConverter {
   /**
    * Convert problem to Obsidian format
    */
-  convert(problem: Problem | ParsedProblem, markdown: string, options?: {
-    includeBacklinks?: boolean
-    tagPrefix?: string
-    wikiLinks?: boolean
-  }): string {
+  convert(
+    problem: Problem | ParsedProblem,
+    markdown: string,
+    options?: {
+      includeBacklinks?: boolean
+      tagPrefix?: string
+      wikiLinks?: boolean
+    }
+  ): string {
     const frontmatter = this.generateFrontmatter(problem)
     const content = this.formatContent(markdown, problem, options)
 
@@ -44,9 +62,9 @@ export class ObsidianConverter {
    */
   private generateFrontmatter(problem: Problem | ParsedProblem): ObsidianFrontmatter {
     // Parse stats if available
-    let stats
+    let stats: ProblemStats | null = null
     try {
-      stats = problem.stats ? JSON.parse(problem.stats) : null
+      stats = problem.stats ? (JSON.parse(problem.stats) as ProblemStats) : null
     } catch {
       stats = null
     }
@@ -55,7 +73,7 @@ export class ObsidianConverter {
     let companies: string[] = []
     try {
       if (problem.companyTagStats) {
-        const companyData = JSON.parse(problem.companyTagStats)
+        const companyData = JSON.parse(problem.companyTagStats) as Record<string, unknown>
         companies = Object.keys(companyData)
       }
     } catch {
@@ -66,30 +84,44 @@ export class ObsidianConverter {
     let similarProblems: string[] = []
     try {
       if (problem.similarQuestions) {
-        const similar = JSON.parse(problem.similarQuestions)
+        const similar = JSON.parse(problem.similarQuestions) as unknown
         similarProblems = Array.isArray(similar)
-          ? similar.map((q: { titleSlug: string }) => q.titleSlug)
+          ? similar.map((q: SimilarQuestion) => q.titleSlug)
           : []
       }
     } catch {
       // Ignore parsing errors
     }
 
-    return {
+    const frontmatter: ObsidianFrontmatter = {
       leetcode_id: problem.questionId,
       frontend_id: problem.questionFrontendId,
       title: problem.title,
       titleSlug: problem.titleSlug,
       difficulty: problem.difficulty,
       tags: problem.topicTags.map((t) => t.slug),
-      companies: companies.length > 0 ? companies : undefined,
-      acceptance: stats?.acRate,
-      total_accepted: stats?.totalAccepted,
-      total_submissions: stats?.totalSubmission,
-      similar_problems: similarProblems.length > 0 ? similarProblems : undefined,
       has_solution: problem.solution?.canSeeDetail || false,
       scraped_at: new Date().toISOString(),
     }
+
+    // Conditionally add optional properties only if they have values
+    if (stats?.acRate) {
+      frontmatter.acceptance = stats.acRate
+    }
+    if (stats?.totalAccepted) {
+      frontmatter.total_accepted = stats.totalAccepted
+    }
+    if (stats?.totalSubmission) {
+      frontmatter.total_submissions = stats.totalSubmission
+    }
+    if (companies.length > 0) {
+      frontmatter.companies = companies
+    }
+    if (similarProblems.length > 0) {
+      frontmatter.similar_problems = similarProblems
+    }
+
+    return frontmatter
   }
 
   /**
@@ -111,7 +143,11 @@ export class ObsidianConverter {
 
     // Convert tags to Obsidian format if requested
     if (options?.tagPrefix) {
-      content = this.formatTags(content, problem.topicTags.map((t) => t.name), options.tagPrefix)
+      content = this.formatTags(
+        content,
+        problem.topicTags.map((t) => t.name),
+        options.tagPrefix
+      )
     }
 
     // Convert links to wiki-links if requested
@@ -134,7 +170,9 @@ export class ObsidianConverter {
     const metadata: string[] = []
 
     // Add difficulty badge
-    metadata.push(`**Difficulty:** ${this.getDifficultyEmoji(problem.difficulty)} ${problem.difficulty}`)
+    metadata.push(
+      `**Difficulty:** ${this.getDifficultyEmoji(problem.difficulty)} ${problem.difficulty}`
+    )
 
     // Add tags
     if (problem.topicTags.length > 0) {
@@ -144,9 +182,9 @@ export class ObsidianConverter {
 
     // Add stats
     try {
-      const stats = problem.stats ? JSON.parse(problem.stats) : null
+      const stats: ProblemStats | null = problem.stats ? (JSON.parse(problem.stats) as ProblemStats) : null
       if (stats) {
-        metadata.push(`**Acceptance Rate:** ${stats.acRate}`)
+        metadata.push(`**Acceptance Rate:** ${String(stats.acRate)}`)
       }
     } catch {
       // Ignore
@@ -209,7 +247,7 @@ export class ObsidianConverter {
     }
 
     try {
-      const similar = JSON.parse(problem.similarQuestions)
+      const similar = JSON.parse(problem.similarQuestions) as unknown
       if (!Array.isArray(similar) || similar.length === 0) {
         return content
       }
@@ -247,7 +285,7 @@ export class ObsidianConverter {
       if (Array.isArray(value)) {
         if (value.length === 0) continue
         lines.push(`${key}:`)
-        value.forEach((item) => {
+        value.forEach((item: string) => {
           lines.push(`  - ${this.escapeYamlValue(item)}`)
         })
       } else if (typeof value === 'string') {
@@ -269,7 +307,7 @@ export class ObsidianConverter {
    */
   private escapeYamlValue(value: string): string {
     // Quote if contains special characters
-    if (/[:#\[\]{}&*!|>'"%@`]/.test(value) || value.includes('\n')) {
+    if (/[:#[\]{}&*!|>'"%@`]/.test(value) || value.includes('\n')) {
       return `"${value.replace(/"/g, '\\"')}"`
     }
     return value
@@ -278,7 +316,10 @@ export class ObsidianConverter {
   /**
    * Generate filename for Obsidian
    */
-  static generateFilename(problem: Problem, format: 'slug' | 'id-slug' | 'id-title' = 'id-slug'): string {
+  static generateFilename(
+    problem: Problem,
+    format: 'slug' | 'id-slug' | 'id-title' = 'id-slug'
+  ): string {
     switch (format) {
       case 'slug':
         return `${problem.titleSlug}.md`
@@ -295,7 +336,10 @@ export class ObsidianConverter {
    * Generate directory structure
    * e.g., "Easy/Array" or "Medium/Dynamic Programming"
    */
-  static generateDirectory(problem: Problem, structure: 'flat' | 'by-difficulty' | 'by-tag' = 'by-difficulty'): string {
+  static generateDirectory(
+    problem: Problem,
+    structure: 'flat' | 'by-difficulty' | 'by-tag' = 'by-difficulty'
+  ): string {
     switch (structure) {
       case 'flat':
         return ''

@@ -1,5 +1,7 @@
 import TurndownService from 'turndown'
+
 import type { Converter, ConverterOptions } from '../../../shared/types/src/index.js'
+import { logger } from '../../../shared/utils/src/index.js'
 
 /**
  * HTML to Markdown converter
@@ -37,7 +39,7 @@ export class HtmlToMarkdownConverter implements Converter {
   /**
    * Convert HTML to Markdown
    */
-  async convert(input: unknown, options?: ConverterOptions): Promise<string> {
+  convert(input: unknown, _options?: ConverterOptions): Promise<string> {
     if (!this.canConvert(input)) {
       throw new Error('Input must be an HTML string')
     }
@@ -51,9 +53,9 @@ export class HtmlToMarkdownConverter implements Converter {
     let markdown = this.turndown.turndown(cleaned)
 
     // Post-process markdown
-    markdown = this.postProcess(markdown, options)
+    markdown = this.postProcess(markdown)
 
-    return markdown
+    return Promise.resolve(markdown)
   }
 
   /**
@@ -93,19 +95,19 @@ export class HtmlToMarkdownConverter implements Converter {
   /**
    * Post-process markdown after conversion
    */
-  private postProcess(markdown: string, options?: ConverterOptions): string {
+  private postProcess(markdown: string): string {
     let processed = markdown
 
     // Fix multiple blank lines
     processed = processed.replace(/\n{3,}/g, '\n\n')
 
     // Fix code block language hints
-    processed = processed.replace(/```(\w+)?\n/g, (match, lang) => {
+    processed = processed.replace(/```(\w+)?\n/g, (_match, lang) => {
       return lang ? `\`\`\`${lang}\n` : '```\n'
     })
 
     // Fix inline code with backticks
-    processed = processed.replace(/`([^`]+)`/g, (match, code) => {
+    processed = processed.replace(/`([^`]+)`/g, (_match, code: string) => {
       // If code contains HTML entities, decode them
       const decoded = code
         .replace(/&lt;/g, '<')
@@ -118,7 +120,7 @@ export class HtmlToMarkdownConverter implements Converter {
     })
 
     // Fix list indentation
-    processed = processed.replace(/^( +)([*-])/gm, (match, spaces, bullet) => {
+    processed = processed.replace(/^( +)([*-])/gm, (_match, spaces: string, bullet: string) => {
       const indentLevel = Math.floor(spaces.length / 2)
       return '  '.repeat(indentLevel) + bullet
     })
@@ -139,6 +141,10 @@ export class HtmlToMarkdownConverter implements Converter {
    * Add custom Turndown rules for LeetCode content
    */
   private addCustomRules() {
+    // Turndown library uses 'any' for node parameters in callbacks
+    // These are external library constraints we cannot control
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
+
     // Rule for handling <sup> (superscript) tags
     this.turndown.addRule('superscript', {
       filter: ['sup'],
@@ -153,27 +159,31 @@ export class HtmlToMarkdownConverter implements Converter {
 
     // Rule for code blocks with language hints
     this.turndown.addRule('codeWithLanguage', {
-      filter: (node) => {
+      filter: (node: Node) => {
+        const element = node as Element
         return (
-          node.nodeName === 'CODE' &&
-          node.hasAttribute('data-lang') &&
-          node.parentNode?.nodeName !== 'PRE'
+          element.nodeName === 'CODE' &&
+          element.hasAttribute('data-lang') &&
+          element.parentNode?.nodeName !== 'PRE'
         )
       },
-      replacement: (content, node) => {
-        const lang = (node as Element).getAttribute('data-lang')
+      replacement: (content: string) => {
+        // Language hint is not used in inline code, just wrap in backticks
         return `\`${content}\``
       },
     })
 
     // Rule for pre-formatted code blocks
     this.turndown.addRule('preformattedCode', {
-      filter: (node) => {
-        return node.nodeName === 'PRE' && node.firstChild?.nodeName === 'CODE'
+      filter: (node: Node) => {
+        const element = node as Element
+        return element.nodeName === 'PRE' && element.firstChild?.nodeName === 'CODE'
       },
-      replacement: (content, node) => {
-        const codeNode = node.firstChild as Element
-        const lang = codeNode?.getAttribute('data-lang') || codeNode?.className?.replace('language-', '') || ''
+      replacement: (content: string, node: Node) => {
+        const element = node as Element
+        const codeNode = element.firstChild as Element | null
+        const lang =
+          codeNode?.getAttribute('data-lang') || codeNode?.className?.replace('language-', '') || ''
 
         // Clean up content
         const cleaned = content
@@ -186,13 +196,14 @@ export class HtmlToMarkdownConverter implements Converter {
 
     // Rule for handling LeetCode's constraint lists
     this.turndown.addRule('constraints', {
-      filter: (node) => {
+      filter: (node: Node) => {
+        const element = node as Element
         return (
-          node.nodeName === 'UL' &&
-          node.previousSibling?.textContent?.includes('Constraints')
+          element.nodeName === 'UL' &&
+          (element.previousSibling?.textContent?.includes('Constraints') ?? false)
         )
       },
-      replacement: (content) => {
+      replacement: (content: string) => {
         return `\n${content}\n`
       },
     })
@@ -200,7 +211,7 @@ export class HtmlToMarkdownConverter implements Converter {
     // Rule for handling images (download if option enabled)
     this.turndown.addRule('images', {
       filter: 'img',
-      replacement: (content, node) => {
+      replacement: (_content: string, node: Node) => {
         const element = node as Element
         const alt = element.getAttribute('alt') || ''
         const src = element.getAttribute('src') || ''
@@ -216,11 +227,12 @@ export class HtmlToMarkdownConverter implements Converter {
     // Rule for handling tables
     this.turndown.addRule('tables', {
       filter: 'table',
-      replacement: (content, node) => {
+      replacement: (content: string) => {
         // Keep tables as HTML for now (Turndown handles basic tables)
         return content
       },
     })
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
   }
 
   /**
@@ -245,7 +257,7 @@ export class HtmlToMarkdownConverter implements Converter {
             const localPath = await imageDownloader(url)
             markdown = markdown.replace(fullMatch, `![${alt}](${localPath})`)
           } catch (error) {
-            console.warn(`Failed to download image ${url}:`, error)
+            logger.warn(`Failed to download image ${url}:`, error)
           }
         }
       }
@@ -284,10 +296,12 @@ export class HtmlToMarkdownConverter implements Converter {
     let match
     while ((match = regex.exec(html)) !== null) {
       const [, language = '', code] = match
-      codeBlocks.push({
-        language,
-        code: this.decodeHtmlEntities(code).trim(),
-      })
+      if (code) {
+        codeBlocks.push({
+          language,
+          code: this.decodeHtmlEntities(code).trim(),
+        })
+      }
     }
 
     return codeBlocks

@@ -237,7 +237,7 @@ export interface User {
  * Base scrape request
  */
 export interface BaseScrapeRequest {
-  type: 'problem' | 'list' | 'discussion' | 'user'
+  type: 'problem' | 'list' | 'discussion' | 'user' | 'editorial'
 }
 
 /**
@@ -265,8 +265,11 @@ export interface ListScrapeRequest extends BaseScrapeRequest {
  */
 export interface DiscussionScrapeRequest extends BaseScrapeRequest {
   type: 'discussion'
-  questionSlug: string
+  titleSlug: string
+  category?: 'solution' | 'general' | 'interview-question'
+  sortBy?: 'hot' | 'most-votes' | 'recent'
   limit?: number
+  includeComments?: boolean
 }
 
 /**
@@ -278,6 +281,15 @@ export interface UserScrapeRequest extends BaseScrapeRequest {
 }
 
 /**
+ * Request to scrape editorial/solution content
+ */
+export interface EditorialScrapeRequest extends BaseScrapeRequest {
+  type: 'editorial'
+  titleSlug: string
+  includePremium?: boolean
+}
+
+/**
  * Union type for all scrape requests
  */
 export type ScrapeRequest =
@@ -285,17 +297,59 @@ export type ScrapeRequest =
   | ListScrapeRequest
   | DiscussionScrapeRequest
   | UserScrapeRequest
+  | EditorialScrapeRequest
+
+/**
+ * Editorial content structure
+ */
+export interface EditorialContent {
+  titleSlug: string
+  content: string
+  approaches: string[]
+  complexity: string | null
+  codeSnippets: CodeSnippet[]
+}
+
+/**
+ * Discussion item
+ */
+export interface Discussion {
+  title: string
+  author: string
+  votes: number
+  timestamp: string | null
+  content: string
+  comments: Array<{
+    author: string
+    content: string
+    timestamp: string | null
+  }>
+  commentCount: number
+}
+
+/**
+ * Discussion list response
+ */
+export interface DiscussionList {
+  titleSlug: string
+  category: string
+  sortBy: string
+  discussions: Discussion[]
+  total: number
+}
 
 /**
  * Raw data from scraping (before processing)
  */
 export interface RawData {
-  type: 'problem' | 'list' | 'discussion' | 'user'
-  data: Problem | ProblemList | DiscussionTopic[] | User
+  type: 'problem' | 'list' | 'discussion' | 'user' | 'editorial'
+  data: Problem | ProblemList | DiscussionTopic[] | User | EditorialContent | DiscussionList
   metadata: {
     scrapedAt: Date
-    source: 'graphql' | 'browser'
+    source?: 'graphql' | 'browser'
     url?: string
+    strategy?: string
+    isPremium?: boolean
   }
 }
 
@@ -303,7 +357,7 @@ export interface RawData {
  * Processed data (after conversion and enhancement)
  */
 export interface ProcessedData {
-  type: 'problem' | 'list' | 'discussion' | 'user'
+  type: 'problem' | 'list' | 'discussion' | 'user' | 'editorial'
   content: string // Converted markdown
   frontmatter: Record<string, unknown> // YAML frontmatter
   metadata: {
@@ -387,7 +441,14 @@ export interface Converter {
 /**
  * Content formats
  */
-export type ContentFormat = 'html' | 'markdown' | 'obsidian' | 'json' | 'csv'
+export type ContentFormat =
+  | 'html'
+  | 'markdown'
+  | 'obsidian'
+  | 'json'
+  | 'csv'
+  | 'editorial'
+  | 'discussion'
 
 /**
  * Converter options
@@ -523,6 +584,36 @@ export interface BrowserDriver {
    * Extract all matching elements
    */
   extractAll(selector: string): Promise<string[]>
+
+  /**
+   * Extract content with fallback selectors
+   */
+  extractWithFallback(selectors: string[]): Promise<string>
+
+  /**
+   * Get HTML content of an element
+   */
+  getHtml(selector: string): Promise<string>
+
+  /**
+   * Get full page HTML
+   */
+  getPageHtml(): Promise<string>
+
+  /**
+   * Check if an element exists
+   */
+  elementExists(selector: string): Promise<boolean>
+
+  /**
+   * Get the browser instance
+   */
+  getBrowser(): unknown
+
+  /**
+   * Take a screenshot
+   */
+  screenshot(path: string): Promise<void>
 
   /**
    * Execute JavaScript in the browser
@@ -669,7 +760,7 @@ export class LescaError extends Error {
     message: string,
     public code: string,
     public statusCode?: number,
-    public cause?: Error
+    public override cause?: Error
   ) {
     super(message)
     this.name = 'LescaError'
@@ -701,13 +792,15 @@ export class AuthError extends LescaError {
  * Rate limit error
  */
 export class RateLimitError extends LescaError {
+  retryAfter?: number
+
   constructor(message: string, retryAfter?: number) {
     super(message, 'RATE_LIMIT_ERROR', 429)
     this.name = 'RateLimitError'
-    this.retryAfter = retryAfter
+    if (retryAfter !== undefined) {
+      this.retryAfter = retryAfter
+    }
   }
-
-  retryAfter?: number
 }
 
 /**

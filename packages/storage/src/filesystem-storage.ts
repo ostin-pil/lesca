@@ -1,5 +1,6 @@
 import { mkdir, writeFile, readFile, unlink, access, readdir } from 'fs/promises'
 import { join, dirname, basename } from 'path'
+
 import type { StorageAdapter } from '../../../shared/types/src/index.js'
 import { StorageError } from '../../../shared/types/src/index.js'
 
@@ -30,11 +31,7 @@ export class FileSystemStorage implements StorageAdapter {
    * @param content - Content to save
    * @param metadata - Optional metadata (saved as .meta.json)
    */
-  async save(
-    key: string,
-    content: string,
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
+  async save(key: string, content: string, metadata?: Record<string, unknown>): Promise<void> {
     try {
       const filePath = join(this.basePath, key)
 
@@ -76,7 +73,7 @@ export class FileSystemStorage implements StorageAdapter {
       }
 
       const content = await readFile(filePath, this.options.encoding)
-      return content
+      return String(content)
     } catch (error) {
       throw new StorageError(
         `Failed to load file ${key}: ${error instanceof Error ? error.message : String(error)}`,
@@ -139,9 +136,7 @@ export class FileSystemStorage implements StorageAdapter {
       }
 
       // Simple pattern matching (* wildcard)
-      const regex = new RegExp(
-        '^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$'
-      )
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$')
 
       return files.filter((file) => regex.test(file))
     } catch (error) {
