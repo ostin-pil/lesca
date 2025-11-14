@@ -13,6 +13,7 @@ Your architecture document is **exceptionally well-designed** with strong patter
 ### 🟢 Strong Architectural Decisions
 
 #### 1. Pure Facade Pattern
+
 ```typescript
 // Excellent: Zero branching in facade
 async scrape(request: ScrapeRequest): Promise<ScrapeResult> {
@@ -24,12 +25,14 @@ async scrape(request: ScrapeRequest): Promise<ScrapeResult> {
 ```
 
 **Why it's good**:
+
 - Business logic stays in strategies
 - Easy to test (mock strategies)
 - New features don't touch core
 - Clear orchestration vs implementation
 
 #### 2. Strategy Pattern for Scrapers
+
 ```typescript
 interface ScraperStrategy {
   canHandle(request: ScrapeRequest): boolean
@@ -38,12 +41,14 @@ interface ScraperStrategy {
 ```
 
 **Why it's good**:
+
 - Each content type has its own strategy
 - Strategies evolve independently
 - Chain of responsibility for selection
 - Testable in isolation
 
 #### 3. Processing Pipeline
+
 ```typescript
 for (const processor of this.processors) {
   if (processor.shouldProcess(result)) {
@@ -53,13 +58,16 @@ for (const processor of this.processors) {
 ```
 
 **Why it's good**:
+
 - Composable data transformations
 - Each processor single-purpose
 - Easy to add/remove processors
 - Order-independent where possible
 
 #### 4. Sequential Processing (No Concurrency)
+
 **Why it's good**:
+
 - No race conditions
 - Easier debugging
 - Natural rate limiting
@@ -67,14 +75,18 @@ for (const processor of this.processors) {
 - Simpler error handling
 
 #### 5. GraphQL-Only Approach
+
 **Why it's good**:
+
 - Single API to maintain
 - LeetCode has migrated to GraphQL
 - Get exactly what you need
 - Batch queries possible
 
 #### 6. Local-First Storage
+
 **Why it's good**:
+
 - Privacy (data stays local)
 - No cloud complexity
 - Works offline
@@ -88,6 +100,7 @@ for (const processor of this.processors) {
 #### 1. Monorepo Complexity
 
 **Your Plan**:
+
 ```
 packages/
 ├── core/
@@ -104,6 +117,7 @@ packages/
 **Concern**: 9 packages from day one is complex
 
 **Recommendation**:
+
 ```
 Phase 1 (MVP):
 lesca/
@@ -131,11 +145,13 @@ Phase 2+:
 **Concern**: Heavy dependency (Playwright/Puppeteer) if not needed
 
 **Recommendation**:
+
 1. **Phase 0**: Test GraphQL coverage first (2-4 hours)
 2. **If GraphQL sufficient**: Skip browser automation entirely
 3. **If GraphQL insufficient**: Add browser as Phase 4
 
 **Test Checklist**:
+
 ```graphql
 # Can GraphQL provide:
 ✓ Problem statement with HTML
@@ -160,6 +176,7 @@ Phase 2+:
 **Recommendation**:
 
 **Phase 1 (MVP)**:
+
 ```typescript
 // Simple: Just download everything
 async scrapeDiscussions(problemId: number) {
@@ -169,6 +186,7 @@ async scrapeDiscussions(problemId: number) {
 ```
 
 **Phase 3 (Enhancement)**:
+
 ```typescript
 // Add simple filtering
 async scrapeDiscussions(problemId: number) {
@@ -180,14 +198,15 @@ async scrapeDiscussions(problemId: number) {
 ```
 
 **Phase 5 (Sophisticated)**:
+
 ```typescript
 // Add Wilson score and multi-factor
-const scored = discussions.map(d => ({
+const scored = discussions.map((d) => ({
   ...d,
-  score: this.qualityScorer.score(d)
+  score: this.qualityScorer.score(d),
 }))
 return scored
-  .filter(d => d.score > 60)
+  .filter((d) => d.score > 60)
   .sort((a, b) => b.score - a.score)
   .slice(0, config.maxDiscussions)
 ```
@@ -203,6 +222,7 @@ return scored
 **Recommendation**:
 
 **Phase 1 Config**:
+
 ```yaml
 # ~/.lesca/config.yaml (minimal)
 cookiePath: ~/.lesca/cookies.json
@@ -210,6 +230,7 @@ outputDir: ~/lesca-output
 ```
 
 **Phase 3 Config**:
+
 ```yaml
 # Add more layers
 auth:
@@ -226,6 +247,7 @@ rateLimit:
 ```
 
 **Phase 5 Config**:
+
 ```yaml
 # Full hierarchical config
 # With validation, env vars, CLI override
@@ -240,6 +262,7 @@ rateLimit:
 **Concern**: Premature abstraction
 
 **Recommendation**:
+
 - **Phase 1-3**: Build core without plugin hooks
 - **Phase 6**: Add plugin system once core is stable
 - **Phase 7**: Create example plugins
@@ -258,17 +281,18 @@ rateLimit:
 
 **Options**:
 
-| Aspect | TypeScript | Python |
-|--------|-----------|---------|
-| Type Safety | ✅ Excellent | ⚠️ Okay (type hints) |
-| Architecture Fit | ✅ Perfect | ⚠️ Adapt needed |
-| Async Patterns | ✅ Native async/await | ⚠️ asyncio complex |
-| Monorepo Tools | ✅ Rich ecosystem | ⚠️ Limited |
-| Existing Code | ❌ Rewrite needed | ✅ Can build on |
-| Deployment | ⚠️ Node.js required | ✅ Simpler |
-| Learning Curve | ⚠️ If new to TS | ✅ If know Python |
+| Aspect           | TypeScript            | Python               |
+| ---------------- | --------------------- | -------------------- |
+| Type Safety      | ✅ Excellent          | ⚠️ Okay (type hints) |
+| Architecture Fit | ✅ Perfect            | ⚠️ Adapt needed      |
+| Async Patterns   | ✅ Native async/await | ⚠️ asyncio complex   |
+| Monorepo Tools   | ✅ Rich ecosystem     | ⚠️ Limited           |
+| Existing Code    | ❌ Rewrite needed     | ✅ Can build on      |
+| Deployment       | ⚠️ Node.js required   | ✅ Simpler           |
+| Learning Curve   | ⚠️ If new to TS       | ✅ If know Python    |
 
 **Recommendation**: **TypeScript** because:
+
 1. Your architecture assumes TypeScript
 2. Existing Python code is minimal (easy to rewrite)
 3. Better fit for complex patterns (Strategy, Facade, Pipeline)
@@ -284,6 +308,7 @@ rateLimit:
 **Action**: Spend 2-4 hours testing GraphQL before any coding
 
 **Test Plan**:
+
 ```typescript
 // Test 1: Problem content
 const problem = await fetch('https://leetcode.com/graphql', {
@@ -303,8 +328,8 @@ const problem = await fetch('https://leetcode.com/graphql', {
         companyTagStats
       }
     }`,
-    variables: { titleSlug: 'two-sum' }
-  })
+    variables: { titleSlug: 'two-sum' },
+  }),
 })
 
 // Test 2: Discussions
@@ -323,8 +348,8 @@ const discussions = await fetch('https://leetcode.com/graphql', {
         }
       }
     }`,
-    variables: { questionId: '1' }
-  })
+    variables: { questionId: '1' },
+  }),
 })
 
 // Document: What's available vs what's missing
@@ -339,6 +364,7 @@ const discussions = await fetch('https://leetcode.com/graphql', {
 **My Recommendation**:
 
 **MVP Features** (2 weeks):
+
 - ✅ Scrape single problem by slug
 - ✅ GraphQL client with cookie auth
 - ✅ Convert HTML to Markdown
@@ -348,6 +374,7 @@ const discussions = await fetch('https://leetcode.com/graphql', {
 - ✅ Simple config file
 
 **Not in MVP**:
+
 - ❌ Browser automation
 - ❌ Quality scoring
 - ❌ Caching
@@ -367,6 +394,7 @@ const discussions = await fetch('https://leetcode.com/graphql', {
 ### Recommendation 1: Start Simpler
 
 **Instead of**:
+
 ```typescript
 // Complex from day 1
 export class LeetCodeScraper {
@@ -381,6 +409,7 @@ export class LeetCodeScraper {
 ```
 
 **Start with**:
+
 ```typescript
 // Simple MVP
 export class LeetCodeScraper {
@@ -399,6 +428,7 @@ export class LeetCodeScraper {
 ```
 
 **Then evolve**:
+
 - Phase 2: Add pipeline
 - Phase 3: Add strategies
 - Phase 5: Add cache, checkpointing
@@ -435,24 +465,28 @@ npx tsx test-graphql.ts
 ### Recommendation 3: Use Existing Tools
 
 **HTML to Markdown**: Don't write from scratch
+
 ```bash
 npm install turndown
 npm install @types/turndown
 ```
 
 **CLI Framework**: Use mature library
+
 ```bash
 npm install commander
 npm install @types/commander
 ```
 
 **Config Management**: Use established tool
+
 ```bash
 npm install cosmiconfig
 npm install yaml
 ```
 
 **Rate Limiting**: Use existing library
+
 ```bash
 npm install p-throttle
 # or
@@ -464,6 +498,7 @@ npm install bottleneck
 **For each module**:
 
 1. **Write types first**:
+
 ```typescript
 // types.ts
 export interface GraphQLClient {
@@ -473,6 +508,7 @@ export interface GraphQLClient {
 ```
 
 2. **Write tests second**:
+
 ```typescript
 // graphql-client.test.ts
 describe('GraphQLClient', () => {
@@ -485,6 +521,7 @@ describe('GraphQLClient', () => {
 ```
 
 3. **Implement third**:
+
 ```typescript
 // graphql-client.ts
 export class GraphQLClient {
@@ -497,12 +534,14 @@ export class GraphQLClient {
 ### Recommendation 5: Progressive Enhancement
 
 **Phase 1**: Hardcode everything
+
 ```typescript
 const GRAPHQL_ENDPOINT = 'https://leetcode.com/graphql'
 const OUTPUT_DIR = './output'
 ```
 
 **Phase 2**: Add config file
+
 ```typescript
 const config = await loadConfig()
 const endpoint = config.api.endpoint
@@ -510,11 +549,13 @@ const outputDir = config.output.directory
 ```
 
 **Phase 3**: Add environment variables
+
 ```typescript
 const endpoint = process.env.LESCA_API_ENDPOINT || config.api.endpoint
 ```
 
 **Phase 4**: Add CLI flags
+
 ```typescript
 const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.endpoint
 ```
@@ -528,6 +569,7 @@ const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.e
 **Timeline**: 2 weeks
 
 **Scope**:
+
 - Single problem scraping only
 - GraphQL + Cookie auth only
 - Basic Markdown conversion
@@ -535,12 +577,14 @@ const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.e
 - Minimal CLI
 
 **Pros**:
+
 - Fast time to value
 - Learn system requirements
 - Get user feedback early
 - Low risk
 
 **Cons**:
+
 - Limited initial functionality
 - Need follow-up phases
 
@@ -549,6 +593,7 @@ const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.e
 **Timeline**: 4-6 weeks
 
 **Scope**:
+
 - Everything in your architecture
 - All strategies, processors
 - Browser automation
@@ -557,10 +602,12 @@ const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.e
 - Plugin system
 
 **Pros**:
+
 - Complete from day 1
 - Fewer iterations
 
 **Cons**:
+
 - Long time before any value
 - High risk of scope creep
 - Harder to course-correct
@@ -572,6 +619,7 @@ const endpoint = args.endpoint || process.env.LESCA_API_ENDPOINT || config.api.e
 ## Migration Plan from Python
 
 Your existing Python code:
+
 ```python
 # main.py
 def setup_driver():
@@ -592,6 +640,7 @@ def setup_driver():
    - Output directory: Phase 1
 
 3. **Archive Python code**:
+
 ```bash
 mkdir archive
 mv main.py archive/
@@ -607,6 +656,7 @@ mv Dockerfile archive/
 ## Questions to Answer Before Starting
 
 ### Q1: Technology Stack
+
 **Question**: Confirm TypeScript/Node.js?
 
 **Options**: TypeScript (recommended) or Python
@@ -614,9 +664,11 @@ mv Dockerfile archive/
 **Your Answer**: TypeScript
 
 ### Q2: MVP Scope
+
 **Question**: MVP features?
 
 **Options**:
+
 - A) Just single problem scraping (2 weeks)
 - B) Single problem + list scraping (3 weeks)
 - C) Everything in architecture (6 weeks)
@@ -624,9 +676,11 @@ mv Dockerfile archive/
 **Your Answer**: Everything in architecture
 
 ### Q3: Browser Automation
+
 **Question**: Include browser automation?
 
 **Options**:
+
 - A) Yes, from day 1
 - B) Only if GraphQL insufficient (recommended)
 - C) No, GraphQL only
@@ -634,9 +688,11 @@ mv Dockerfile archive/
 **Your Answer**: Yes, from day 1
 
 ### Q4: Deployment Target
+
 **Question**: How will users install it?
 
 **Options**:
+
 - A) npm package (recommended)
 - B) Standalone binary
 - C) Docker container
@@ -645,9 +701,11 @@ mv Dockerfile archive/
 **Your Answer**: All of the above
 
 ### Q5: Timeline
+
 **Question**: Target completion date?
 
 **Options**:
+
 - A) 2 weeks (strict MVP)
 - B) 4 weeks (MVP + enhancements)
 - C) 6 weeks (full v1.0)
@@ -660,12 +718,14 @@ mv Dockerfile archive/
 ## Next Steps
 
 ### Immediate (Today)
+
 1. ✅ Review architecture (done)
 2. ✅ Review implementation plan (done)
 3. ⏳ Answer 5 questions above
 4. ⏳ Decide: TypeScript or Python?
 
 ### This Week
+
 5. ⏳ Phase 0.1: Test GraphQL coverage (2-4 hours)
 6. ⏳ Phase 0.2: Set up TypeScript project (1 hour)
 7. ⏳ Phase 0.3: Create shared types (1 hour)
@@ -673,6 +733,7 @@ mv Dockerfile archive/
 9. ⏳ Phase 1.2: Implement cookie auth (2 hours)
 
 ### Next Week
+
 10. ⏳ Phase 1.3-1.7: Complete MVP (remaining)
 11. ⏳ Test end-to-end
 12. ⏳ Document what worked/didn't
@@ -683,6 +744,7 @@ mv Dockerfile archive/
 ## Success Metrics
 
 ### MVP Success (End of 2 Weeks)
+
 - [ ] Can scrape "Two Sum" problem
 - [ ] Saves as `1-two-sum.md`
 - [ ] Markdown has Obsidian frontmatter
@@ -691,6 +753,7 @@ mv Dockerfile archive/
 - [ ] Can scrape 10 different problems successfully
 
 ### v1.0 Success (End of 6 Weeks)
+
 - [ ] Can scrape problem lists (by tag, company, difficulty)
 - [ ] Respects rate limits (no blocking)
 - [ ] Can resume interrupted scrapes
@@ -706,6 +769,7 @@ mv Dockerfile archive/
 Your architecture is **excellent** - well-thought-out with solid patterns and clear reasoning. The main challenge is bridging from architectural vision to working code.
 
 **My advice**:
+
 1. **Start small**: Build MVP first (2 weeks)
 2. **Validate early**: Test GraphQL before committing
 3. **Iterate fast**: Ship → Learn → Improve
@@ -721,6 +785,7 @@ The architecture will emerge naturally as you build. Some of your planned patter
 ## Ready to Start?
 
 Once you answer the 5 questions, I can help you:
+
 1. Set up the TypeScript project structure
 2. Create the initial GraphQL test script
 3. Implement the first module (GraphQL client)

@@ -1,6 +1,7 @@
 # Lesca Implementation Plan
 
 ## Current State
+
 - **Existing Code**: Python/Selenium prototype with basic cookie auth
 - **Target Architecture**: TypeScript/Node.js modular system with GraphQL
 - **Gap**: Need to bridge from prototype to production architecture
@@ -10,6 +11,7 @@
 ### Technology Stack Choice
 
 **Option A: TypeScript/Node.js** (Recommended per architecture)
+
 - ✅ Better type safety for complex architecture
 - ✅ Rich npm ecosystem for tools
 - ✅ Better async/await patterns
@@ -18,6 +20,7 @@
 - ❌ Steeper learning curve if team knows Python better
 
 **Option B: Python** (Leverage existing code)
+
 - ✅ Can build on existing prototype
 - ✅ Simpler deployment (single file possible)
 - ✅ Good libraries (requests, BeautifulSoup, Playwright)
@@ -36,6 +39,7 @@
 ### Tasks
 
 #### 0.1 Validate GraphQL Approach
+
 ```bash
 # Test LeetCode GraphQL endpoint manually
 # Verify it provides all needed data:
@@ -47,6 +51,7 @@
 ```
 
 **Acceptance Criteria**:
+
 - [ ] GraphQL returns problem statements with HTML
 - [ ] GraphQL returns editorial content (or identify if browser needed)
 - [ ] GraphQL returns discussion threads
@@ -55,6 +60,7 @@
 **Output**: Document `graphql-coverage.md` listing what GraphQL provides vs what needs browser
 
 #### 0.2 Set Up Development Environment
+
 ```bash
 # Initialize project
 npm init -y
@@ -72,6 +78,7 @@ npx tsc --init
 ```
 
 **Files to Create**:
+
 - `package.json` - Root workspace configuration
 - `tsconfig.json` - Base TypeScript config
 - `tsconfig.build.json` - Build-specific config
@@ -80,12 +87,14 @@ npx tsc --init
 - `vitest.config.ts` - Test configuration
 
 **Acceptance Criteria**:
+
 - [ ] TypeScript compiles successfully
 - [ ] Can run tests with vitest
 - [ ] Workspaces configured (npm/pnpm/yarn)
 - [ ] Linting and formatting work
 
 #### 0.3 Create Shared Types
+
 ```typescript
 // shared/types/index.ts
 export interface Problem {
@@ -111,6 +120,7 @@ export interface ScrapeRequest {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Core domain types defined
 - [ ] Proper TypeScript discriminated unions
 - [ ] Types exported and importable by packages
@@ -122,6 +132,7 @@ export interface ScrapeRequest {
 **Goal**: Scrape a single problem and save as markdown
 
 ### Architecture Focus
+
 - Core facade (minimal)
 - GraphQL client (basic)
 - Cookie authentication (simple)
@@ -140,17 +151,20 @@ export class GraphQLClient {
 ```
 
 **Key Features**:
+
 - Basic fetch-based GraphQL queries
 - Cookie authentication (from file)
 - Error handling
 - No rate limiting yet (add in Phase 3)
 
 **Tests**:
+
 - Mock GraphQL responses
 - Test error handling
 - Test cookie injection
 
 **Acceptance Criteria**:
+
 - [ ] Can query LeetCode GraphQL
 - [ ] Returns parsed Problem object
 - [ ] Handles network errors gracefully
@@ -168,22 +182,25 @@ export class CookieFileAuth implements AuthStrategy {
 ```
 
 **Key Features**:
+
 - Load cookies from JSON file
 - Format for HTTP headers
 - Extract CSRF token
 - Basic validation (not expired)
 
 **Cookie File Format**:
+
 ```json
 {
   "cookies": [
-    {"name": "LEETCODE_SESSION", "value": "...", "domain": ".leetcode.com"},
-    {"name": "csrftoken", "value": "...", "domain": "leetcode.com"}
+    { "name": "LEETCODE_SESSION", "value": "...", "domain": ".leetcode.com" },
+    { "name": "csrftoken", "value": "...", "domain": "leetcode.com" }
   ]
 }
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Loads cookie file successfully
 - [ ] Formats cookies for GraphQL client
 - [ ] Validates cookie expiry
@@ -198,6 +215,7 @@ export class HtmlToMarkdownConverter {
 ```
 
 **Key Features**:
+
 - Use `turndown` library as base
 - Preserve code blocks with language detection
 - Handle inline code
@@ -205,6 +223,7 @@ export class HtmlToMarkdownConverter {
 - Strip JavaScript/tracking
 
 **Acceptance Criteria**:
+
 - [ ] Converts basic HTML to markdown
 - [ ] Preserves code blocks correctly
 - [ ] Handles LeetCode-specific HTML patterns
@@ -221,12 +240,14 @@ export class FileSystemStorage {
 ```
 
 **Key Features**:
+
 - Save markdown files
 - Consistent naming: `{id}-{slug}.md`
 - Create directories as needed
 - Atomic writes (temp + rename)
 
 **Acceptance Criteria**:
+
 - [ ] Saves files with correct names
 - [ ] Creates nested directories
 - [ ] Handles file system errors
@@ -242,12 +263,14 @@ export class ProblemStrategy implements ScraperStrategy {
 ```
 
 **Key Features**:
+
 - Fetch problem via GraphQL
 - Basic data validation
 - Return structured raw data
 - No enhancements yet
 
 **Acceptance Criteria**:
+
 - [ ] Fetches problem from GraphQL
 - [ ] Returns complete problem data
 - [ ] Handles missing problems (404)
@@ -268,12 +291,14 @@ export class LeetCodeScraper {
 ```
 
 **Key Features**:
+
 - Strategy selection (only one for now)
 - Call converter
 - Call storage
 - Return result
 
 **Acceptance Criteria**:
+
 - [ ] Orchestrates the full flow
 - [ ] Handles errors from strategies
 - [ ] Returns success/failure status
@@ -303,12 +328,14 @@ program
 ```
 
 **Key Features**:
+
 - Use `commander` for CLI parsing
 - Load simple config (just cookie path and output dir)
 - Pretty error messages
 - Success feedback
 
 **Acceptance Criteria**:
+
 - [ ] Can run from command line
 - [ ] Scrapes and saves problem
 - [ ] Shows clear success/error messages
@@ -347,6 +374,7 @@ export class ProcessingPipeline {
 ### 2.2 Built-in Processors
 
 #### Content Cleaner
+
 ```typescript
 // packages/core/src/processors/content-cleaner.ts
 export class ContentCleanerProcessor implements Processor {
@@ -357,6 +385,7 @@ export class ContentCleanerProcessor implements Processor {
 ```
 
 #### Image Downloader
+
 ```typescript
 // packages/core/src/processors/image-downloader.ts
 export class ImageDownloaderProcessor implements Processor {
@@ -367,6 +396,7 @@ export class ImageDownloaderProcessor implements Processor {
 ```
 
 #### Metadata Enhancer
+
 ```typescript
 // packages/core/src/processors/metadata-enhancer.ts
 export class MetadataEnhancerProcessor implements Processor {
@@ -389,6 +419,7 @@ export class ObsidianConverter {
 ```
 
 **Frontmatter Example**:
+
 ```yaml
 ---
 leetcode_id: 1
@@ -406,6 +437,7 @@ date_scraped: 2024-01-15
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Pipeline executes processors in order
 - [ ] Each processor is testable in isolation
 - [ ] Content is cleaned properly
@@ -439,12 +471,14 @@ export class ConfigManager {
 ```
 
 **Configuration Files**:
+
 - `~/.lesca/config.yaml` - User config
 - `.lesca.yaml` - Project config (optional)
 - Environment variables
 - CLI arguments
 
 **Validation**:
+
 - Use `zod` or `joi` for schema validation
 - Helpful error messages
 - Default values for optional fields
@@ -455,11 +489,12 @@ export class ConfigManager {
 // shared/utils/src/rate-limiter.ts
 export class RateLimiter {
   async acquire(): Promise<void>
-  reportRateLimit(): void  // Trigger backoff
+  reportRateLimit(): void // Trigger backoff
 }
 ```
 
 **Features**:
+
 - Configurable delays
 - Random jitter
 - Exponential backoff
@@ -478,6 +513,7 @@ lesca export --format obsidian      # Export
 ```
 
 **Features**:
+
 - Progress bars (`cli-progress`)
 - Colored output (`chalk`)
 - Interactive prompts (`inquirer`)
@@ -496,12 +532,14 @@ export class Logger {
 ```
 
 **Features**:
+
 - Multiple transports (console, file)
 - Log levels
 - Structured logging (JSON)
 - Log rotation
 
 **Acceptance Criteria**:
+
 - [ ] Config loads from multiple sources
 - [ ] Rate limiting prevents API abuse
 - [ ] CLI has good UX (colors, progress)
@@ -514,6 +552,7 @@ export class Logger {
 **Goal**: Add browser automation for content GraphQL can't fetch
 
 ### Prerequisites
+
 - Complete Phase 0.1 to identify what needs browser
 - Only implement if GraphQL is insufficient
 
@@ -548,12 +587,12 @@ export class PlaywrightDriver implements BrowserDriver {
 selectors:
   problem:
     title: "[data-cy='question-title']"
-    content: ".question-content__JfgR"
-    difficulty: "[diff-label]"
+    content: '.question-content__JfgR'
+    difficulty: '[diff-label]'
 
   discussion:
-    threads: ".discuss-item"
-    content: ".discuss-markdown-container"
+    threads: '.discuss-item'
+    content: '.discuss-markdown-container'
 ```
 
 ```typescript
@@ -576,6 +615,7 @@ export class DiscussionStrategy implements ScraperStrategy {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Browser launches headlessly
 - [ ] Can navigate and extract content
 - [ ] Selectors are configurable
@@ -599,6 +639,7 @@ export class QualityScorer {
 ```
 
 **Scoring Factors**:
+
 - Wilson score for voting
 - Code presence detection
 - Length and completeness
@@ -617,6 +658,7 @@ export class Cache {
 ```
 
 **Features**:
+
 - File-based cache
 - TTL support
 - Size limits
@@ -634,6 +676,7 @@ export class CheckpointManager {
 ```
 
 **Features**:
+
 - Save progress periodically
 - Resume on interrupt
 - Clear on completion
@@ -651,6 +694,7 @@ export class ListStrategy implements ScraperStrategy {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Quality filtering works effectively
 - [ ] Cache reduces redundant API calls
 - [ ] Can resume interrupted scrapes
@@ -695,6 +739,7 @@ export class HookManager {
 ```
 
 **Events**:
+
 - `before:scrape`
 - `after:scrape`
 - `before:process`
@@ -719,6 +764,7 @@ export class AnkiExportPlugin implements Plugin {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Plugins can be loaded dynamically
 - [ ] Hook system works correctly
 - [ ] Example plugin demonstrates capability
@@ -733,16 +779,19 @@ export class AnkiExportPlugin implements Plugin {
 ### 7.1 Testing
 
 **Unit Tests**:
+
 - Each module tested in isolation
 - Mock external dependencies
 - 80%+ code coverage
 
 **Integration Tests**:
+
 - Test module interactions
 - Use fixtures for API responses
 - Test error scenarios
 
 **E2E Tests**:
+
 - CLI command testing
 - Full scraping workflows
 - Config loading and validation
@@ -750,6 +799,7 @@ export class AnkiExportPlugin implements Plugin {
 ### 7.2 Documentation
 
 **User Documentation**:
+
 - `README.md` - Quick start
 - `docs/installation.md` - Setup guide
 - `docs/configuration.md` - Config reference
@@ -757,12 +807,14 @@ export class AnkiExportPlugin implements Plugin {
 - `docs/plugins.md` - Plugin development
 
 **Developer Documentation**:
+
 - `docs/architecture.md` - Your existing doc
 - `docs/contributing.md` - Contribution guide
 - `docs/api.md` - API reference
 - Code comments and JSDoc
 
 **Acceptance Criteria**:
+
 - [ ] Test coverage >80%
 - [ ] All critical paths tested
 - [ ] Documentation is complete
@@ -781,10 +833,7 @@ export class AnkiExportPlugin implements Plugin {
   "bin": {
     "lesca": "./dist/cli/index.js"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ]
+  "files": ["dist", "README.md"]
 }
 ```
 
@@ -804,6 +853,7 @@ npm publish --access public
 ### Distribution Options
 
 1. **NPM Package** (Primary)
+
    ```bash
    npm install -g @lesca/cli
    ```
@@ -816,6 +866,7 @@ npm publish --access public
    - For users who prefer containers
 
 **Acceptance Criteria**:
+
 - [ ] Builds successfully
 - [ ] Can install via npm
 - [ ] Binary works on major platforms
@@ -825,24 +876,25 @@ npm publish --access public
 
 ## Timeline Summary
 
-| Phase | Duration | Description |
-|-------|----------|-------------|
-| Phase 0 | 1-2 days | Validation & Setup |
-| Phase 1 | 3-5 days | Minimal Viable Scraper |
-| Phase 2 | 2-3 days | Processing Pipeline |
-| Phase 3 | 2-3 days | Configuration & CLI |
-| Phase 4 | 2-4 days | Browser Automation |
-| Phase 5 | 3-5 days | Quality Features |
-| Phase 6 | 2-3 days | Plugin System |
-| Phase 7 | 2-3 days | Testing & Docs |
-| Deployment | 1 day | Package & Publish |
-| **Total** | **18-29 days** | **~4-6 weeks** |
+| Phase      | Duration       | Description            |
+| ---------- | -------------- | ---------------------- |
+| Phase 0    | 1-2 days       | Validation & Setup     |
+| Phase 1    | 3-5 days       | Minimal Viable Scraper |
+| Phase 2    | 2-3 days       | Processing Pipeline    |
+| Phase 3    | 2-3 days       | Configuration & CLI    |
+| Phase 4    | 2-4 days       | Browser Automation     |
+| Phase 5    | 3-5 days       | Quality Features       |
+| Phase 6    | 2-3 days       | Plugin System          |
+| Phase 7    | 2-3 days       | Testing & Docs         |
+| Deployment | 1 day          | Package & Publish      |
+| **Total**  | **18-29 days** | **~4-6 weeks**         |
 
 ---
 
 ## Priority Ranking
 
 ### Must Have (MVP)
+
 1. ✅ GraphQL client with cookie auth
 2. ✅ Single problem scraping
 3. ✅ HTML to Markdown conversion
@@ -850,6 +902,7 @@ npm publish --access public
 5. ✅ Basic CLI
 
 ### Should Have (v1.0)
+
 6. ✅ Processing pipeline
 7. ✅ Obsidian format support
 8. ✅ Configuration system
@@ -860,6 +913,7 @@ npm publish --access public
 13. ✅ Resume capability
 
 ### Nice to Have (v1.x)
+
 14. ⭕ Browser automation (if needed)
 15. ⭕ Plugin system
 16. ⭕ Web UI
@@ -871,30 +925,39 @@ npm publish --access public
 ## Risks & Mitigation
 
 ### Risk 1: GraphQL May Not Provide Everything
+
 **Mitigation**: Phase 0 validates this first. If needed, add browser automation.
 
 ### Risk 2: Rate Limiting/Blocking by LeetCode
+
 **Mitigation**:
+
 - Implement conservative rate limiting from day 1
 - Add exponential backoff
 - Respect robots.txt
 - Add user-agent identification
 
 ### Risk 3: Selectors Break on UI Updates
+
 **Mitigation**:
+
 - Use data attributes when possible
 - Implement selector fallback chains
 - Make selectors configurable
 - Community can update selector file
 
 ### Risk 4: Cookie Expiration
+
 **Mitigation**:
+
 - Implement session refresh logic
 - Warn user before expiry
 - Graceful degradation to public content
 
 ### Risk 5: Scope Creep
+
 **Mitigation**:
+
 - Stick to MVP first (Phases 0-3)
 - Resist adding features until core is solid
 - Use plugin system for "nice to have" features
@@ -904,6 +967,7 @@ npm publish --access public
 ## Success Criteria
 
 ### MVP Success (End of Phase 3)
+
 - [ ] Can scrape a single problem
 - [ ] Saves as properly formatted Markdown
 - [ ] Obsidian frontmatter is correct
@@ -912,6 +976,7 @@ npm publish --access public
 - [ ] Configuration is simple
 
 ### v1.0 Success (End of Phase 5)
+
 - [ ] Can scrape problem lists efficiently
 - [ ] Quality filtering works well
 - [ ] Caching reduces API calls
@@ -920,6 +985,7 @@ npm publish --access public
 - [ ] Works reliably for common use cases
 
 ### v1.x Success (End of Phase 7)
+
 - [ ] Plugin system enables extensions
 - [ ] Well documented and tested
 - [ ] Published and installable

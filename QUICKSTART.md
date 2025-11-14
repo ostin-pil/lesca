@@ -45,10 +45,12 @@ npm run dev -- scrape two-sum
 ```
 
 **Required cookies:**
+
 - `LEETCODE_SESSION` - Your session cookie (most important!)
 - `csrftoken` - CSRF protection token
 
 **Optional cookies** (for better reliability):
+
 - `cf_clearance` - Cloudflare clearance
 - `INGRESSCOOKIE` - Ingress routing
 
@@ -63,6 +65,7 @@ npm run dev -- scrape two-sum --no-auth
 ```
 
 **Limitations without auth:**
+
 - Can only access free problems
 - No premium editorial content
 - May hit rate limits faster
@@ -125,6 +128,7 @@ lesca init
 ### Obsidian Format (Default)
 
 Creates markdown files with:
+
 - YAML frontmatter (tags, difficulty, metadata)
 - Formatted content with emojis
 - Wiki-links to similar problems
@@ -134,14 +138,14 @@ Creates markdown files with:
 
 ```markdown
 ---
-leetcode_id: "1"
-frontend_id: "1"
+leetcode_id: '1'
+frontend_id: '1'
 title: Two Sum
 difficulty: Easy
 tags:
   - array
   - hash-table
-acceptance: "56.5%"
+acceptance: '56.5%'
 ---
 
 # Two Sum
@@ -159,6 +163,7 @@ Given an array of integers...
 ### Markdown Format
 
 Standard markdown without Obsidian-specific features:
+
 - No YAML frontmatter
 - Regular markdown links
 - Clean, portable format
@@ -209,6 +214,7 @@ npm run dev -- scrape-list --tags dynamic-programming --limit 30
 **Problem:** Cookie file not found or invalid
 
 **Solutions:**
+
 1. Check file exists at `~/.lesca/cookies.json`
 2. Verify JSON format is correct
 3. Ensure cookies haven't expired (re-export from browser)
@@ -219,6 +225,7 @@ npm run dev -- scrape-list --tags dynamic-programming --limit 30
 **Problem:** Too many requests to LeetCode API
 
 **Solutions:**
+
 1. Wait 1-2 minutes and try again
 2. Reduce `--limit` for batch scraping
 3. The scraper has built-in rate limiting (2-3 seconds between requests)
@@ -228,6 +235,7 @@ npm run dev -- scrape-list --tags dynamic-programming --limit 30
 **Problem:** Invalid problem slug
 
 **Solutions:**
+
 1. Check the problem slug is correct (use URL slug from LeetCode)
 2. Example: `https://leetcode.com/problems/two-sum/` → use `two-sum`
 3. Premium problems require authentication
@@ -237,6 +245,7 @@ npm run dev -- scrape-list --tags dynamic-programming --limit 30
 **Problem:** Output directory doesn't exist
 
 **Solutions:**
+
 1. Create the directory: `mkdir -p ./output`
 2. Or use an existing directory: `--output ~/Documents`
 

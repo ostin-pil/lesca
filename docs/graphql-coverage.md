@@ -10,6 +10,7 @@ LeetCode's GraphQL API provides **excellent coverage** for core problem data. Th
 ## ✅ What Works (GraphQL Only)
 
 ### 1. Problem Data ⭐⭐⭐⭐⭐
+
 **Status**: Fully functional, comprehensive data
 
 ```graphql
@@ -19,21 +20,33 @@ query getProblem($titleSlug: String!) {
     questionFrontendId
     title
     titleSlug
-    content  # Full HTML content
+    content # Full HTML content
     difficulty
     exampleTestcases
     hints
-    topicTags { name, slug }
+    topicTags {
+      name
+      slug
+    }
     companyTagStats
     stats
-    codeSnippets { lang, langSlug, code }
+    codeSnippets {
+      lang
+      langSlug
+      code
+    }
     similarQuestions
-    solution { id, content, canSeeDetail }
+    solution {
+      id
+      content
+      canSeeDetail
+    }
   }
 }
 ```
 
 **Data Provided**:
+
 - ✅ Full problem statement (HTML formatted)
 - ✅ Examples with inputs/outputs
 - ✅ Constraints (embedded in content HTML)
@@ -45,6 +58,7 @@ query getProblem($titleSlug: String!) {
 - ✅ Solution availability flag
 
 **Sample Data Structure**:
+
 ```json
 {
   "questionId": "1",
@@ -72,14 +86,12 @@ query getProblem($titleSlug: String!) {
 ---
 
 ### 2. Problem Lists ⭐⭐⭐⭐⭐
+
 **Status**: Fully functional with filtering
 
 ```graphql
 query problemsetQuestionList($categorySlug: String, $filters: QuestionListFilterInput) {
-  problemsetQuestionList: questionList(
-    categorySlug: $categorySlug
-    filters: $filters
-  ) {
+  problemsetQuestionList: questionList(categorySlug: $categorySlug, filters: $filters) {
     total: totalNum
     questions: data {
       questionId
@@ -89,24 +101,30 @@ query problemsetQuestionList($categorySlug: String, $filters: QuestionListFilter
       difficulty
       acRate
       paidOnly: isPaidOnly
-      topicTags { name, slug }
+      topicTags {
+        name
+        slug
+      }
     }
   }
 }
 ```
 
 **Filtering Capabilities**:
+
 - ✅ By difficulty (EASY, MEDIUM, HARD)
 - ✅ By tags (array, ["array", "hash-table"])
 - ✅ By category (algorithms, database, shell)
 - ✅ Premium vs free problems
 
 **Sample Response**:
+
 - Total available: 417 problems (with filters)
 - Returns: 50 problems per query
 - Pagination: Supported (use skip/limit)
 
 **Sample Entry**:
+
 ```json
 {
   "questionFrontendId": "1",
@@ -115,7 +133,7 @@ query problemsetQuestionList($categorySlug: String, $filters: QuestionListFilter
   "difficulty": "Easy",
   "acRate": 56.54,
   "paidOnly": false,
-  "topicTags": [{"name": "Array"}, {"name": "Hash Table"}]
+  "topicTags": [{ "name": "Array" }, { "name": "Hash Table" }]
 }
 ```
 
@@ -124,6 +142,7 @@ query problemsetQuestionList($categorySlug: String, $filters: QuestionListFilter
 ---
 
 ### 3. User Profiles ⭐⭐⭐⭐
+
 **Status**: Works for public data
 
 ```graphql
@@ -142,18 +161,25 @@ query getUserProfile($username: String!) {
         count
       }
     }
-    badges { id, name, displayName, icon }
+    badges {
+      id
+      name
+      displayName
+      icon
+    }
   }
 }
 ```
 
 **Data Provided**:
+
 - ✅ Public profile information
 - ✅ Ranking and reputation
 - ✅ Submission statistics (aggregated)
 - ✅ Badges
 
 **Limitations**:
+
 - ⚠️ Personal submission details require authentication
 - ⚠️ Submission code not available via GraphQL
 
@@ -162,16 +188,14 @@ query getUserProfile($username: String!) {
 ## ❌ What Doesn't Work (Yet)
 
 ### 4. Discussion Threads ⚠️
+
 **Status**: Query failed (400 Bad Request)
 
 **Attempted Query**:
+
 ```graphql
 query discussionTopics($questionSlug: String!) {
-  questionDiscussionTopics(
-    questionSlug: $questionSlug
-    orderBy: HOT
-    first: 10
-  ) {
+  questionDiscussionTopics(questionSlug: $questionSlug, orderBy: HOT, first: 10) {
     edges {
       node {
         id
@@ -181,7 +205,9 @@ query discussionTopics($questionSlug: String!) {
         post {
           voteCount
           content
-          author { username }
+          author {
+            username
+          }
         }
       }
     }
@@ -190,12 +216,14 @@ query discussionTopics($questionSlug: String!) {
 ```
 
 **Possible Issues**:
+
 - Schema name might be different
 - May require authentication
 - May need different query structure
 - Endpoint might have changed
 
 **Options**:
+
 1. Research correct GraphQL schema (try GraphQL introspection)
 2. Use browser automation to scrape discussions from HTML
 3. Skip discussions for MVP
@@ -203,9 +231,11 @@ query discussionTopics($questionSlug: String!) {
 ---
 
 ### 5. Tags/Metadata ⚠️
+
 **Status**: Query failed (400 Bad Request)
 
 **Attempted Query**:
+
 ```graphql
 query getTags {
   questionTags {
@@ -217,6 +247,7 @@ query getTags {
 ```
 
 **Workaround**:
+
 - Tags are already available in problem list queries
 - Can build tag database from problem list responses
 - Not critical for core functionality
@@ -225,26 +256,27 @@ query getTags {
 
 ## 📊 Coverage Assessment
 
-| Feature | GraphQL | Browser | Priority | Decision |
-|---------|---------|---------|----------|----------|
-| Problem Content | ✅ | - | High | GraphQL only |
-| Problem Lists | ✅ | - | High | GraphQL only |
-| Code Snippets | ✅ | - | Medium | GraphQL only |
-| Hints | ✅ | - | Medium | GraphQL only |
-| Tags | ✅* | - | Medium | From problem lists |
-| Statistics | ✅ | - | Medium | GraphQL only |
-| Editorial/Solution | ⚠️ | ✅ | Low | Browser (premium) |
-| Discussions | ❌ | ✅ | Low | Browser or fix query |
-| User Submissions | ❌ | ✅ | Low | Not in MVP |
-| Test Execution | ❌ | ✅ | Low | Not in MVP |
+| Feature            | GraphQL | Browser | Priority | Decision             |
+| ------------------ | ------- | ------- | -------- | -------------------- |
+| Problem Content    | ✅      | -       | High     | GraphQL only         |
+| Problem Lists      | ✅      | -       | High     | GraphQL only         |
+| Code Snippets      | ✅      | -       | Medium   | GraphQL only         |
+| Hints              | ✅      | -       | Medium   | GraphQL only         |
+| Tags               | ✅\*    | -       | Medium   | From problem lists   |
+| Statistics         | ✅      | -       | Medium   | GraphQL only         |
+| Editorial/Solution | ⚠️      | ✅      | Low      | Browser (premium)    |
+| Discussions        | ❌      | ✅      | Low      | Browser or fix query |
+| User Submissions   | ❌      | ✅      | Low      | Not in MVP           |
+| Test Execution     | ❌      | ✅      | Low      | Not in MVP           |
 
-*Available indirectly through problem queries
+\*Available indirectly through problem queries
 
 ---
 
 ## 💡 Recommendations
 
 ### Phase 1 (MVP - 1 week)
+
 **Use GraphQL Only**
 
 ```typescript
@@ -263,12 +295,14 @@ query getTags {
 ```
 
 **Rationale**:
+
 - GraphQL provides 80% of value
 - Much simpler to implement
 - Faster execution (no browser overhead)
 - More reliable (no selector breakage)
 
 ### Phase 2 (Enhancements - 1 week)
+
 **Add Browser Automation Selectively**
 
 ```typescript
@@ -290,6 +324,7 @@ query getTags {
 To find correct queries for discussions/tags, we need to:
 
 ### Option 1: GraphQL Introspection
+
 ```graphql
 query IntrospectionQuery {
   __schema {
@@ -308,6 +343,7 @@ query IntrospectionQuery {
 ```
 
 ### Option 2: Browser DevTools
+
 1. Open LeetCode.com
 2. Open DevTools → Network tab
 3. Filter: GraphQL
@@ -315,6 +351,7 @@ query IntrospectionQuery {
 5. Copy actual queries used by the site
 
 ### Option 3: LeetCode API Repository
+
 - Search GitHub for "leetcode-graphql-schema"
 - Check unofficial API documentation
 - Review community reverse-engineering efforts
@@ -324,6 +361,7 @@ query IntrospectionQuery {
 ## 🎯 Implementation Priority
 
 ### Priority 1: Core Problem Scraping (This Week)
+
 ```typescript
 ✅ GraphQL client
 ✅ Cookie authentication
@@ -333,6 +371,7 @@ query IntrospectionQuery {
 ```
 
 ### Priority 2: Processing & Output (This Week)
+
 ```typescript
 ✅ HTML to Markdown converter
 ✅ Obsidian format converter
@@ -341,6 +380,7 @@ query IntrospectionQuery {
 ```
 
 ### Priority 3: Browser Automation (Week 2, if needed)
+
 ```typescript
 ⏳ Browser driver interface
 ⏳ Playwright implementation
@@ -349,6 +389,7 @@ query IntrospectionQuery {
 ```
 
 ### Priority 4: Enhancements (Week 2)
+
 ```typescript
 ⏳ Quality filtering
 ⏳ Caching
@@ -361,6 +402,7 @@ query IntrospectionQuery {
 ## 📝 Action Items
 
 ### Immediate (Today)
+
 - [x] Test GraphQL API coverage
 - [x] Document findings
 - [ ] Set up TypeScript project structure
@@ -368,6 +410,7 @@ query IntrospectionQuery {
 - [ ] Implement basic GraphQL client
 
 ### This Week
+
 - [ ] Implement problem scraper
 - [ ] Implement HTML to Markdown conversion
 - [ ] Implement file storage
@@ -375,6 +418,7 @@ query IntrospectionQuery {
 - [ ] Test end-to-end with "Two Sum"
 
 ### Next Week (If Time)
+
 - [ ] Research discussion GraphQL queries
 - [ ] Add browser automation (if discussions needed)
 - [ ] Add quality filtering
@@ -387,12 +431,14 @@ query IntrospectionQuery {
 **GraphQL API is sufficient for MVP!**
 
 We can build a fully functional LeetCode scraper using only GraphQL for:
+
 - ✅ Individual problem scraping
 - ✅ Bulk problem list scraping
 - ✅ Filtering by difficulty, tags, companies
 - ✅ All metadata and statistics
 
 Browser automation can be added later if needed for:
+
 - Premium editorial content
 - Discussion threads (if GraphQL query can't be fixed)
 - User-specific data
