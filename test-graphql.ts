@@ -5,6 +5,14 @@
  * Run: npx tsx test-graphql.ts
  */
 
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import { writeFile } from 'fs/promises'
 
 interface GraphQLResponse<T> {
@@ -17,9 +25,10 @@ async function queryGraphQL<T>(query: string, variables: Record<string, any> = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'User-Agent': 'Lesca/1.0 GraphQL Coverage Test',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     },
-    body: JSON.stringify({ query, variables })
+    body: JSON.stringify({ query, variables }),
   })
 
   if (!response.ok) {
@@ -102,7 +111,9 @@ async function testProblemQuery() {
     console.log(`   Tags: ${question.topicTags?.length || 0}`)
     console.log(`   Code Snippets: ${question.codeSnippets?.length || 0}`)
     console.log(`   Similar Questions: ${question.similarQuestions ? 'YES' : 'NO'}`)
-    console.log(`   Solution Available: ${question.solution?.canSeeDetail ? 'YES' : 'NO (may require premium)'}`)
+    console.log(
+      `   Solution Available: ${question.solution?.canSeeDetail ? 'YES' : 'NO (may require premium)'}`
+    )
 
     // Save sample for inspection
     await writeFile('./graphql-test-problem.json', JSON.stringify(data, null, 2))
@@ -158,7 +169,7 @@ async function testProblemListQuery() {
       filters: {
         tags: ['array'],
         difficulty: 'EASY',
-      }
+      },
     })
 
     const list = data.problemsetQuestionList
@@ -328,7 +339,12 @@ async function testMetadataQuery() {
     console.log(`   Total Tags: ${tags?.length || 0}`)
 
     if (tags?.length > 0) {
-      console.log(`   Sample Tags: ${tags.slice(0, 5).map((t: any) => `${t.name} (${t.questionCount})`).join(', ')}`)
+      console.log(
+        `   Sample Tags: ${tags
+          .slice(0, 5)
+          .map((t: any) => `${t.name} (${t.questionCount})`)
+          .join(', ')}`
+      )
     }
 
     await writeFile('./graphql-test-metadata.json', JSON.stringify(data, null, 2))
@@ -349,7 +365,7 @@ async function testMetadataQuery() {
 // Main test runner
 async function main() {
   console.log('🧪 LeetCode GraphQL API Coverage Test')
-  console.log('=' .repeat(50))
+  console.log('='.repeat(50))
 
   const results = {
     problem: await testProblemQuery(),
