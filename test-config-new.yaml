@@ -1,0 +1,72 @@
+auth:
+  method: cookie
+  sessionTimeout: 3600
+  autoRefresh: true
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 30000
+  retries: 3
+  retryDelay: 1000
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 30
+    minDelay: 2000
+    maxDelay: 10000
+    jitter: true
+storage:
+  type: filesystem
+  path: /home/pil/lesca/output
+  options: {}
+output:
+  format: obsidian
+  pattern: "{slug}.md"
+  frontmatter: true
+  images:
+    download: false
+    directory: images
+    pattern: "{slug}-{index}.{ext}"
+scraping:
+  strategies:
+    - problem
+  concurrency: 3
+  batchSize: 10
+  delay: 1000
+  timeout: 60000
+  discussion:
+    defaultLimit: 10
+    defaultSort: hot
+processing:
+  converters:
+    - html-to-markdown
+  options: {}
+browser:
+  enabled: true
+  headless: true
+  timeout: 30000
+  viewport:
+    width: 1920
+    height: 1080
+  blockedResources:
+    - image
+    - font
+    - media
+cache:
+  enabled: true
+  memorySize: 50
+  ttl:
+    problem: 604800000
+    list: 86400000
+    editorial: 604800000
+    discussion: 3600000
+    metadata: 3600000
+  maxSize: 524288000
+  compression: true
+logging:
+  level: info
+  output: console
+  format: text
+plugins:
+  enabled: false
+  directory: ./plugins
+  autoLoad: true
+  plugins: []
