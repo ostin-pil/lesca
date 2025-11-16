@@ -60,3 +60,6 @@ archive/
 # Local config
 .lesca/
 test-output/
+
+# Claude (per file settings)
+.claude/settings.local.json

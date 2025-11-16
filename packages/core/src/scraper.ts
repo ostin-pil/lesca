@@ -14,6 +14,8 @@ import {
   ObsidianConverter,
   EditorialConverter,
   DiscussionConverter,
+  EnhancementManager,
+  type EnhancementConfig,
 } from '../../converters/src/index.js'
 
 /**
@@ -22,16 +24,21 @@ import {
  * Delegates all work to strategies, converters, and storage
  */
 export class LeetCodeScraper {
+  private enhancementManager: EnhancementManager
+
   constructor(
     private strategies: ScraperStrategy[],
     private storage: StorageAdapter,
     private options: {
       format?: 'markdown' | 'obsidian'
       outputPattern?: string // e.g., "{id}-{slug}.md"
+      enhancements?: EnhancementConfig
     } = {}
   ) {
     // Sort strategies by priority (highest first)
     this.strategies.sort((a, b) => b.priority - a.priority)
+    // Initialize enhancement manager with config
+    this.enhancementManager = new EnhancementManager(this.options.enhancements)
   }
 
   /**
@@ -122,7 +129,10 @@ export class LeetCodeScraper {
 
       // Convert HTML to Markdown
       const htmlConverter = new HtmlToMarkdownConverter()
-      const markdown = await htmlConverter.convert(problem.content)
+      let markdown = await htmlConverter.convert(problem.content)
+
+      // Apply content enhancements (format-agnostic)
+      markdown = this.enhancementManager.enhance(markdown, rawData, this.options.enhancements)
 
       // Apply format-specific conversion
       let finalMarkdown = markdown

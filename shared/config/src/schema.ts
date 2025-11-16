@@ -66,6 +66,19 @@ const ProcessingConfigSchema = z.object({
   converters: z.array(z.string()).default(['html-to-markdown']),
   pipeline: z.array(z.string()).optional(),
   options: z.record(z.any()).default({}),
+  enhancements: z.object({
+    enabled: z.boolean().default(true),
+    hints: z.object({
+      enabled: z.boolean().default(true),
+    }).default({}),
+    codeSnippets: z.object({
+      enabled: z.boolean().default(true),
+      languagePriority: z.array(z.string()).default(['python3', 'java', 'cpp', 'javascript', 'typescript', 'c']),
+    }).default({}),
+    companies: z.object({
+      enabled: z.boolean().default(true),
+    }).default({}),
+  }).default({}),
 })
 
 // Browser configuration

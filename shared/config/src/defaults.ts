@@ -61,6 +61,19 @@ export function getDefaultConfig(): Config {
     processing: {
       converters: ['html-to-markdown'],
       options: {},
+      enhancements: {
+        enabled: true,
+        hints: {
+          enabled: true,
+        },
+        codeSnippets: {
+          enabled: true,
+          languagePriority: ['python3', 'java', 'cpp', 'javascript', 'typescript', 'c'],
+        },
+        companies: {
+          enabled: true,
+        },
+      },
     },
     browser: {
       enabled: true,
