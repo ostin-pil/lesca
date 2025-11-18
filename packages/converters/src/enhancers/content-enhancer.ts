@@ -1,4 +1,4 @@
-import type { RawData } from '../../../../shared/types/src/index.js'
+import type { RawData } from '@/shared/types/src/index.js'
 
 /**
  * Options for content enhancement

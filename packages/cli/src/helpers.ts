@@ -4,10 +4,10 @@
  * Extracted helper functions for better testability
  */
 
-import chalk from 'chalk'
 
-import type { ConfigManager } from '../../../shared/config/src/index.js'
-import { logger } from '../../../shared/utils/src/index.js'
+import type { ConfigManager } from '@/shared/config/src/index.js'
+import { logger } from '@/shared/utils/src/index.js'
+import chalk from 'chalk'
 
 /**
  * Initialize configuration with fallback to defaults

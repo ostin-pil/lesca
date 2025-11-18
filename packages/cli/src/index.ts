@@ -3,18 +3,29 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { resolve , dirname } from 'path'
 
-import { ScrapingError } from '@lesca/error'
-import chalk from 'chalk'
-import cliProgress from 'cli-progress'
-import { Command } from 'commander'
-import ora from 'ora'
 
+import { GraphQLClient, RateLimiter } from '@/packages/api-client/src/index.js'
+import { CookieFileAuth } from '@/packages/auth/src/index.js'
+import { PlaywrightDriver } from '@/packages/browser-automation/src/index.js'
+import {
+  LeetCodeScraper,
+  BatchScraper,
+  type BatchProgress,
+  type BatchScrapingOptions,
+} from '@/packages/core/src/index.js'
+import {
+  ProblemScraperStrategy,
+  ListScraperStrategy,
+  EditorialScraperStrategy,
+  DiscussionScraperStrategy,
+} from '@/packages/scrapers/src/index.js'
+import { FileSystemStorage } from '@/packages/storage/src/index.js'
 import {
   ConfigManager,
   getDefaultPaths,
   createDefaultConfig,
   exportConfigToYaml,
-} from '../../../shared/config/src/index.js'
+} from '@/shared/config/src/index.js'
 import type {
   ProblemScrapeRequest,
   ListScrapeRequest,
@@ -23,24 +34,13 @@ import type {
   EditorialScrapeRequest,
   ProblemListFilters,
   Difficulty,
-} from '../../../shared/types/src/index.js'
-import { logger } from '../../../shared/utils/src/index.js'
-import { GraphQLClient, RateLimiter } from '../../api-client/src/index.js'
-import { CookieFileAuth } from '../../auth/src/index.js'
-import { PlaywrightDriver } from '../../browser-automation/src/index.js'
-import {
-  LeetCodeScraper,
-  BatchScraper,
-  type BatchProgress,
-  type BatchScrapingOptions,
-} from '../../core/src/index.js'
-import {
-  ProblemScraperStrategy,
-  ListScraperStrategy,
-  EditorialScraperStrategy,
-  DiscussionScraperStrategy,
-} from '../../scrapers/src/index.js'
-import { FileSystemStorage } from '../../storage/src/index.js'
+} from '@/shared/types/src/index.js'
+import { logger } from '@/shared/utils/src/index.js'
+import { ScrapingError } from '@lesca/error'
+import chalk from 'chalk'
+import cliProgress from 'cli-progress'
+import { Command } from 'commander'
+import ora from 'ora'
 
 /**
  * CLI Application for Lesca

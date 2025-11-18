@@ -1,3 +1,11 @@
+import {
+  HtmlToMarkdownConverter,
+  ObsidianConverter,
+  EditorialConverter,
+  DiscussionConverter,
+  EnhancementManager,
+  type EnhancementConfig,
+} from '@/packages/converters/src/index.js'
 import type {
   ScrapeRequest,
   ScrapeResult,
@@ -7,16 +15,8 @@ import type {
   StorageAdapter,
   DiscussionList,
   EditorialContent,
-} from '../../../shared/types/src/index.js'
-import { LescaError } from '../../../shared/types/src/index.js'
-import {
-  HtmlToMarkdownConverter,
-  ObsidianConverter,
-  EditorialConverter,
-  DiscussionConverter,
-  EnhancementManager,
-  type EnhancementConfig,
-} from '../../converters/src/index.js'
+} from '@/shared/types/src/index.js'
+import { LescaError } from '@/shared/types/src/index.js'
 
 /**
  * Main LeetCode scraper facade

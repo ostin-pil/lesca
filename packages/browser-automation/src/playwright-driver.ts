@@ -2,14 +2,14 @@
 // Non-null assertions in this file are safe because they're always preceded by ensureLaunched()
 // which performs runtime checks. TypeScript cannot infer this relationship statically.
 
-import { BrowserError } from '@lesca/error'
-import { chromium, type Browser, type Page, type Cookie } from 'playwright'
-
 import type {
   BrowserDriver,
   BrowserLaunchOptions,
   AuthCredentials,
-} from '../../../shared/types/src/index.js'
+} from '@/shared/types/src/index.js'
+import { BrowserError } from '@lesca/error'
+import { chromium, type Browser, type Page, type Cookie } from 'playwright'
+
 
 /**
  * Playwright browser driver

@@ -1,4 +1,4 @@
-import type { Problem, RawData } from '../../../../shared/types/src/index.js'
+import type { Problem, RawData } from '@/shared/types/src/index.js'
 
 import type { ContentEnhancer, EnhancementOptions } from './content-enhancer.js'
 

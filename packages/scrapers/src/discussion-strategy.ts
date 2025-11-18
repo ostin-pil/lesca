@@ -1,5 +1,4 @@
-import { BrowserError } from '@lesca/error'
-
+import { SelectorManager } from '@/packages/browser-automation/src/index.js'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -7,10 +6,10 @@ import type {
   BrowserDriver,
   DiscussionScrapeRequest,
   Discussion,
-} from '../../../shared/types/src/index.js'
-import { LescaError } from '../../../shared/types/src/index.js'
-import { logger } from '../../../shared/utils/src/index.js'
-import { SelectorManager } from '../../browser-automation/src/index.js'
+} from '@/shared/types/src/index.js'
+import { LescaError } from '@/shared/types/src/index.js'
+import { logger } from '@/shared/utils/src/index.js'
+import { BrowserError } from '@lesca/error'
 
 /**
  * Discussion Scraper Strategy

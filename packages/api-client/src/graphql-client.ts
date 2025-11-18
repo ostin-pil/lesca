@@ -3,8 +3,8 @@ import type {
   ProblemList,
   ProblemListFilters,
   AuthCredentials,
-} from '../../../shared/types/src/index.js'
-import { GraphQLError, RateLimitError } from '../../../shared/types/src/index.js'
+} from '@/shared/types/src/index.js'
+import { GraphQLError, RateLimitError } from '@/shared/types/src/index.js'
 
 /**
  * GraphQL response wrapper

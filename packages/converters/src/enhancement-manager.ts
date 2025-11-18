@@ -1,4 +1,4 @@
-import type { RawData } from '../../../shared/types/src/index.js'
+import type { RawData } from '@/shared/types/src/index.js'
 
 import type { CodeSnippetsOptions } from './enhancers/code-snippets-enhancer.js';
 import { CodeSnippetsEnhancer } from './enhancers/code-snippets-enhancer.js'

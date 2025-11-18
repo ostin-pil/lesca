@@ -1,4 +1,4 @@
-import type { Problem, ParsedProblem, Difficulty } from '../../../shared/types/src/index.js'
+import type { Problem, ParsedProblem, Difficulty } from '@/shared/types/src/index.js'
 
 /**
  * Type definitions for JSON parsed data

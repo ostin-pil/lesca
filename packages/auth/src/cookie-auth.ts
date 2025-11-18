@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'fs/promises'
 
-import { ConfigError } from '@lesca/error'
 
-import type { AuthStrategy, AuthCredentials, Cookie } from '../../../shared/types/src/index.js'
-import { AuthError } from '../../../shared/types/src/index.js'
+import type { AuthStrategy, AuthCredentials, Cookie } from '@/shared/types/src/index.js'
+import { AuthError } from '@/shared/types/src/index.js'
+import { ConfigError } from '@lesca/error'
 
 /**
  * Cookie file format

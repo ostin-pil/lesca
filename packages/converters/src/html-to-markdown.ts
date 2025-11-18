@@ -1,8 +1,8 @@
+import type { Converter, ConverterOptions } from '@/shared/types/src/index.js'
+import { logger } from '@/shared/utils/src/index.js'
 import { ParsingError } from '@lesca/error'
 import TurndownService from 'turndown'
 
-import type { Converter, ConverterOptions } from '../../../shared/types/src/index.js'
-import { logger } from '../../../shared/utils/src/index.js'
 
 /**
  * HTML to Markdown converter

@@ -1,10 +1,10 @@
-import { ParsingError } from '@lesca/error'
-
 import type {
   Converter,
   ConverterOptions,
   EditorialContent,
-} from '../../../shared/types/src/index.js'
+} from '@/shared/types/src/index.js'
+import { ParsingError } from '@lesca/error'
+
 
 import { HtmlToMarkdownConverter } from './html-to-markdown.js'
 

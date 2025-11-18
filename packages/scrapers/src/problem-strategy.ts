@@ -1,14 +1,14 @@
-import { ScrapingError } from '@lesca/error'
-
+import type { GraphQLClient } from '@/packages/api-client/src/graphql-client.js'
 import type {
   ScraperStrategy,
   ScrapeRequest,
   ProblemScrapeRequest,
   RawData,
   Problem,
-} from '../../../shared/types/src/index.js'
-import { GraphQLError } from '../../../shared/types/src/index.js'
-import type { GraphQLClient } from '../../api-client/src/graphql-client.js'
+} from '@/shared/types/src/index.js'
+import { GraphQLError } from '@/shared/types/src/index.js'
+import { ScrapingError } from '@lesca/error'
+
 
 /**
  * Problem scraper strategy
