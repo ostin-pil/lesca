@@ -7,6 +7,7 @@
   },
   "types": "./src/index.ts",
   "dependencies": {
+    "@lesca/error": "*",
     "@lesca/shared-types": "*",
     "@lesca/shared-config": "*",
     "@lesca/auth": "*",

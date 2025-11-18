@@ -10,6 +10,7 @@
   },
   "types": "./src/index.ts",
   "dependencies": {
+    "@lesca/error": "*",
     "@lesca/core": "*",
     "@lesca/shared-types": "*",
     "@lesca/shared-config": "*",
