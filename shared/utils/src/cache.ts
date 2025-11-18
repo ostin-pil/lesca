@@ -138,7 +138,7 @@ export class FileCache {
 
       this.stats.entries++
     } catch (error) {
-      logger.error(`Failed to set cache for key ${key}:`, error)
+      logger.error(`Failed to set cache for key ${key}:`, error instanceof Error ? error : undefined)
     }
   }
 
@@ -193,7 +193,7 @@ export class FileCache {
         entries: 0,
       }
     } catch (error) {
-      logger.error('Failed to clear cache:', error)
+      logger.error('Failed to clear cache:', error instanceof Error ? error : undefined)
     }
   }
 
@@ -262,7 +262,7 @@ export class FileCache {
       }
       this.stats.entries = Math.max(0, this.stats.entries - evicted)
     } catch (error) {
-      logger.error('Failed to evict expired entries:', error)
+      logger.error('Failed to evict expired entries:', error instanceof Error ? error : undefined)
     }
     return evicted
   }
@@ -340,7 +340,7 @@ export class FileCache {
         this.stats.entries = Math.max(0, this.stats.entries - 1)
       }
     } catch (error) {
-      logger.error('Failed to evict oldest entry:', error)
+      logger.error('Failed to evict oldest entry:', error instanceof Error ? error : undefined)
     }
   }
 }
