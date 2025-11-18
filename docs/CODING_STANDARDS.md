@@ -346,6 +346,26 @@ throw new Error('Error occurred')
 
 ## Testing Standards
 
+### Test Types
+
+Lesca uses a multi-tiered testing approach:
+
+| Type | Purpose | Speed | Location | Run Frequency |
+|------|---------|-------|----------|---------------|
+| **Unit** | Test individual functions/classes | Fast (< 30s) | `packages/*/__tests__/` | Every commit/PR |
+| **Integration** | Test cross-package workflows | Slow (30s+) | `tests/integration/` | Release only |
+| **Benchmarks** | Track performance | Varies | `tests/benchmarks/` | On-demand |
+
+**Commands:**
+```bash
+npm run test:unit         # Fast unit tests
+npm run test:integration  # Slow integration tests
+npm run test:all          # All tests
+npm run benchmark         # Performance benchmarks
+```
+
+See [TESTING.md](./TESTING.md) for comprehensive testing guide.
+
 ### Test Structure
 
 ```typescript
@@ -360,16 +380,72 @@ describe('ConfigManager', () => {
 
   describe('getConfig', () => {
     it('should return the current configuration', () => {
+      // Arrange
+      const expected = { auth: { method: 'cookie' } }
+
+      // Act
       const config = manager.getConfig()
+
+      // Assert
       expect(config).toBeDefined()
       expect(config.auth).toBeDefined()
     })
 
     it('should not return a reference to internal config', () => {
+      // Act
       const config1 = manager.getConfig()
       const config2 = manager.getConfig()
+
+      // Assert
       expect(config1).not.toBe(config2)
     })
+  })
+})
+```
+
+### Test Data: Factories vs Fixtures
+
+#### Use Factories for Dynamic Data
+
+Factories generate flexible test data with sensible defaults:
+
+```typescript
+import { createProblem, createProblemList } from '../../../tests/factories/problem-factory'
+
+// DO use factories when you need customization
+it('should filter by difficulty', () => {
+  const easy = createProblem({ difficulty: 'Easy' })
+  const hard = createProblem({ difficulty: 'Hard' })
+  const problems = [easy, hard]
+
+  const result = filterByDifficulty(problems, 'Easy')
+  expect(result).toHaveLength(1)
+})
+
+// DO use factories to generate multiple items
+it('should handle batch processing', () => {
+  const problems = createProblemList(100, { difficulty: 'Medium' })
+  expect(problems).toHaveLength(100)
+})
+```
+
+#### Use Fixtures for Static Data
+
+Fixtures provide consistent, pre-defined test data:
+
+```typescript
+import { twoSumProblem, hardProblems } from '../../../tests/fixtures/problems'
+
+// DO use fixtures for reference data
+it('should recognize Two Sum problem', () => {
+  expect(isProblem(twoSumProblem)).toBe(true)
+  expect(twoSumProblem.titleSlug).toBe('two-sum')
+})
+
+// DO use fixtures for consistent test scenarios
+it('should format hard problems correctly', () => {
+  hardProblems.forEach(problem => {
+    expect(problem.difficulty).toBe('Hard')
   })
 })
 ```
@@ -377,14 +453,41 @@ describe('ConfigManager', () => {
 ### Test Naming
 
 ```typescript
-// DO use descriptive test names
+// DO use descriptive test names that explain behavior
 it('should load configuration from YAML file')
 it('should merge CLI options with config file values')
 it('should throw error when config file is invalid')
+it('should return default value when environment variable is undefined')
 
 // DON'T use vague names
 it('works')
 it('test config')
+it('handles edge cases')
+```
+
+### Test Organization
+
+```typescript
+// DO organize tests hierarchically by feature/method
+describe('CacheManager', () => {
+  describe('get()', () => {
+    it('should return cached value when key exists', () => {})
+    it('should return undefined when key does not exist', () => {})
+    it('should return undefined when value is expired', () => {})
+  })
+
+  describe('set()', () => {
+    it('should store value with default TTL', () => {})
+    it('should store value with custom TTL', () => {})
+  })
+})
+
+// DON'T use flat structure
+describe('CacheManager', () => {
+  it('should get value', () => {})
+  it('should set value', () => {})
+  it('should handle TTL', () => {})
+})
 ```
 
 ### Mocking
@@ -399,7 +502,96 @@ const mockGraphQLClient = {
 const strategy = new ProblemScraperStrategy(
   mockGraphQLClient as unknown as GraphQLClient
 )
+
+// DO clear mocks between tests
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+// DO test that mocks are called correctly
+it('should call API with correct parameters', async () => {
+  await scraper.scrapeProblem('two-sum')
+
+  expect(mockGraphQLClient.query).toHaveBeenCalledWith(
+    expect.objectContaining({ titleSlug: 'two-sum' })
+  )
+  expect(mockGraphQLClient.query).toHaveBeenCalledTimes(1)
+})
 ```
+
+### Async Testing
+
+```typescript
+// DO use async/await for asynchronous tests
+it('should scrape problem', async () => {
+  const result = await scraper.scrapeProblem('two-sum')
+  expect(result.title).toBe('Two Sum')
+})
+
+// DO test error cases
+it('should throw error when problem not found', async () => {
+  await expect(scraper.scrapeProblem('invalid')).rejects.toThrow('Not found')
+})
+
+// DON'T forget await
+it('should scrape problem', () => {
+  const result = scraper.scrapeProblem('two-sum') // ❌ result is Promise
+  expect(result.title).toBe('Two Sum') // ❌ Will fail
+})
+```
+
+### Test Independence
+
+```typescript
+// DO ensure tests are independent
+describe('Counter', () => {
+  let counter: Counter
+
+  beforeEach(() => {
+    counter = new Counter() // Fresh instance per test
+  })
+
+  it('should start at 0', () => {
+    expect(counter.value).toBe(0)
+  })
+
+  it('should increment', () => {
+    counter.increment()
+    expect(counter.value).toBe(1)
+  })
+})
+
+// DON'T share state between tests
+describe('Counter', () => {
+  const counter = new Counter() // ❌ Shared instance
+
+  it('should start at 0', () => {
+    expect(counter.value).toBe(0)
+  })
+
+  it('should increment', () => { // ❌ Depends on previous test
+    counter.increment()
+    expect(counter.value).toBe(1)
+  })
+})
+```
+
+### Coverage
+
+```bash
+# Check coverage
+npm run test:coverage
+
+# Validate coverage thresholds
+npm run check-coverage
+```
+
+**Minimum thresholds per package:**
+- Critical packages (api-client, auth, scrapers): 90%+ statements
+- Core packages (core, converters, storage): 80%+ statements
+- Shared modules: 80%+ statements
+
+See [TESTING.md](./TESTING.md) for detailed coverage requirements.
 
 ---
 

@@ -5,6 +5,7 @@ Thank you for contributing to Lesca! This document provides guidelines to help m
 ## Important Documents
 
 - **[Coding Standards](./docs/CODING_STANDARDS.md)** - Required reading for all contributors
+- **[Testing Guide](./docs/TESTING.md)** - Testing infrastructure and best practices
 - **[Architecture Review](./ARCHITECTURE_REVIEW.md)** - System design and patterns
 - **[TypeScript Guide](./docs/TYPESCRIPT_GUIDE.md)** - TypeScript best practices
 
@@ -23,11 +24,14 @@ Thank you for contributing to Lesca! This document provides guidelines to help m
 # Ensure everything builds
 npm run build
 
-# Run tests
+# Run unit tests (fast)
 npm test
 
 # Run linter
 npm run lint
+
+# Check coverage (optional)
+npm run test:coverage
 ```
 
 ### During Development
@@ -56,9 +60,13 @@ npm run build
 npm run lint
 # ✓ Should pass with no errors
 
-# 3. Tests (if applicable)
+# 3. Unit tests
 npm test
-# ✓ All tests should pass
+# ✓ All unit tests should pass (< 30s)
+
+# 4. Coverage check (optional but recommended)
+npm run check-coverage
+# ✓ Coverage should meet minimum thresholds
 ```
 
 ## TypeScript Guidelines
@@ -132,15 +140,28 @@ shared/
 
 ## Testing
 
+### Test Types
+
+Lesca uses a multi-tiered testing approach for speed and reliability:
+
+| Type | Purpose | Speed | When to Run |
+|------|---------|-------|-------------|
+| **Unit** | Test individual functions/classes | Fast (< 30s) | Every commit/PR |
+| **Integration** | Test cross-package workflows | Slow (30s+) | Before release |
+| **Benchmarks** | Track performance | Varies | On-demand |
+
+See [Testing Guide](./docs/TESTING.md) for comprehensive documentation.
+
 ### Writing Tests
 
 ```typescript
 import { describe, it, expect } from 'vitest'
+import { createProblem } from '../../../tests/factories/problem-factory'
 
 describe('FeatureName', () => {
   it('should do something specific', () => {
     // Arrange
-    const input = 'test'
+    const input = createProblem({ difficulty: 'Easy' })
 
     // Act
     const result = doSomething(input)
@@ -151,20 +172,55 @@ describe('FeatureName', () => {
 })
 ```
 
+**Guidelines:**
+- Use **factories** (`tests/factories/`) for dynamic test data
+- Use **fixtures** (`tests/fixtures/`) for static reference data
+- Follow Arrange-Act-Assert pattern
+- Write descriptive test names
+- Ensure tests are independent
+
 ### Running Tests
 
 ```bash
-# All tests
+# Unit tests only (fast - run on every PR)
 npm test
+# or
+npm run test:unit
+
+# Integration tests only (slower - run on release)
+npm run test:integration
+
+# All tests (unit + integration)
+npm run test:all
 
 # Specific file
 npm test -- path/to/test.ts
 
 # Watch mode
-npm test -- --watch
+npm run test:ui
 
-# Coverage
-npm test -- --coverage
+# Coverage report
+npm run test:coverage
+
+# Validate coverage thresholds
+npm run check-coverage
+
+# Performance benchmarks
+npm run benchmark
+```
+
+### Coverage Requirements
+
+New code should maintain or improve coverage:
+
+- **Critical packages** (api-client, auth, scrapers): 90%+
+- **Core packages** (core, converters, storage): 80%+
+- **Shared modules**: 80%+
+
+Check coverage:
+```bash
+npm run test:coverage
+npm run check-coverage
 ```
 
 ## Pull Request Process

@@ -2,8 +2,8 @@
 
 A powerful, modular TypeScript-based LeetCode content scraper for creating personal knowledge bases in Obsidian and other markdown-based systems.
 
-[![Tests](https://img.shields.io/badge/tests-539%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage-73.66%25-yellow)]()
+[![Tests](https://img.shields.io/badge/tests-631%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-68.43%25-yellow)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -22,7 +22,7 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 
 ### Developer Experience
 - 🔌 **Modular Architecture**: Clean separation with swappable components
-- 🧪 **Well-Tested**: 539 passing tests with 73.66% coverage
+- 🧪 **Well-Tested**: 631 passing tests with 68.43% coverage
 - 📦 **Monorepo Structure**: Organized, maintainable codebase
 - 🎨 **Extensible**: Plugin-ready architecture
 - 🔍 **Smart Filtering**: Filter by difficulty, tags, and limits
@@ -43,6 +43,7 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 ### For Developers
 - **[Architecture Review](./ARCHITECTURE_REVIEW.md)** - Design decisions and patterns
 - **[Coding Standards](./docs/CODING_STANDARDS.md)** - Code style and best practices
+- **[Testing Guide](./docs/TESTING.md)** - Testing infrastructure and best practices
 - **[Agent Guidelines](./docs/AGENT_GUIDELINES.md)** - Guidelines for AI assistants
 - **[TypeScript Guide](./docs/TYPESCRIPT_GUIDE.md)** - TypeScript patterns used
 - **[Contributing](./CONTRIBUTING.md)** - How to contribute
@@ -181,35 +182,58 @@ See [Architecture Review](./ARCHITECTURE_REVIEW.md) for detailed analysis.
 
 ## 🧪 Testing
 
-Lesca has comprehensive test coverage with **539 passing tests** (73.66% coverage).
+Lesca has comprehensive test coverage with **631 passing tests** (68.43% coverage).
 
 ```bash
-# Run all tests
+# Run unit tests (fast - runs on every PR)
 npm test
+# or
+npm run test:unit
+
+# Run integration tests (slower - runs on release)
+npm run test:integration
+
+# Run all tests (unit + integration)
+npm run test:all
 
 # Run with coverage report
 npm run test:coverage
 
 # Run tests in watch mode
 npm run test:ui
+
+# Check coverage thresholds
+npm run check-coverage
+
+# Run performance benchmarks
+npm run benchmark
 ```
 
 ### Test Coverage by Package
 
 | Package | Coverage | Tests | Status |
 |---------|----------|-------|--------|
-| **api-client** | 97.3% | 28 | ✅ Complete |
-| **auth** | 95.67% | 41 | ✅ Complete |
-| **browser-automation** | 96.4% | 65 | ✅ Complete |
-| **cli** | 0% | 31 | ✅ Complete |
-| **converters** | 87.57% | 154 | ✅ Complete |
-| **core** | 81.9% | 29 | ✅ Complete |
-| **scrapers** | 92.77% | 105 | ✅ Complete |
+| **api-client** | 98.45% | 28 | ✅ Complete |
+| **auth** | 95.75% | 41 | ✅ Complete |
+| **browser-automation** | 96.48% | 65 | ✅ Complete |
+| **cli** | 15.62% | 61 | 🚧 In Progress |
+| **converters** | 85.97% | 154 | ✅ Complete |
+| **core** | 81.72% | 29 | ✅ Complete |
+| **scrapers** | 90.87% | 105 | ✅ Complete |
 | **storage** | 91.02% | 35 | ✅ Complete |
 | **shared/utils** | 80.22% | 23 | ✅ Complete |
-| **shared/config** | N/A | 28 | ✅ Complete |
+| **shared/config** | 93.09% | 28 | ✅ Complete |
+| **shared/error** | 100% | 34 | ✅ Complete |
 
-**Total: 539 tests passing • 73.66% coverage**
+**Total: 631 tests passing • 68.43% coverage**
+
+### Test Infrastructure
+
+- **Unit Tests**: Fast tests that run on every PR (< 30s target)
+- **Integration Tests**: End-to-end tests that run on release
+- **Benchmarks**: Performance tracking for critical paths
+- **Factories**: Dynamic test data generation
+- **Fixtures**: Static test data for consistent testing
 
 ---
 
@@ -283,8 +307,13 @@ npm run lint:fix
 |---------|-------------|
 | `npm run dev` | Development mode with TypeScript watch |
 | `npm run build` | Build all packages |
-| `npm test` | Run test suite |
+| `npm test` | Run unit tests (fast) |
+| `npm run test:unit` | Run unit tests only |
+| `npm run test:integration` | Run integration tests only |
+| `npm run test:all` | Run all tests (unit + integration) |
 | `npm run test:coverage` | Generate coverage report |
+| `npm run check-coverage` | Validate coverage thresholds |
+| `npm run benchmark` | Run performance benchmarks |
 | `npm run lint` | Lint codebase |
 | `npm run lint:fix` | Fix linting issues |
 | `npm run format` | Format code with Prettier |
@@ -389,9 +418,9 @@ See [Troubleshooting Guide](./docs/TROUBLESHOOTING.md) for common issues.
 ## 📊 Project Stats
 
 - **Language**: TypeScript
-- **Tests**: 539 passing
-- **Coverage**: 73.66%
-- **Packages**: 10
+- **Tests**: 631 passing
+- **Coverage**: 68.43%
+- **Packages**: 11
 - **Lines of Code**: ~15,000
 - **Dependencies**: Minimal, well-maintained
 - **License**: MIT
