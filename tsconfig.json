@@ -38,6 +38,7 @@
     // Paths (for monorepo packages)
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./*"],
       "@lesca/core": ["./packages/core/src"],
       "@lesca/auth": ["./packages/auth/src"],
       "@lesca/api-client": ["./packages/api-client/src"],
