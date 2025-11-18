@@ -1,3 +1,4 @@
+import { ParsingError } from '@lesca/error'
 import TurndownService from 'turndown'
 
 import type { Converter, ConverterOptions } from '../../../shared/types/src/index.js'
@@ -41,7 +42,11 @@ export class HtmlToMarkdownConverter implements Converter {
    */
   convert(input: unknown, _options?: ConverterOptions): Promise<string> {
     if (!this.canConvert(input)) {
-      throw new Error('Input must be an HTML string')
+      throw new ParsingError(
+        'PARSE_HTML_FAILED',
+        'Input must be an HTML string',
+        { context: { inputType: typeof input } }
+      )
     }
 
     const html = input as string
@@ -257,7 +262,7 @@ export class HtmlToMarkdownConverter implements Converter {
             const localPath = await imageDownloader(url)
             markdown = markdown.replace(fullMatch, `![${alt}](${localPath})`)
           } catch (error) {
-            logger.warn(`Failed to download image ${url}:`, error)
+            logger.warn(`Failed to download image ${url}: ${error instanceof Error ? error.message : String(error)}`)
           }
         }
       }

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs'
 import { resolve } from 'path'
 
+import { ConfigError } from '@lesca/error'
 import { set, merge } from 'lodash-es'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 
@@ -28,7 +29,11 @@ export interface LoaderOptions {
  */
 export function loadConfigFile(path: string): PartialConfig {
   if (!existsSync(path)) {
-    throw new Error(`Configuration file not found: ${path}`)
+    throw new ConfigError(
+      'CONFIG_LOAD_FAILED',
+      `Configuration file not found: ${path}`,
+      { context: { path } }
+    )
   }
 
   const content = readFileSync(path, 'utf-8')
@@ -40,7 +45,11 @@ export function loadConfigFile(path: string): PartialConfig {
   } else if (ext === 'yaml' || ext === 'yml') {
     config = parseYaml(content)
   } else {
-    throw new Error(`Unsupported configuration file format: ${ext}`)
+    throw new ConfigError(
+      'CONFIG_INVALID_VALUE',
+      `Unsupported configuration file format: ${ext}`,
+      { context: { path, format: ext } }
+    )
   }
 
   return validatePartialConfig(config)
