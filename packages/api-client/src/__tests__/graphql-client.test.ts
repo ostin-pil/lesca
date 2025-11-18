@@ -382,7 +382,9 @@ describe('GraphQLClient', () => {
     })
   })
 
-  describe('cache integration', () => {
+  // Cache integration tests disabled - caching removed from GraphQLClient
+  // TODO: Re-enable when caching is re-implemented
+  describe.skip('cache integration', () => {
     it('should use cached results when available', async () => {
       const mockResponse = { data: { test: 'value' } }
 

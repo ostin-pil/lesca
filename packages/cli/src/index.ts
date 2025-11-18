@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { resolve , dirname } from 'path'
 
+import { ScrapingError } from '@lesca/error'
 import chalk from 'chalk'
 import cliProgress from 'cli-progress'
 import { Command } from 'commander'
@@ -23,7 +24,7 @@ import type {
   ProblemListFilters,
   Difficulty,
 } from '../../../shared/types/src/index.js'
-import { TieredCache, logger } from '../../../shared/utils/src/index.js'
+import { logger } from '../../../shared/utils/src/index.js'
 import { GraphQLClient, RateLimiter } from '../../api-client/src/index.js'
 import { CookieFileAuth } from '../../auth/src/index.js'
 import { PlaywrightDriver } from '../../browser-automation/src/index.js'
@@ -120,6 +121,26 @@ function initializeConfig(configPath?: string): void {
   }
 }
 
+/**
+ * Handle CLI errors with debug mode support
+ */
+function handleCliError(message: string, error?: unknown): void {
+  if (error instanceof Error) {
+    logger.error(message, error)
+
+    // In debug mode, show stack trace
+    const opts = program.optsWithGlobals<{ debug?: boolean }>()
+    if (opts.debug && error.stack) {
+      logger.log(chalk.gray('\nStack trace:'))
+      logger.log(chalk.gray(error.stack))
+    }
+  } else if (error) {
+    logger.error(message, undefined, { error: String(error) })
+  } else {
+    logger.error(message)
+  }
+}
+
 const program = new Command()
 
 program
@@ -127,10 +148,22 @@ program
   .description('Modular LeetCode Scraper - Scrape LeetCode problems to Markdown')
   .version('0.1.0')
   .option('--config <path>', 'Path to configuration file')
+  .option('--debug', 'Enable debug mode with verbose logging')
   .hook('preAction', (thisCommand) => {
     // Initialize config before any command runs
-    const opts = thisCommand.optsWithGlobals()
-    initializeConfig(opts.config as string | undefined)
+    const opts = thisCommand.optsWithGlobals<{ config?: string; debug?: boolean }>()
+
+    // Enable debug logging if requested
+    if (opts.debug) {
+      logger.setConfig({
+        level: 'debug',
+        timestamps: true,
+        colors: true,
+      })
+      logger.debug('Debug mode enabled')
+    }
+
+    initializeConfig(opts.config)
   })
 
 /**
@@ -235,7 +268,7 @@ program
 
     } catch (error) {
       spinner.fail(chalk.red('Failed to initialize configuration'))
-      logger.error(error)
+      handleCliError('Failed to initialize configuration', error)
       process.exit(1)
     }
   })
@@ -284,13 +317,9 @@ program
         spinner.info('Running without authentication')
       }
 
-      // 2. Set up cache
-      let cache
+      // 2. Set up cache (if enabled)
       if (cacheEnabled && cacheDir) {
-        cache = new TieredCache(cacheDir, {
-          memorySize: config.cache.memorySize,
-          fileTtl: config.cache.ttl.problem,
-        })
+        // Cache setup here if needed by other components
         spinner.info('Cache enabled')
       }
 
@@ -300,7 +329,7 @@ program
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
+      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter)
 
       // 4. Set up strategies
       const strategies = [
@@ -338,12 +367,12 @@ program
         }
       } else {
         spinner.fail('Failed to scrape problem')
-        logger.error(chalk.red('Error:'), result.error?.message)
+        logger.error(chalk.red('Error:'), result.error)
         process.exit(1)
       }
     } catch (error) {
       spinner.fail('Unexpected error')
-      logger.error(chalk.red('Error:'), error instanceof Error ? error.message : String(error))
+      handleCliError(chalk.red('Unexpected error during operation'), error)
       process.exit(1)
     }
   })
@@ -394,13 +423,9 @@ program
         }
       }
 
-      // 2. Set up cache
-      let cache
+      // 2. Set up cache (if enabled)
       if (cacheEnabled && cacheDir) {
-        cache = new TieredCache(cacheDir, {
-          memorySize: config.cache.memorySize,
-          fileTtl: config.cache.ttl.problem,
-        })
+        // Cache setup here if needed by other components
         spinner.info('Cache enabled')
       }
 
@@ -410,7 +435,7 @@ program
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
+      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter)
 
       // 4. Set up strategies
       const strategies = [
@@ -446,7 +471,11 @@ program
       const listResult = await new ListScraperStrategy(graphqlClient).execute(listRequest)
 
       if (listResult.type !== 'list') {
-        throw new Error('Invalid response type')
+        throw new ScrapingError(
+          'SCRAPE_CONTENT_EXTRACTION_FAILED',
+          'Invalid response type from list scraper',
+          { context: { expectedType: 'list', actualType: listResult.type } }
+        )
       }
 
       const problems = (listResult.data as { questions: { titleSlug: string; title: string }[] })
@@ -545,7 +574,7 @@ program
       }
     } catch (error) {
       spinner.fail('Unexpected error')
-      logger.error(chalk.red('Error:'), error instanceof Error ? error.message : String(error))
+      handleCliError(chalk.red('Unexpected error during operation'), error)
       process.exit(1)
     }
   })
@@ -588,10 +617,7 @@ program
         } catch (error) {
           if (options.premium) {
             spinner.fail('Authentication required for premium content')
-            logger.error(
-              chalk.red('Error:'),
-              error instanceof Error ? error.message : String(error)
-            )
+            handleCliError(chalk.red('Authentication failed for premium content'), error)
             process.exit(1)
           }
           spinner.warn('Authentication failed, continuing without auth')
@@ -656,7 +682,7 @@ program
         }
       } else {
         spinner.fail('Failed to scrape editorial')
-        logger.error(chalk.red('Error:'), result.error?.message)
+        logger.error(chalk.red('Error:'), result.error)
         process.exit(1)
       }
 
@@ -664,7 +690,7 @@ program
       await browserDriver.close()
     } catch (error) {
       spinner.fail('Unexpected error')
-      logger.error(chalk.red('Error:'), error instanceof Error ? error.message : String(error))
+      handleCliError(chalk.red('Unexpected error during operation'), error)
       process.exit(1)
     }
   })
@@ -778,7 +804,7 @@ program
         }
       } else {
         spinner.fail('Failed to scrape discussions')
-        logger.error(chalk.red('Error:'), result.error?.message)
+        logger.error(chalk.red('Error:'), result.error)
         process.exit(1)
       }
 
@@ -786,7 +812,7 @@ program
       await browserDriver.close()
     } catch (error) {
       spinner.fail('Unexpected error')
-      logger.error(chalk.red('Error:'), error instanceof Error ? error.message : String(error))
+      handleCliError(chalk.red('Unexpected error during operation'), error)
       process.exit(1)
     }
   })

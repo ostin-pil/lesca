@@ -1,5 +1,7 @@
 import { readFile, writeFile } from 'fs/promises'
 
+import { ConfigError } from '@lesca/error'
+
 import type { AuthStrategy, AuthCredentials, Cookie } from '../../../shared/types/src/index.js'
 import { AuthError } from '../../../shared/types/src/index.js'
 
@@ -337,5 +339,9 @@ export function exportCookies(
     return lines.join('\n')
   }
 
-  throw new Error(`Unsupported export format: ${String(format)}`)
+  throw new ConfigError(
+    'CONFIG_INVALID_VALUE',
+    `Unsupported export format: ${String(format)}`,
+    { context: { format: String(format), supportedFormats: ['json', 'netscape'] } }
+  )
 }

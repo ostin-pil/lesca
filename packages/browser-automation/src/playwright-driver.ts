@@ -2,6 +2,7 @@
 // Non-null assertions in this file are safe because they're always preceded by ensureLaunched()
 // which performs runtime checks. TypeScript cannot infer this relationship statically.
 
+import { BrowserError } from '@lesca/error'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
 import type {
@@ -105,7 +106,11 @@ export class PlaywrightDriver implements BrowserDriver {
 
     const element = await this.page!.waitForSelector(selector)
     if (!element) {
-      throw new Error(`Element not found: ${selector}`)
+      throw new BrowserError(
+        'BROWSER_SELECTOR_NOT_FOUND',
+        `Element not found: ${selector}`,
+        { context: { selector } }
+      )
     }
 
     const content = await element.textContent()
@@ -152,7 +157,11 @@ export class PlaywrightDriver implements BrowserDriver {
 
     const element = await this.page!.waitForSelector(selector)
     if (!element) {
-      throw new Error(`Element not found: ${selector}`)
+      throw new BrowserError(
+        'BROWSER_SELECTOR_NOT_FOUND',
+        `Element not found: ${selector}`,
+        { context: { selector } }
+      )
     }
 
     const html = await element.innerHTML()
@@ -229,7 +238,10 @@ export class PlaywrightDriver implements BrowserDriver {
    */
   private ensureLaunched(): void {
     if (!this.isLaunched || !this.page || !this.browser) {
-      throw new Error('Browser not launched. Call launch() first.')
+      throw new BrowserError(
+        'BROWSER_LAUNCH_FAILED',
+        'Browser not launched. Call launch() first.'
+      )
     }
   }
 
@@ -313,7 +325,11 @@ export class PlaywrightDriver implements BrowserDriver {
       }
     }
 
-    throw new Error(`No content found with any of the selectors: ${selectors.join(', ')}`)
+    throw new BrowserError(
+      'BROWSER_SELECTOR_NOT_FOUND',
+      `No content found with any of the selectors: ${selectors.join(', ')}`,
+      { context: { selectors } }
+    )
   }
 
   /**

@@ -1,3 +1,5 @@
+import { ScrapingError } from '@lesca/error'
+
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -30,7 +32,11 @@ export class ProblemScraperStrategy implements ScraperStrategy {
    */
   async execute(request: ScrapeRequest): Promise<RawData> {
     if (!this.canHandle(request)) {
-      throw new Error(`ProblemScraperStrategy cannot handle request type: ${request.type}`)
+      throw new ScrapingError(
+        'SCRAPE_NO_STRATEGY',
+        `ProblemScraperStrategy cannot handle request type: ${request.type}`,
+        { context: { requestType: request.type, strategyName: this.name } }
+      )
     }
 
     const problemRequest = request as ProblemScrapeRequest

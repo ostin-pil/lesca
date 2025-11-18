@@ -1,3 +1,5 @@
+import { ParsingError } from '@lesca/error'
+
 import type {
   Converter,
   ConverterOptions,
@@ -39,7 +41,11 @@ export class EditorialConverter implements Converter {
     const editorial = input as EditorialContent
 
     if (!editorial || typeof editorial !== 'object' || !('titleSlug' in editorial)) {
-      throw new Error('Invalid editorial content: expected EditorialContent object')
+      throw new ParsingError(
+        'PARSE_MARKDOWN_FAILED',
+        'Invalid editorial content: expected EditorialContent object',
+        { context: { inputType: typeof input } }
+      )
     }
 
     const sections: string[] = []

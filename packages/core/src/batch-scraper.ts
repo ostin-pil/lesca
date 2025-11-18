@@ -2,6 +2,8 @@ import { existsSync } from 'fs'
 import { writeFile, readFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 
+import { SystemError } from '@lesca/error'
+
 import type { ScrapeRequest, ScrapeResult } from '../../../shared/types/src/index.js'
 import { logger } from '../../../shared/utils/src/index.js'
 
@@ -182,7 +184,11 @@ export class BatchScraper {
         batch.map((request, batchItemIndex) => {
           const index = indices[batchItemIndex]
           if (index === undefined) {
-            throw new Error(`Index mapping missing for batch item ${batchItemIndex}`)
+            throw new SystemError(
+              'SYS_UNKNOWN_ERROR',
+              `Index mapping missing for batch item ${batchItemIndex}`,
+              { context: { batchItemIndex, indicesLength: indices.length } }
+            )
           }
           return this.scrapeSingle(request, index)
         })
@@ -337,7 +343,7 @@ export class BatchScraper {
       await writeFile(progressFile, JSON.stringify(state, null, 2), 'utf-8')
     } catch (error) {
       // Silently fail - progress saving is not critical
-      logger.error('Failed to save progress:', error)
+      logger.error('Failed to save progress:', error instanceof Error ? error : undefined)
     }
   }
 

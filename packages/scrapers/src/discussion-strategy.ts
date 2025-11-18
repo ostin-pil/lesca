@@ -1,3 +1,5 @@
+import { BrowserError } from '@lesca/error'
+
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -136,7 +138,13 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
 
     try {
       const firstSelector = selectors[0]
-      if (!firstSelector) throw new Error('No selector found')
+      if (!firstSelector) {
+        throw new BrowserError(
+          'BROWSER_SELECTOR_NOT_FOUND',
+          'No selector found for discussions',
+          { context: { selectors } }
+        )
+      }
       await this.browserDriver.waitForSelector(firstSelector, 5000)
     } catch {
       // Try fallback selectors
@@ -182,7 +190,7 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
               discussions.push(discussion)
             }
           } catch (error) {
-            logger.error(`Failed to extract discussion ${i}:`, error)
+            logger.error(`Failed to extract discussion ${i}:`, error instanceof Error ? error : undefined)
             continue
           }
         }
@@ -320,7 +328,7 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
         commentCount: comments.length,
       }
     } catch (error) {
-      logger.error(`Error extracting discussion at index ${index}:`, error)
+      logger.error(`Error extracting discussion at index ${index}:`, error instanceof Error ? error : undefined)
       return null
     }
   }

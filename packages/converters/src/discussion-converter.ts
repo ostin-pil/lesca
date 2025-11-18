@@ -1,3 +1,5 @@
+import { ParsingError } from '@lesca/error'
+
 import type {
   Converter,
   ConverterOptions,
@@ -44,7 +46,11 @@ export class DiscussionConverter implements Converter {
       typeof discussionList !== 'object' ||
       !('discussions' in discussionList)
     ) {
-      throw new Error('Invalid discussion list: expected DiscussionList object')
+      throw new ParsingError(
+        'PARSE_MARKDOWN_FAILED',
+        'Invalid discussion list: expected DiscussionList object',
+        { context: { inputType: typeof input } }
+      )
     }
 
     const sections: string[] = []
