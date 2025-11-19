@@ -15,12 +15,14 @@ describe('BatchScraper', () => {
   const mockSuccessResult: ScrapeResult = {
     success: true,
     filePath: '/path/to/file.md',
-    data: { title: 'Two Sum' },
+    request: mockRequest,
+    data: { title: 'Two Sum' } as any,
   }
 
   const mockFailureResult: ScrapeResult = {
     success: false,
     error: new Error('Scrape failed'),
+    request: mockRequest,
   }
 
   beforeEach(() => {
@@ -204,8 +206,8 @@ describe('BatchScraper', () => {
       const result = await batchScraper.scrapeAll(requests)
 
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].error.message).toBe('Specific scrape error')
-      expect(result.errors[0].request).toEqual(mockRequest)
+      expect(result.errors[0]!.error.message).toBe('Specific scrape error')
+      expect(result.errors[0]!.request).toEqual(mockRequest)
     })
   })
 

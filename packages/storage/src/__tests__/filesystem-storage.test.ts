@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { FileSystemStorage } from '../filesystem-storage.js'
 import { StorageError } from '../../../../shared/types/src/index.js'
 import { existsSync } from 'fs'
-import { rm, mkdir, readFile, writeFile } from 'fs/promises'
+import { rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, join } from 'path'
 
 describe('FileSystemStorage', () => {
@@ -299,9 +299,9 @@ describe('FileSystemStorage', () => {
       expect(storages.discussions).toBeInstanceOf(FileSystemStorage)
       expect(storages.images).toBeInstanceOf(FileSystemStorage)
 
-      expect(storages.problems.getBasePath()).toBe(join(testDir, 'problems'))
-      expect(storages.discussions.getBasePath()).toBe(join(testDir, 'discussions'))
-      expect(storages.images.getBasePath()).toBe(join(testDir, 'images'))
+      expect(storages.problems!.getBasePath()).toBe(join(testDir, 'problems'))
+      expect(storages.discussions!.getBasePath()).toBe(join(testDir, 'discussions'))
+      expect(storages.images!.getBasePath()).toBe(join(testDir, 'images'))
     })
 
     it('should allow saving to different storage instances', async () => {
@@ -310,11 +310,11 @@ describe('FileSystemStorage', () => {
         discussions: 'discussions',
       })
 
-      await storages.problems.save('two-sum.md', 'problem content')
-      await storages.discussions.save('discussion-1.md', 'discussion content')
+      await storages.problems!.save('two-sum.md', 'problem content')
+      await storages.discussions!.save('discussion-1.md', 'discussion content')
 
-      const problemContent = await storages.problems.load('two-sum.md')
-      const discussionContent = await storages.discussions.load('discussion-1.md')
+      const problemContent = await storages.problems!.load('two-sum.md')
+      const discussionContent = await storages.discussions!.load('discussion-1.md')
 
       expect(problemContent).toBe('problem content')
       expect(discussionContent).toBe('discussion content')

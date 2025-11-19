@@ -4,7 +4,6 @@ import type {
   ScraperStrategy,
   StorageAdapter,
   ProblemScrapeRequest,
-  ScrapeResult,
 } from '../../../../shared/types/src/index.js'
 
 describe('LeetCodeScraper', () => {
@@ -84,7 +83,7 @@ describe('LeetCodeScraper', () => {
 
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.message).toContain('No strategy can handle request type')
+        expect(result.error!.message).toContain('No strategy can handle request type')
       }
     })
 
@@ -257,7 +256,7 @@ describe('LeetCodeScraper', () => {
 
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.message).toContain('No strategy can handle request type')
+        expect(result.error!.message).toContain('No strategy can handle request type')
       }
     })
   })

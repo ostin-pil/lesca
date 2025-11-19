@@ -156,27 +156,26 @@ scraping:
 
   describe('Configuration Merging', () => {
     it('should merge configurations with correct priority', () => {
-      const defaultConfig = { output: { format: 'markdown' as const } }
-      const fileConfig = { output: { format: 'obsidian' as const } }
-      const envConfig = { output: { format: 'json' as const } }
+      const defaultConfig = getDefaultConfig()
+      const fileConfig = { output: { format: 'obsidian' as const } } as any
+      const envConfig = { output: { format: 'json' as const } } as any
 
       const merged = mergeConfigs(defaultConfig, fileConfig, envConfig)
       expect(merged.output.format).toBe('json') // Last one wins
     })
 
     it('should deep merge nested configurations', () => {
-      const config1 = {
-        api: {
-          timeout: 20000,
-          rateLimit: { enabled: true, requestsPerMinute: 20 },
-        },
-      }
+      const config1 = getDefaultConfig()
+      config1.api.timeout = 20000
+      config1.api.rateLimit.enabled = true
+      config1.api.rateLimit.requestsPerMinute = 20
+
       const config2 = {
         api: {
           timeout: 30000,
           rateLimit: { requestsPerMinute: 40 },
         },
-      }
+      } as any
 
       const merged = mergeConfigs(config1, config2)
       expect(merged.api.timeout).toBe(30000)
@@ -210,7 +209,7 @@ scraping:
 
     it('should update configuration', async () => {
       const manager = await ConfigManager.initialize()
-      manager.update({ output: { format: 'obsidian' as const } })
+      manager.update({ output: { format: 'obsidian' as const } } as any)
 
       const config = manager.getConfig()
       expect(config.output.format).toBe('obsidian')
@@ -218,7 +217,7 @@ scraping:
 
     it('should reset configuration to defaults', async () => {
       const manager = await ConfigManager.initialize()
-      manager.update({ output: { format: 'obsidian' as const } })
+      manager.update({ output: { format: 'obsidian' as const } } as any)
       expect(manager.getConfig().output.format).toBe('obsidian')
 
       manager.reset()
@@ -230,7 +229,7 @@ scraping:
       const listener = vi.fn()
       manager.on('config-changed', listener)
 
-      manager.update({ output: { format: 'obsidian' as const } })
+      manager.update({ output: { format: 'obsidian' as const } } as any)
       expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         output: expect.objectContaining({ format: 'obsidian' })
       }))
@@ -277,7 +276,7 @@ scraping:
 
     it('should handle CLI overrides', async () => {
       const manager = await ConfigManager.initialize({
-        cliOptions: { output: { format: 'json' as const } }
+        cliOptions: { output: { format: 'json' as const } } as any
       })
 
       const config = manager.getEffectiveConfig()

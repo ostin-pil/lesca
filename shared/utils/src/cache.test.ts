@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { FileCache, MemoryCache, TieredCache } from './cache.js'
 import { existsSync, mkdirSync, rmSync } from 'fs'
 import { resolve } from 'path'
@@ -141,8 +141,7 @@ describe('FileCache', () => {
     mkdirSync(testCacheDir, { recursive: true })
 
     cache = new FileCache(testCacheDir, {
-      compress: true,
-      shardDepth: 2,
+      compression: true,
     })
   })
 
@@ -279,7 +278,7 @@ describe('TieredCache', () => {
       await cache.set('key1', 'value1')
 
       // Clear memory cache to simulate cold start
-      const stats = cache.getStats()
+      cache.getStats()
 
       // Get from file, should promote to memory
       const value = await cache.get<string>('key1')
