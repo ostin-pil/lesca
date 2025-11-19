@@ -11,8 +11,8 @@ describe('EditorialConverter', () => {
     approaches: ['<p>First approach using HashMap</p>', '<p>Second approach using sorting</p>'],
     complexity: '<p>Time: O(n), Space: O(n)</p>',
     codeSnippets: [
-      { langSlug: 'python3', code: 'def solution():\n    pass' },
-      { langSlug: 'javascript', code: 'function solution() {}' },
+      { lang: 'python', langSlug: 'python3', code: 'def solution():\n    pass' },
+      { lang: 'javascript', langSlug: 'javascript', code: 'function solution() {}' },
     ],
   }
 
@@ -102,7 +102,7 @@ describe('EditorialConverter', () => {
     it('should handle missing complexity', async () => {
       const editorial: EditorialContent = {
         ...mockEditorial,
-        complexity: undefined,
+        complexity: null,
       }
       const result = await converter.convert(editorial)
       expect(result).not.toContain('## Complexity Analysis')
@@ -215,8 +215,8 @@ describe('EditorialConverter', () => {
       const editorial: EditorialContent = {
         ...mockEditorial,
         codeSnippets: [
-          { langSlug: 'python3', code: 'code1 = 1' },
-          { langSlug: 'python3', code: 'code2 = 2' },
+          { lang: 'python', langSlug: 'python3', code: 'code1 = 1' },
+          { lang: 'python', langSlug: 'python3', code: 'code2 = 2' },
         ],
       }
       const result = await converter.convert(editorial)
@@ -229,6 +229,7 @@ describe('EditorialConverter', () => {
         ...mockEditorial,
         codeSnippets: [
           {
+            lang: 'python',
             langSlug: 'python3',
             code: 'def foo():\n    if True:\n        return 1',
           },
@@ -242,7 +243,7 @@ describe('EditorialConverter', () => {
     it('should handle empty code snippets', async () => {
       const editorial: EditorialContent = {
         ...mockEditorial,
-        codeSnippets: [{ langSlug: 'python3', code: '' }],
+        codeSnippets: [{ lang: 'python', langSlug: 'python3', code: '' }],
       }
       const result = await converter.convert(editorial)
       expect(result).toContain('```python3')
@@ -291,6 +292,9 @@ describe('EditorialConverter', () => {
       const editorial: EditorialContent = {
         titleSlug: 'test',
         content: '<p>Only content</p>',
+        approaches: [],
+        complexity: null,
+        codeSnippets: [],
       }
       const result = await converter.convert(editorial)
       expect(result).toContain('## Solution')
@@ -305,6 +309,9 @@ describe('EditorialConverter', () => {
       const editorial: EditorialContent = {
         titleSlug: 'minimal',
         content: '<p>Minimal content</p>',
+        approaches: [],
+        complexity: null,
+        codeSnippets: [],
       }
       const result = await converter.convert(editorial)
       expect(result).toContain('# Editorial: Minimal')
@@ -317,6 +324,8 @@ describe('EditorialConverter', () => {
         titleSlug: 'test',
         content: '',
         approaches: ['<p>Approach 1</p>'],
+        complexity: null,
+        codeSnippets: [],
       }
       const result = await converter.convert(editorial)
       expect(result).toContain('# Editorial: Test')
@@ -363,9 +372,10 @@ describe('EditorialConverter', () => {
     it('should handle many code snippets', async () => {
       const editorial: EditorialContent = {
         ...mockEditorial,
-        codeSnippets: ['python3', 'javascript', 'java', 'cpp', 'go'].map((lang) => ({
-          langSlug: lang,
-          code: `${lang} code here`,
+        codeSnippets: ['python3', 'javascript', 'java', 'cpp', 'go'].map((langSlug) => ({
+          lang: langSlug.replace('3', ''),
+          langSlug: langSlug,
+          code: `${langSlug} code here`,
         })),
       }
       const result = await converter.convert(editorial)

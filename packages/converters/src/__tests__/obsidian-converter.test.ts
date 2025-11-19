@@ -158,9 +158,9 @@ describe('ObsidianConverter', () => {
     it('should omit optional fields when not available', () => {
       const minimalProblem: Problem = {
         ...mockProblem,
-        stats: undefined,
-        companyTagStats: undefined,
-        similarQuestions: undefined,
+        stats: '',
+        companyTagStats: null,
+        similarQuestions: null,
       } as Problem
 
       const markdown = '# Test'
@@ -379,7 +379,7 @@ describe('ObsidianConverter', () => {
     it('should not include undefined values', () => {
       const minimalProblem: Problem = {
         ...mockProblem,
-        companyTagStats: undefined,
+        companyTagStats: null,
       } as Problem
 
       const markdown = '# Test'

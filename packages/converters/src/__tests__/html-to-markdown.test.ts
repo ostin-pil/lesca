@@ -266,7 +266,7 @@ describe('HtmlToMarkdownConverter', () => {
     it('should handle multiple images', async () => {
       const html = '<img src="https://example.com/1.png" alt="First" /><img src="https://example.com/2.png" alt="Second" />'
       let callCount = 0
-      const mockDownloader = async (url: string) => {
+      const mockDownloader = async (_url: string) => {
         callCount++
         return `./local/${callCount}.png`
       }
@@ -324,16 +324,16 @@ describe('HtmlToMarkdownConverter', () => {
       const html = '<pre><code>function test() { return true; }</code></pre>'
       const blocks = converter.extractCodeBlocks(html)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].language).toBe('')
-      expect(blocks[0].code).toContain('function test()')
+      expect(blocks[0]?.language).toBe('')
+      expect(blocks[0]?.code).toContain('function test()')
     })
 
     it('should extract code block with language', () => {
       const html = '<pre><code class="language-javascript">const x = 42;</code></pre>'
       const blocks = converter.extractCodeBlocks(html)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].language).toBe('javascript')
-      expect(blocks[0].code).toBe('const x = 42;')
+      expect(blocks[0]?.language).toBe('javascript')
+      expect(blocks[0]?.code).toBe('const x = 42;')
     })
 
     it('should extract multiple code blocks', () => {
@@ -343,17 +343,17 @@ describe('HtmlToMarkdownConverter', () => {
       `
       const blocks = converter.extractCodeBlocks(html)
       expect(blocks).toHaveLength(2)
-      expect(blocks[0].language).toBe('python')
-      expect(blocks[0].code).toContain('def foo()')
-      expect(blocks[1].language).toBe('java')
-      expect(blocks[1].code).toContain('public class Test')
+      expect(blocks[0]?.language).toBe('python')
+      expect(blocks[0]?.code).toContain('def foo()')
+      expect(blocks[1]?.language).toBe('java')
+      expect(blocks[1]?.code).toContain('public class Test')
     })
 
     it('should decode HTML entities in code', () => {
       const html = '<pre><code class="language-cpp">vector&lt;int&gt; nums;</code></pre>'
       const blocks = converter.extractCodeBlocks(html)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].code).toBe('vector<int> nums;')
+      expect(blocks[0]?.code).toBe('vector<int> nums;')
     })
 
     it('should return empty array for HTML without code blocks', () => {
@@ -372,9 +372,9 @@ describe('HtmlToMarkdownConverter', () => {
       const html = '<pre><code>  \n  function test() {}\n  </code></pre>'
       const blocks = converter.extractCodeBlocks(html)
       expect(blocks).toHaveLength(1)
-      expect(blocks[0].code).toBe('function test() {}')
-      expect(blocks[0].code).not.toMatch(/^\s/)
-      expect(blocks[0].code).not.toMatch(/\s$/)
+      expect(blocks[0]?.code).toBe('function test() {}')
+      expect(blocks[0]?.code).not.toMatch(/^\s/)
+      expect(blocks[0]?.code).not.toMatch(/\s$/)
     })
   })
 

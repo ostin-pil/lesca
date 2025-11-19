@@ -6,14 +6,13 @@ describe('DiscussionConverter', () => {
   let converter: DiscussionConverter
 
   const mockDiscussion: Discussion = {
-    id: '1',
     title: 'Clean Python Solution',
     content: '<p>Here is my solution using <code>HashMap</code></p>',
     author: 'johndoe',
     votes: 150,
-    views: 1200,
-    createdAt: '2024-01-15',
-    isPinned: false,
+    timestamp: '2024-01-15',
+    comments: [],
+    commentCount: 0,
   }
 
   const mockDiscussionList: DiscussionList = {
@@ -121,14 +120,13 @@ describe('DiscussionConverter', () => {
 
     it('should handle discussions without certain fields', async () => {
       const minimalDiscussion: Discussion = {
-        id: '2',
         title: 'Minimal Discussion',
         content: '<p>Content</p>',
         author: 'user',
         votes: 0,
-        views: 0,
-        createdAt: '2024-01-01',
-        isPinned: false,
+        timestamp: null,
+        comments: [],
+        commentCount: 0,
       }
       const list: DiscussionList = {
         ...mockDiscussionList,
@@ -257,7 +255,7 @@ describe('DiscussionConverter', () => {
       const discussion: Discussion = {
         ...mockDiscussion,
         votes: 0,
-        timestamp: undefined,
+        timestamp: null,
       }
       const list: DiscussionList = {
         ...mockDiscussionList,
@@ -277,11 +275,9 @@ describe('DiscussionConverter', () => {
         ...mockDiscussion,
         comments: [
           {
-            id: 'c1',
             content: '<p>Great solution!</p>',
             author: 'commenter1',
-            votes: 5,
-            createdAt: '2024-01-16',
+            timestamp: '2024-01-16',
           },
         ],
       }
@@ -305,18 +301,14 @@ describe('DiscussionConverter', () => {
         ...mockDiscussion,
         comments: [
           {
-            id: 'c1',
             content: '<p>Comment 1</p>',
             author: 'user1',
-            votes: 5,
-            createdAt: '2024-01-16',
+            timestamp: '2024-01-16',
           },
           {
-            id: 'c2',
             content: '<p>Comment 2</p>',
             author: 'user2',
-            votes: 3,
-            createdAt: '2024-01-17',
+            timestamp: '2024-01-17',
           },
         ],
       }
