@@ -46,7 +46,7 @@ export default defineConfig({
       '@lesca/shared/types': resolve(__dirname, './shared/types/src'),
       '@lesca/shared/config': resolve(__dirname, './shared/config/src'),
       '@lesca/shared/utils': resolve(__dirname, './shared/utils/src'),
-      '@lesca/shared/error': resolve(__dirname, './shared/error/src'),
+      '@lesca/error': resolve(__dirname, './shared/error/src'),
     },
   },
 })
