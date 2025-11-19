@@ -115,7 +115,8 @@ describe('RateLimiter', () => {
 })
 
 describe('GraphQLClient', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let fetchSpy: any
   const testCacheDir = resolve(__dirname, '__test_graphql_cache__')
 
   beforeEach(() => {
@@ -319,6 +320,7 @@ describe('GraphQLClient', () => {
 
       const auth: AuthCredentials = {
         cookies: [{ name: 'session', value: 'token', domain: 'leetcode.com' }],
+        csrfToken: 'test-csrf-token',
       }
 
       client.setAuth(auth)
@@ -346,6 +348,7 @@ describe('GraphQLClient', () => {
 
       const auth: AuthCredentials = {
         cookies: [{ name: 'session', value: 'token', domain: 'leetcode.com' }],
+        csrfToken: 'test-csrf-token',
       }
 
       const client = new GraphQLClient(auth)
@@ -353,7 +356,7 @@ describe('GraphQLClient', () => {
       await client.query('{ test }')
 
       const call = fetchSpy.mock.calls[0]
-      const headers = call?.[1]?.headers as Record<string, string>
+      const headers = (call?.[1] as RequestInit | undefined)?.headers as Record<string, string> | undefined
 
       expect(headers?.['Cookie']).toBeUndefined()
     })
@@ -395,11 +398,11 @@ describe('GraphQLClient', () => {
         headers: new Headers(),
       } as Response)
 
-      const cache = new TieredCache(testCacheDir, {
+      new TieredCache(testCacheDir, {
         memorySize: 10,
         fileTtl: 10000,
       })
-      const client = new GraphQLClient(undefined, undefined, cache)
+      const client = new GraphQLClient(undefined, undefined)
 
       // First call - should hit network
       const result1 = await client.query('{ test }')
@@ -422,8 +425,8 @@ describe('GraphQLClient', () => {
         headers: new Headers(),
       } as Response)
 
-      const cache = new TieredCache(testCacheDir)
-      const client = new GraphQLClient(undefined, undefined, cache)
+      new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined)
 
       // Problem queries should have 7-day TTL
       await client.query('query { question(titleSlug: "test") { title } }')
@@ -432,8 +435,8 @@ describe('GraphQLClient', () => {
     })
 
     it('should generate unique cache keys for different queries', async () => {
-      const cache = new TieredCache(testCacheDir)
-      const client = new GraphQLClient(undefined, undefined, cache)
+      new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined)
 
       fetchSpy
         .mockResolvedValueOnce({
@@ -467,8 +470,16 @@ describe('GraphQLClient', () => {
         titleSlug: 'two-sum',
         content: '<p>Test content</p>',
         difficulty: 'Easy',
+        exampleTestcases: 'test1\ntest2',
+        hints: [],
         topicTags: [{ name: 'Array', slug: 'array' }],
+        companyTagStats: null,
+        stats: '{"totalAccepted": "1000", "totalSubmission": "2000"}',
         codeSnippets: [],
+        similarQuestions: '[]',
+        solution: null,
+        mysqlSchemas: [],
+        dataSchemas: [],
       }
 
       fetchSpy.mockResolvedValue({
@@ -560,7 +571,7 @@ describe('GraphQLClient', () => {
 
       const call = fetchSpy.mock.calls[0]
       expect(call).toBeDefined()
-      const body = call?.[1]?.body
+      const body = (call?.[1] as RequestInit | undefined)?.body
       expect(body).toBeDefined()
       const callBody = JSON.parse(body as string)
       expect(callBody.variables.filters).toEqual({

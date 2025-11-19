@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 

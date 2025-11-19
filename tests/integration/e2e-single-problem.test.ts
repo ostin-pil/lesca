@@ -66,10 +66,6 @@ describe('E2E: Single Problem Scraping', () => {
       format: 'obsidian',
       enhancements: {
         enabled: true,
-        enhancers: {
-          codeblock: { enabled: true },
-          frontmatter: { enabled: true },
-        },
       },
     })
   })

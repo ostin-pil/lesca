@@ -280,7 +280,7 @@ describe('PlaywrightDriver', () => {
 
     it('should evaluate function with arguments', async () => {
       await driver.launch()
-      const fn = (a: number, b: number) => a + b
+      const fn = (...args: unknown[]) => (args[0] as number) + (args[1] as number)
       await driver.evaluate(fn, 1, 2)
 
       expect(mockPage.evaluate).toHaveBeenCalledWith(fn, 1, 2)
@@ -614,14 +614,14 @@ describe('PlaywrightDriver', () => {
     it('should block specified resource types', async () => {
       await driver.launch({ blockResources: ['image', 'font', 'media'] })
 
-      const routeCallback = vi.mocked(mockPage.route).mock.calls[0][1]
+      const routeCallback = vi.mocked(mockPage.route).mock.calls[0]?.[1]
       const mockRoute = {
         request: vi.fn().mockReturnValue({ resourceType: vi.fn().mockReturnValue('image') }),
         abort: vi.fn().mockResolvedValue(undefined),
         continue: vi.fn().mockResolvedValue(undefined),
       }
 
-      await routeCallback(mockRoute as any)
+      await routeCallback?.(mockRoute as any, undefined as any)
 
       expect(mockRoute.abort).toHaveBeenCalled()
       expect(mockRoute.continue).not.toHaveBeenCalled()
@@ -630,14 +630,14 @@ describe('PlaywrightDriver', () => {
     it('should allow non-blocked resource types', async () => {
       await driver.launch({ blockResources: ['image'] })
 
-      const routeCallback = vi.mocked(mockPage.route).mock.calls[0][1]
+      const routeCallback = vi.mocked(mockPage.route).mock.calls[0]?.[1]
       const mockRoute = {
         request: vi.fn().mockReturnValue({ resourceType: vi.fn().mockReturnValue('script') }),
         abort: vi.fn().mockResolvedValue(undefined),
         continue: vi.fn().mockResolvedValue(undefined),
       }
 
-      await routeCallback(mockRoute as any)
+      await routeCallback?.(mockRoute as any, undefined as any)
 
       expect(mockRoute.continue).toHaveBeenCalled()
       expect(mockRoute.abort).not.toHaveBeenCalled()
