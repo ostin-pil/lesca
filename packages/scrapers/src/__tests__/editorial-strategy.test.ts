@@ -8,14 +8,6 @@ describe('EditorialScraperStrategy', () => {
   let strategy: EditorialScraperStrategy
   let mockBrowserDriver: BrowserDriver
 
-  const mockEditorial: EditorialContent = {
-    titleSlug: 'two-sum',
-    content: '<p>This is the editorial content</p>',
-    approaches: ['<p>Approach 1</p>'],
-    complexity: '<p>O(n)</p>',
-    codeSnippets: [{ langSlug: 'python3', code: 'def solution(): pass', lang: 'python3' }],
-  }
-
   beforeEach(() => {
     mockBrowserDriver = {
       navigate: vi.fn().mockResolvedValue(undefined),
@@ -141,6 +133,7 @@ describe('EditorialScraperStrategy', () => {
 
     it('should handle premium content with authentication', async () => {
       const strategyWithAuth = new EditorialScraperStrategy(mockBrowserDriver, {
+        cookies: [],
         sessionToken: 'test-token',
         csrfToken: 'csrf-token',
       })
@@ -249,6 +242,7 @@ describe('EditorialScraperStrategy', () => {
 
     it('should return true when premium banner exists', async () => {
       const strategyWithAuth = new EditorialScraperStrategy(mockBrowserDriver, {
+        cookies: [],
         sessionToken: 'test-token',
         csrfToken: 'csrf-token',
       })
@@ -303,7 +297,8 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.approaches).toEqual([])
+      const data = result.data as EditorialContent
+      expect(data.approaches).toEqual([])
     })
 
     it('should extract multiple approaches', async () => {
@@ -319,7 +314,8 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.approaches.length).toBeGreaterThan(0)
+      const data = result.data as EditorialContent
+      expect(data.approaches.length).toBeGreaterThan(0)
     })
   })
 
@@ -338,7 +334,8 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.complexity).toBeNull()
+      const data = result.data as EditorialContent
+      expect(data.complexity).toBeNull()
     })
 
     it('should extract complexity when available', async () => {
@@ -355,7 +352,8 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.complexity).toBeDefined()
+      const data = result.data as EditorialContent
+      expect(data.complexity).toBeDefined()
     })
   })
 
@@ -371,7 +369,8 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.codeSnippets).toEqual([])
+      const data = result.data as EditorialContent
+      expect(data.codeSnippets).toEqual([])
     })
 
     it('should extract code snippets with detected language', async () => {
@@ -388,10 +387,11 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0]).toHaveProperty('code')
-        expect(result.data.codeSnippets[0]).toHaveProperty('lang')
-        expect(result.data.codeSnippets[0]).toHaveProperty('langSlug')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]).toHaveProperty('code')
+        expect(data.codeSnippets[0]).toHaveProperty('lang')
+        expect(data.codeSnippets[0]).toHaveProperty('langSlug')
       }
     })
   })
@@ -411,8 +411,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('python')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('python')
       }
     })
 
@@ -430,8 +431,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('javascript')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('javascript')
       }
     })
 
@@ -449,8 +451,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('java')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('java')
       }
     })
 
@@ -468,8 +471,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('cpp')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('cpp')
       }
     })
 
@@ -487,8 +491,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('go')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('go')
       }
     })
 
@@ -506,8 +511,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('rust')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('rust')
       }
     })
 
@@ -525,8 +531,9 @@ describe('EditorialScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.codeSnippets.length > 0) {
-        expect(result.data.codeSnippets[0].lang).toBe('text')
+      const data = result.data as EditorialContent
+      if (data.codeSnippets.length > 0) {
+        expect(data.codeSnippets[0]?.lang).toBe('text')
       }
     })
   })

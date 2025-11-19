@@ -16,6 +16,8 @@ describe('ListScraperStrategy', () => {
         title: 'Two Sum',
         titleSlug: 'two-sum',
         difficulty: 'Easy',
+        acRate: 45.5,
+        paidOnly: false,
         topicTags: [{ name: 'Array', slug: 'array' }],
       },
       {
@@ -24,6 +26,8 @@ describe('ListScraperStrategy', () => {
         title: 'Add Two Numbers',
         titleSlug: 'add-two-numbers',
         difficulty: 'Medium',
+        acRate: 38.2,
+        paidOnly: false,
         topicTags: [{ name: 'Linked List', slug: 'linked-list' }],
       },
     ],
@@ -130,9 +134,10 @@ describe('ListScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data).toHaveProperty('total')
-      expect(result.data).toHaveProperty('questions')
-      expect(Array.isArray(result.data.questions)).toBe(true)
+      const data = result.data as ProblemList
+      expect(data).toHaveProperty('total')
+      expect(data).toHaveProperty('questions')
+      expect(Array.isArray(data.questions)).toBe(true)
     })
 
     it('should handle GraphQL client errors', async () => {
@@ -159,8 +164,9 @@ describe('ListScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.total).toBe(0)
-      expect(result.data.questions).toHaveLength(0)
+      const data = result.data as ProblemList
+      expect(data.total).toBe(0)
+      expect(data.questions).toHaveLength(0)
     })
   })
 
@@ -311,10 +317,11 @@ describe('ListScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.questions[0]).toHaveProperty('questionId')
-      expect(result.data.questions[0]).toHaveProperty('title')
-      expect(result.data.questions[0]).toHaveProperty('titleSlug')
-      expect(result.data.questions[0]).toHaveProperty('difficulty')
+      const data = result.data as ProblemList
+      expect(data.questions[0]).toHaveProperty('questionId')
+      expect(data.questions[0]).toHaveProperty('title')
+      expect(data.questions[0]).toHaveProperty('titleSlug')
+      expect(data.questions[0]).toHaveProperty('difficulty')
     })
 
     it('should return correct total count', async () => {
@@ -324,7 +331,8 @@ describe('ListScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.total).toBe(100)
+      const data = result.data as ProblemList
+      expect(data.total).toBe(100)
     })
 
     it('should handle lists with many problems', async () => {
@@ -338,6 +346,8 @@ describe('ListScraperStrategy', () => {
             title: `Problem ${i + 1}`,
             titleSlug: `problem-${i + 1}`,
             difficulty: 'Easy' as const,
+            acRate: 50.0,
+            paidOnly: false,
             topicTags: [],
           })),
       }
@@ -349,8 +359,9 @@ describe('ListScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.questions).toHaveLength(100)
-      expect(result.data.total).toBe(500)
+      const data = result.data as ProblemList
+      expect(data.questions).toHaveLength(100)
+      expect(data.total).toBe(500)
     })
   })
 })

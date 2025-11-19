@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { DiscussionScraperStrategy } from '../discussion-strategy.js'
-import type { DiscussionScrapeRequest, Discussion } from '../../../../shared/types/src/index.js'
+import type { DiscussionScrapeRequest, DiscussionList } from '../../../../shared/types/src/index.js'
 import type { BrowserDriver } from '../../../../shared/types/src/index.js'
 import { LescaError } from '../../../../shared/types/src/index.js'
 
@@ -75,9 +75,10 @@ describe('DiscussionScraperStrategy', () => {
 
       expect(result.type).toBe('discussion')
       expect(result.data).toBeDefined()
-      expect(result.data.titleSlug).toBe('two-sum')
-      expect(result.data.category).toBe('all')
-      expect(result.data.sortBy).toBe('hot')
+      const data = result.data as DiscussionList
+      expect(data.titleSlug).toBe('two-sum')
+      expect(data.category).toBe('all')
+      expect(data.sortBy).toBe('hot')
       expect(result.metadata).toBeDefined()
       expect(result.metadata.strategy).toBe('discussion')
     })
@@ -103,18 +104,19 @@ describe('DiscussionScraperStrategy', () => {
       const request: DiscussionScrapeRequest = {
         type: 'discussion',
         titleSlug: 'two-sum',
-        category: 'solutions',
-        sortBy: 'newest',
+        category: 'solution',
+        sortBy: 'most-votes',
       }
 
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
 
       const result = await strategy.execute(request)
 
-      expect(result.data.category).toBe('solutions')
-      expect(result.data.sortBy).toBe('newest')
+      const data = result.data as DiscussionList
+      expect(data.category).toBe('solution')
+      expect(data.sortBy).toBe('most-votes')
       expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
-        'https://leetcode.com/problems/two-sum/solutions/?category=solutions&orderBy=newest'
+        'https://leetcode.com/problems/two-sum/solutions/?category=solution&orderBy=most-votes'
       )
     })
 
@@ -137,7 +139,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions.length).toBeLessThanOrEqual(5)
+      const data = result.data as DiscussionList
+      expect(data.discussions.length).toBeLessThanOrEqual(5)
     })
 
     it('should use default limit of 10', async () => {
@@ -151,7 +154,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions.length).toBeLessThanOrEqual(10)
+      const data = result.data as DiscussionList
+      expect(data.discussions.length).toBeLessThanOrEqual(10)
     })
 
     it('should wrap non-LescaError errors', async () => {
@@ -201,7 +205,7 @@ describe('DiscussionScraperStrategy', () => {
       const request: DiscussionScrapeRequest = {
         type: 'discussion',
         titleSlug: 'two-sum',
-        category: 'python',
+        category: 'solution',
       }
 
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
@@ -209,7 +213,7 @@ describe('DiscussionScraperStrategy', () => {
       await strategy.execute(request)
 
       expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
-        'https://leetcode.com/problems/two-sum/solutions/?category=python'
+        'https://leetcode.com/problems/two-sum/solutions/?category=solution'
       )
     })
 
@@ -217,7 +221,7 @@ describe('DiscussionScraperStrategy', () => {
       const request: DiscussionScrapeRequest = {
         type: 'discussion',
         titleSlug: 'two-sum',
-        sortBy: 'newest',
+        sortBy: 'recent',
       }
 
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
@@ -225,7 +229,7 @@ describe('DiscussionScraperStrategy', () => {
       await strategy.execute(request)
 
       expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
-        'https://leetcode.com/problems/two-sum/solutions/?orderBy=newest'
+        'https://leetcode.com/problems/two-sum/solutions/?orderBy=recent'
       )
     })
 
@@ -233,8 +237,8 @@ describe('DiscussionScraperStrategy', () => {
       const request: DiscussionScrapeRequest = {
         type: 'discussion',
         titleSlug: 'two-sum',
-        category: 'javascript',
-        sortBy: 'top',
+        category: 'general',
+        sortBy: 'most-votes',
       }
 
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
@@ -242,7 +246,7 @@ describe('DiscussionScraperStrategy', () => {
       await strategy.execute(request)
 
       expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
-        'https://leetcode.com/problems/two-sum/solutions/?category=javascript&orderBy=top'
+        'https://leetcode.com/problems/two-sum/solutions/?category=general&orderBy=most-votes'
       )
     })
   })
@@ -304,7 +308,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions).toEqual([])
+      const data = result.data as DiscussionList
+      expect(data.discussions).toEqual([])
     })
 
     it('should extract multiple discussions', async () => {
@@ -332,7 +337,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions.length).toBeGreaterThan(0)
+      const data = result.data as DiscussionList
+      expect(data.discussions.length).toBeGreaterThan(0)
     })
   })
 
@@ -355,8 +361,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        const discussion = result.data.discussions[0]
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        const discussion = data.discussions[0]
         expect(discussion).toHaveProperty('title')
         expect(discussion).toHaveProperty('author')
         expect(discussion).toHaveProperty('votes')
@@ -381,8 +388,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].author).toBe('Anonymous')
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.author).toBe('Anonymous')
       }
     })
 
@@ -402,8 +410,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].votes).toBe(0)
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.votes).toBe(0)
       }
     })
 
@@ -423,8 +432,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].votes).toBe(42)
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.votes).toBe(42)
       }
     })
 
@@ -440,7 +450,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions).toEqual([])
+      const data = result.data as DiscussionList
+      expect(data.discussions).toEqual([])
     })
   })
 
@@ -466,9 +477,10 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].comments).toBeDefined()
-        expect(result.data.discussions[0].commentCount).toBeGreaterThanOrEqual(0)
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.comments).toBeDefined()
+        expect(data.discussions[0]?.commentCount).toBeGreaterThanOrEqual(0)
       }
     })
 
@@ -490,8 +502,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].comments).toEqual([])
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.comments).toEqual([])
       }
     })
 
@@ -516,8 +529,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].comments).toEqual([])
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.comments).toEqual([])
       }
     })
 
@@ -542,8 +556,9 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      if (result.data.discussions.length > 0) {
-        expect(result.data.discussions[0].comments.length).toBeLessThanOrEqual(50)
+      const data = result.data as DiscussionList
+      if (data.discussions.length > 0) {
+        expect(data.discussions[0]?.comments.length).toBeLessThanOrEqual(50)
       }
     })
   })
@@ -564,7 +579,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.total).toBeGreaterThanOrEqual(0)
+      const data = result.data as DiscussionList
+      expect(data.total).toBeGreaterThanOrEqual(0)
     })
 
     it('should return 0 when extractAll fails', async () => {
@@ -578,7 +594,8 @@ describe('DiscussionScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.discussions).toEqual([])
+      const data = result.data as DiscussionList
+      expect(data.discussions).toEqual([])
     })
   })
 

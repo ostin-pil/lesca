@@ -150,7 +150,8 @@ describe('ProblemScraperStrategy', () => {
         }
 
         const result = await strategy.execute(request)
-        expect(result.data.difficulty).toBe(difficulty)
+        const data = result.data as Problem
+        expect(data.difficulty).toBe(difficulty)
       }
     })
 
@@ -164,7 +165,8 @@ describe('ProblemScraperStrategy', () => {
       }
 
       const result = await strategy.execute(request)
-      expect(result.data.topicTags).toEqual([])
+      const data = result.data as Problem
+      expect(data.topicTags).toEqual([])
     })
 
     it('should throw error for problems with empty content', async () => {
@@ -191,9 +193,10 @@ describe('ProblemScraperStrategy', () => {
 
       expect(result.type).toBe('problem')
       expect(result.data).toBeDefined()
-      expect(result.data.questionId).toBe('1')
-      expect(result.data.title).toBe('Two Sum')
-      expect(result.data.titleSlug).toBe('two-sum')
+      const data = result.data as Problem
+      expect(data.questionId).toBe('1')
+      expect(data.title).toBe('Two Sum')
+      expect(data.titleSlug).toBe('two-sum')
     })
 
     it('should preserve all problem fields', async () => {
@@ -215,9 +218,10 @@ describe('ProblemScraperStrategy', () => {
 
       const result = await strategy.execute(request)
 
-      expect(result.data.exampleTestcases).toBeDefined()
-      expect(result.data.hints).toBeDefined()
-      expect(result.data.solution).toBeDefined()
+      const data = result.data as Problem
+      expect(data.exampleTestcases).toBeDefined()
+      expect(data.hints).toBeDefined()
+      expect(data.solution).toBeDefined()
     })
   })
 })
