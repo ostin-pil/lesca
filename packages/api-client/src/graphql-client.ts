@@ -36,18 +36,15 @@ export class GraphQLClient {
    * Execute a GraphQL query
    */
   async query<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-    // Apply rate limiting if configured
     if (this.rateLimiter) {
       await this.rateLimiter.acquire()
     }
 
-    // Build request headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'User-Agent': this.userAgent,
     }
 
-    // Add authentication if available
     if (this.auth) {
       headers['Cookie'] = this.formatCookies(this.auth.cookies)
       if (this.auth.csrfToken) {
@@ -55,7 +52,6 @@ export class GraphQLClient {
       }
     }
 
-    // Execute request
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
@@ -63,7 +59,6 @@ export class GraphQLClient {
         body: JSON.stringify({ query, variables }),
       })
 
-      // Check for rate limiting
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After')
         throw new RateLimitError(
@@ -72,33 +67,27 @@ export class GraphQLClient {
         )
       }
 
-      // Check for other HTTP errors
       if (!response.ok) {
         throw new GraphQLError(`HTTP ${response.status}: ${response.statusText}`, response.status)
       }
 
-      // Parse response
       const result = await response.json() as GraphQLResponse<T>
 
-      // Check for GraphQL errors
       if (result.errors && result.errors.length > 0) {
         const errorMessages = result.errors.map((e) => e.message).join(', ')
         throw new GraphQLError(`GraphQL errors: ${errorMessages}`)
       }
 
-      // Check for missing data
       if (!result.data) {
         throw new GraphQLError('No data returned from GraphQL query')
       }
 
       return result.data
     } catch (error) {
-      // Re-throw known errors
       if (error instanceof GraphQLError || error instanceof RateLimitError) {
         throw error
       }
 
-      // Wrap unknown errors
       throw new GraphQLError(
         `Failed to execute GraphQL query: ${error instanceof Error ? error.message : String(error)}`,
         undefined,
@@ -201,7 +190,6 @@ export class GraphQLClient {
       skip: offset,
     }
 
-    // Build filters object
     if (filters) {
       const graphqlFilters: Record<string, unknown> = {}
 
@@ -242,13 +230,11 @@ export class GraphQLClient {
     const allQuestions: ProblemList['questions'] = []
     let total = 0
 
-    // Fetch first page to get total
     const firstPage = await this.getProblemList(filters, pageSize, offset)
     total = firstPage.total
     allQuestions.push(...firstPage.questions)
     offset += pageSize
 
-    // Fetch remaining pages
     while (offset < total) {
       const page = await this.getProblemList(filters, pageSize, offset)
       allQuestions.push(...page.questions)
@@ -343,14 +329,12 @@ export class RateLimiter {
     const now = Date.now()
     const elapsed = now - this.lastRequest
 
-    // Calculate delay with optional jitter
     let delay = this.minDelay
     if (this.jitter && this.maxDelay > this.minDelay) {
       const jitterRange = this.maxDelay - this.minDelay
       delay = this.minDelay + Math.random() * jitterRange
     }
 
-    // Wait if needed
     if (elapsed < delay) {
       await this.sleep(delay - elapsed)
     }

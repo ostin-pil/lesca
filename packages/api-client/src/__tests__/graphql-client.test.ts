@@ -9,14 +9,14 @@ import { existsSync, rmSync, mkdirSync } from 'fs'
 describe('RateLimiter', () => {
   describe('basic rate limiting', () => {
     it('should enforce minimum delay between requests', async () => {
-      const limiter = new RateLimiter(100, 100, false) // 100ms delay, no jitter
+      const limiter = new RateLimiter(100, 100, false)
       const start = Date.now()
 
       await limiter.acquire()
       await limiter.acquire()
 
       const elapsed = Date.now() - start
-      expect(elapsed).toBeGreaterThanOrEqual(90) // Allow some tolerance
+      expect(elapsed).toBeGreaterThanOrEqual(90)
     })
 
     it('should not delay first request', async () => {
@@ -26,7 +26,7 @@ describe('RateLimiter', () => {
       await limiter.acquire()
 
       const elapsed = Date.now() - start
-      expect(elapsed).toBeLessThan(50) // Should be near instant
+      expect(elapsed).toBeLessThan(50)
     })
 
     it('should handle multiple sequential requests', async () => {
@@ -38,13 +38,13 @@ describe('RateLimiter', () => {
       await limiter.acquire() // ~50ms delay
 
       const elapsed = Date.now() - start
-      expect(elapsed).toBeGreaterThanOrEqual(90) // At least 2x50ms
+      expect(elapsed).toBeGreaterThanOrEqual(90)
     })
   })
 
   describe('jitter', () => {
     it('should add random jitter when enabled', async () => {
-      const limiter = new RateLimiter(100, 200, true) // 100-200ms range
+      const limiter = new RateLimiter(100, 200, true)
       const delays: number[] = []
 
       // Test multiple acquisitions to verify randomness
