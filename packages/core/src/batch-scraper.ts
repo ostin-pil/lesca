@@ -103,7 +103,6 @@ export class BatchScraper {
     const results: ScrapeResult[] = []
     const errors: BatchScrapeResult['errors'] = []
 
-    // Load previous progress if resuming
     let completedIndices: Set<number> = new Set()
     if (this.options.resume) {
       const state = await this.loadProgress()
@@ -113,7 +112,6 @@ export class BatchScraper {
       }
     }
 
-    // Filter out already completed requests
     const pendingRequests = requests.filter((_, index) => !completedIndices.has(index))
     const pendingIndices = requests
       .map((_, index) => index)
@@ -135,12 +133,10 @@ export class BatchScraper {
       }
     }
 
-    // Split into batches based on concurrency
     const concurrency = this.options.concurrency || 3
     const batches = this.createBatches(pendingRequests, concurrency)
     const indexBatches = this.createBatches(pendingIndices, concurrency)
 
-    // Track progress
     const progress: BatchProgress = {
       total: requests.length,
       completed: completedIndices.size,
@@ -154,10 +150,8 @@ export class BatchScraper {
       elapsedTime: 0,
     }
 
-    // Notify initial progress
     this.options.onProgress?.(progress)
 
-    // Process batches
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex]
       const indices = indexBatches[batchIndex]
@@ -166,11 +160,9 @@ export class BatchScraper {
         continue
       }
 
-      // Update progress
       progress.currentBatch = batchIndex + 1
       progress.elapsedTime = Date.now() - startTime
 
-      // Calculate ETA
       if (progress.completed > 0) {
         const avgTimePerItem = progress.elapsedTime / progress.completed
         const remaining = progress.total - progress.completed
@@ -179,7 +171,6 @@ export class BatchScraper {
 
       this.options.onProgress?.(progress)
 
-      // Process batch in parallel
       const batchResults = await Promise.allSettled(
         batch.map((request, batchItemIndex) => {
           const index = indices[batchItemIndex]
@@ -194,7 +185,6 @@ export class BatchScraper {
         })
       )
 
-      // Collect results
       for (let i = 0; i < batchResults.length; i++) {
         const result = batchResults[i]
         const originalIndex = indices[i]
@@ -222,10 +212,8 @@ export class BatchScraper {
             }
           }
 
-          // Notify individual result
           this.options.onResult?.(scrapeResult, originalIndex, requests.length)
         } else {
-          // Promise rejected - create failed result
           const reason = result.reason as unknown
           const error = reason instanceof Error ? reason : new Error(String(reason))
           const failedResult: ScrapeResult = {
@@ -243,7 +231,6 @@ export class BatchScraper {
             index: originalIndex,
           })
 
-          // Notify individual result
           this.options.onResult?.(failedResult, originalIndex, requests.length)
         }
 
@@ -251,7 +238,6 @@ export class BatchScraper {
         progress.percentage = (progress.completed / progress.total) * 100
         progress.elapsedTime = Date.now() - startTime
 
-        // Save progress after each item
         if (this.options.resume) {
           await this.saveProgress({
             completedIndices: Array.from(completedIndices),
@@ -261,7 +247,6 @@ export class BatchScraper {
         }
       }
 
-      // Notify progress after batch
       this.options.onProgress?.(progress)
 
       // Delay between batches (except for last batch)
@@ -270,7 +255,6 @@ export class BatchScraper {
       }
     }
 
-    // Clean up progress file if completed successfully
     if (this.options.resume && progress.completed === progress.total) {
       await this.cleanupProgress()
     }
@@ -335,14 +319,12 @@ export class BatchScraper {
     try {
       const dir = dirname(progressFile)
 
-      // Ensure directory exists
       if (!existsSync(dir)) {
         await mkdir(dir, { recursive: true })
       }
 
       await writeFile(progressFile, JSON.stringify(state, null, 2), 'utf-8')
     } catch (error) {
-      // Silently fail - progress saving is not critical
       logger.error('Failed to save progress:', error instanceof Error ? error : undefined)
     }
   }
@@ -362,7 +344,6 @@ export class BatchScraper {
       const content = await readFile(progressFile, 'utf-8')
       return JSON.parse(content) as ProgressState
     } catch (error) {
-      // If progress file is corrupted, start fresh
       return null
     }
   }
@@ -380,7 +361,7 @@ export class BatchScraper {
         await unlink(progressFile)
       }
     } catch (error) {
-      // Silently fail
+      // Silently fail - cleanup is not critical
     }
   }
 

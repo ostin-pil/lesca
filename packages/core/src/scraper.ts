@@ -37,7 +37,6 @@ export class LeetCodeScraper {
   ) {
     // Sort strategies by priority (highest first)
     this.strategies.sort((a, b) => b.priority - a.priority)
-    // Initialize enhancement manager with config
     this.enhancementManager = new EnhancementManager(this.options.enhancements)
   }
 
@@ -97,7 +96,6 @@ export class LeetCodeScraper {
       const result = await this.scrape(request)
       results.push(result)
 
-      // Stop on first error if configured
       if (!result.success && !this.options) {
         break
       }
@@ -127,14 +125,12 @@ export class LeetCodeScraper {
     if (rawData.type === 'problem') {
       const problem = rawData.data as Problem
 
-      // Convert HTML to Markdown
       const htmlConverter = new HtmlToMarkdownConverter()
       let markdown = await htmlConverter.convert(problem.content)
 
       // Apply content enhancements (format-agnostic)
       markdown = this.enhancementManager.enhance(markdown, rawData, this.options.enhancements)
 
-      // Apply format-specific conversion
       let finalMarkdown = markdown
       let filename = `${problem.questionFrontendId}-${problem.titleSlug}.md`
 
@@ -148,7 +144,6 @@ export class LeetCodeScraper {
         filename = ObsidianConverter.generateFilename(problem, 'id-slug')
       }
 
-      // Add title if not present
       if (!finalMarkdown.startsWith('#')) {
         finalMarkdown = `# ${problem.title}\n\n${finalMarkdown}`
       }
@@ -160,7 +155,6 @@ export class LeetCodeScraper {
       const editorial = rawData.data as EditorialContent
       const editorialConverter = new EditorialConverter()
 
-      // Apply format-specific conversion
       let finalMarkdown: string
       const filename = `${editorial.titleSlug}-editorial.md`
 
@@ -177,7 +171,6 @@ export class LeetCodeScraper {
       const discussionList = rawData.data as DiscussionList
       const discussionConverter = new DiscussionConverter()
 
-      // Apply format-specific conversion
       let finalMarkdown: string
       const filename = `${discussionList.titleSlug}-discussions.md`
 
