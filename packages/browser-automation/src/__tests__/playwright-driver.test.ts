@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { PlaywrightDriver } from '../playwright-driver.js'
 import type { Browser, Page, BrowserContext, ElementHandle } from 'playwright'
 
-// Mock playwright
 vi.mock('playwright', () => ({
   chromium: {
     launch: vi.fn(),

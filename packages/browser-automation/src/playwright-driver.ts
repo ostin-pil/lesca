@@ -10,6 +10,8 @@ import type {
 import { BrowserError } from '@lesca/error'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
+import type { CookieManager } from './cookie-manager.js'
+
 
 /**
  * Playwright browser driver
@@ -19,6 +21,7 @@ export class PlaywrightDriver implements BrowserDriver {
   private browser?: Browser
   private page?: Page
   private isLaunched = false
+  private cookieManager?: CookieManager
 
   constructor(private auth?: AuthCredentials) {}
 
@@ -38,13 +41,11 @@ export class PlaywrightDriver implements BrowserDriver {
       blockResources = [],
     } = options
 
-    // Launch browser
     this.browser = await chromium.launch({
       headless,
       timeout,
     })
 
-    // Create page
     this.page = await this.browser.newPage({
       viewport,
       userAgent:
@@ -52,10 +53,8 @@ export class PlaywrightDriver implements BrowserDriver {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     })
 
-    // Set default timeout
     this.page.setDefaultTimeout(timeout)
 
-    // Block unnecessary resources for performance
     if (blockResources.length > 0) {
       await this.page.route('**/*', async (route) => {
         const resourceType = route.request().resourceType()
@@ -82,7 +81,7 @@ export class PlaywrightDriver implements BrowserDriver {
     this.ensureLaunched()
 
     await this.page!.goto(url, {
-      waitUntil: 'domcontentloaded', // Wait for DOM to be ready
+      waitUntil: 'domcontentloaded',
     })
   }
 
@@ -219,6 +218,10 @@ export class PlaywrightDriver implements BrowserDriver {
    * Close the browser
    */
   async close(): Promise<void> {
+    if (this.cookieManager && this.isLaunched) {
+      await this.cookieManager.autoSave(this)
+    }
+
     if (this.page) {
       await this.page.close()
       delete this.page
@@ -253,13 +256,12 @@ export class PlaywrightDriver implements BrowserDriver {
       return
     }
 
-    // Convert our cookie format to Playwright format
     const cookies: Cookie[] = this.auth.cookies.map((cookie) => ({
       name: cookie.name,
       value: cookie.value,
       domain: cookie.domain,
       path: cookie.path || '/',
-      expires: cookie.expires ? cookie.expires / 1000 : -1, // Playwright uses seconds
+      expires: cookie.expires ? cookie.expires / 1000 : -1,
       httpOnly: cookie.httpOnly || false,
       secure: cookie.secure || false,
       sameSite: 'Lax' as const,
@@ -320,7 +322,6 @@ export class PlaywrightDriver implements BrowserDriver {
           }
         }
       } catch {
-        // Try next selector
         continue
       }
     }
@@ -344,5 +345,19 @@ export class PlaywrightDriver implements BrowserDriver {
     } catch {
       return false
     }
+  }
+
+  /**
+   * Set cookie manager for auto-save functionality
+   */
+  setCookieManager(manager: CookieManager): void {
+    this.cookieManager = manager
+  }
+
+  /**
+   * Get cookie manager
+   */
+  getCookieManager(): CookieManager | undefined {
+    return this.cookieManager
   }
 }
