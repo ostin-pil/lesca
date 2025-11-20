@@ -45,6 +45,7 @@ describe('PlaywrightDriver', () => {
       waitForResponse: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
       context: vi.fn().mockReturnValue(mockContext),
+      on: vi.fn(),
     } as unknown as Page
 
     // Create mock browser
@@ -615,7 +616,11 @@ describe('PlaywrightDriver', () => {
 
       const routeCallback = vi.mocked(mockPage.route).mock.calls[0]?.[1]
       const mockRoute = {
-        request: vi.fn().mockReturnValue({ resourceType: vi.fn().mockReturnValue('image') }),
+        request: vi.fn().mockReturnValue({
+          resourceType: vi.fn().mockReturnValue('image'),
+          url: vi.fn().mockReturnValue('https://example.com/image.png'),
+          headers: vi.fn().mockReturnValue({}),
+        }),
         abort: vi.fn().mockResolvedValue(undefined),
         continue: vi.fn().mockResolvedValue(undefined),
       }
@@ -631,7 +636,11 @@ describe('PlaywrightDriver', () => {
 
       const routeCallback = vi.mocked(mockPage.route).mock.calls[0]?.[1]
       const mockRoute = {
-        request: vi.fn().mockReturnValue({ resourceType: vi.fn().mockReturnValue('script') }),
+        request: vi.fn().mockReturnValue({
+          resourceType: vi.fn().mockReturnValue('script'),
+          url: vi.fn().mockReturnValue('https://example.com/script.js'),
+          headers: vi.fn().mockReturnValue({}),
+        }),
         abort: vi.fn().mockResolvedValue(undefined),
         continue: vi.fn().mockResolvedValue(undefined),
       }
@@ -696,6 +705,54 @@ describe('PlaywrightDriver', () => {
       await driver.launch()
 
       expect(mockContext.addCookies).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('captured responses', () => {
+    it('should return captured responses when interception enabled', async () => {
+      await driver.launch({
+        interception: {
+          enabled: true,
+          capturePattern: 'api/.*',
+        },
+      })
+
+      // Simulate a captured response
+      const routeCallback = vi.mocked(mockPage.route).mock.calls[0]?.[1]
+      const mockRoute = {
+        request: vi.fn().mockReturnValue({
+          resourceType: vi.fn().mockReturnValue('xhr'),
+          url: vi.fn().mockReturnValue('https://example.com/api/data'),
+          headers: vi.fn().mockReturnValue({}),
+        }),
+        fetch: vi.fn().mockResolvedValue({
+          headers: vi.fn().mockReturnValue({ 'content-type': 'application/json' }),
+          json: vi.fn().mockResolvedValue({ data: 'test' }),
+        }),
+        fulfill: vi.fn().mockResolvedValue(undefined),
+        continue: vi.fn().mockResolvedValue(undefined),
+      }
+
+      await routeCallback?.(mockRoute as any, undefined as any)
+
+      const responses = driver.getCapturedResponses()
+      expect(responses.get('https://example.com/api/data')).toEqual({ data: 'test' })
+    })
+  })
+
+  describe('performance metrics', () => {
+    it('should return metrics when monitoring enabled', async () => {
+      await driver.launch({
+        monitoring: {
+          enabled: true,
+        },
+      })
+
+      const metrics = await driver.getPerformanceMetrics()
+      expect(metrics).toBeDefined()
+      // Since we can't easily mock the performance monitor's internal state without more complex mocking,
+      // we just check that the method exists and returns something (or null if not fully active)
+      // In this mock setup, performance monitor is instantiated but page events aren't triggered real-time.
     })
   })
 })

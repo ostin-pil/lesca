@@ -42,13 +42,10 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     const problemRequest = request as ProblemScrapeRequest
 
     try {
-      // Fetch problem from GraphQL
       const problem = await this.graphqlClient.getProblem(problemRequest.titleSlug)
 
-      // Validate problem data
       this.validateProblem(problem)
 
-      // Return raw data
       return {
         type: 'problem',
         data: problem,

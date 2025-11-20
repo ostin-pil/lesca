@@ -34,6 +34,7 @@ export {
   RateLimitError,
   StorageError,
   BrowserError,
+  BrowserTimeoutError,
   ScrapingError,
   ParsingError,
   ValidationError,

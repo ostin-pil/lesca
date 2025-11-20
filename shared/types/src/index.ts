@@ -638,6 +638,16 @@ export interface BrowserLaunchOptions {
   }
   userAgent?: string
   blockResources?: string[] // e.g., ['image', 'font', 'media']
+  interception?: {
+    enabled?: boolean
+    blockResources?: string[]
+    captureResponses?: boolean
+    capturePattern?: string
+  }
+  monitoring?: {
+    enabled?: boolean
+    logMetrics?: boolean
+  }
 }
 
 // ============================================================================

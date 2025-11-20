@@ -7,11 +7,13 @@ import type {
   BrowserLaunchOptions,
   AuthCredentials,
 } from '@/shared/types/src/index.js'
-import { BrowserError } from '@lesca/error'
+import { BrowserError, BrowserTimeoutError } from '@lesca/error'
+import { logger } from '@/shared/utils/src/index.js'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
 import type { CookieManager } from './cookie-manager.js'
-
+import { RequestInterceptor } from './interceptor.js'
+import { PerformanceMonitor, type PerformanceMetrics } from './performance.js'
 
 /**
  * Playwright browser driver
@@ -22,6 +24,8 @@ export class PlaywrightDriver implements BrowserDriver {
   private page?: Page
   private isLaunched = false
   private cookieManager?: CookieManager
+  private interceptor?: RequestInterceptor
+  private performanceMonitor?: PerformanceMonitor
 
   constructor(private auth?: AuthCredentials) {}
 
@@ -39,50 +43,82 @@ export class PlaywrightDriver implements BrowserDriver {
       viewport = { width: 1920, height: 1080 },
       userAgent,
       blockResources = [],
+      interception,
     } = options
 
-    this.browser = await chromium.launch({
-      headless,
-      timeout,
-    })
-
-    this.page = await this.browser.newPage({
-      viewport,
-      userAgent:
-        userAgent ||
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    })
-
-    this.page.setDefaultTimeout(timeout)
-
-    if (blockResources.length > 0) {
-      await this.page.route('**/*', async (route) => {
-        const resourceType = route.request().resourceType()
-        if (blockResources.includes(resourceType)) {
-          await route.abort()
-        } else {
-          await route.continue()
-        }
+    try {
+      this.browser = await chromium.launch({
+        headless,
+        timeout,
       })
-    }
 
-    // Inject authentication cookies if provided
-    if (this.auth) {
-      await this.injectCookies()
-    }
+      this.page = await this.browser.newPage({
+        viewport,
+        userAgent:
+          userAgent ||
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      })
 
-    this.isLaunched = true
+      this.page.setDefaultTimeout(timeout)
+
+      // Setup Interceptor
+      if (interception?.enabled || blockResources.length > 0) {
+        this.interceptor = new RequestInterceptor({
+          blockResources: [...blockResources, ...(interception?.blockResources || [])],
+          capturePattern: interception?.capturePattern ? new RegExp(interception.capturePattern) : undefined,
+          captureResponses: interception?.captureResponses,
+        } as any) // Cast to any to match internal options if needed, or update interface
+        await this.interceptor.attach(this.page)
+      }
+
+      // Setup Performance Monitor
+      if (options.monitoring?.enabled) {
+        this.performanceMonitor = new PerformanceMonitor()
+        await this.performanceMonitor.startMonitoring(this.page)
+      }
+
+      // Inject authentication cookies if provided
+      if (this.auth) {
+        await this.injectCookies()
+      }
+
+      this.isLaunched = true
+    } catch (error) {
+      throw new BrowserError(
+        'BROWSER_LAUNCH_FAILED',
+        'Failed to launch browser',
+        { cause: error as Error }
+      )
+    }
   }
 
   /**
-   * Navigate to a URL
+   * Navigate to a URL with retry logic
    */
-  async navigate(url: string): Promise<void> {
+  async navigate(url: string, retries = 3): Promise<void> {
     this.ensureLaunched()
 
-    await this.page!.goto(url, {
-      waitUntil: 'domcontentloaded',
-    })
+    let lastError: Error | undefined
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await this.page!.goto(url, {
+          waitUntil: 'domcontentloaded',
+        })
+        return
+      } catch (error) {
+        lastError = error as Error
+        logger.warn(`Navigation failed (attempt ${attempt}/${retries}): ${url}`, { error })
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+        }
+      }
+    }
+
+    throw new BrowserError(
+      'BROWSER_NAVIGATION_FAILED',
+      `Failed to navigate to ${url} after ${retries} attempts`,
+      { cause: lastError instanceof Error ? lastError : undefined, context: { url } }
+    )
   }
 
   /**
@@ -91,10 +127,17 @@ export class PlaywrightDriver implements BrowserDriver {
   async waitForSelector(selector: string, timeout?: number): Promise<void> {
     this.ensureLaunched()
 
-    await this.page!.waitForSelector(selector, {
-      timeout: timeout || 30000,
-      state: 'visible',
-    })
+    try {
+      await this.page!.waitForSelector(selector, {
+        timeout: timeout || 30000,
+        state: 'visible',
+      })
+    } catch (error) {
+      throw new BrowserTimeoutError(
+        `Timeout waiting for selector: ${selector}`,
+        { cause: error instanceof Error ? error : undefined, context: { selector, timeout } }
+      )
+    }
   }
 
   /**
@@ -103,17 +146,20 @@ export class PlaywrightDriver implements BrowserDriver {
   async extractContent(selector: string): Promise<string> {
     this.ensureLaunched()
 
-    const element = await this.page!.waitForSelector(selector)
-    if (!element) {
+    try {
+      const element = await this.page!.waitForSelector(selector)
+      if (!element) {
+        throw new Error('Element not found')
+      }
+      const content = await element.textContent()
+      return content || ''
+    } catch (error) {
       throw new BrowserError(
         'BROWSER_SELECTOR_NOT_FOUND',
         `Element not found: ${selector}`,
-        { context: { selector } }
+        { cause: error as Error, context: { selector } }
       )
     }
-
-    const content = await element.textContent()
-    return content || ''
   }
 
   /**
@@ -154,17 +200,19 @@ export class PlaywrightDriver implements BrowserDriver {
   async getHtml(selector: string): Promise<string> {
     this.ensureLaunched()
 
-    const element = await this.page!.waitForSelector(selector)
-    if (!element) {
+    try {
+      const element = await this.page!.waitForSelector(selector)
+      if (!element) {
+        throw new Error('Element not found')
+      }
+      return await element.innerHTML()
+    } catch (error) {
       throw new BrowserError(
         'BROWSER_SELECTOR_NOT_FOUND',
         `Element not found: ${selector}`,
-        { context: { selector } }
+        { cause: error as Error, context: { selector } }
       )
     }
-
-    const html = await element.innerHTML()
-    return html
   }
 
   /**
@@ -218,6 +266,10 @@ export class PlaywrightDriver implements BrowserDriver {
    * Close the browser
    */
   async close(): Promise<void> {
+    if (this.performanceMonitor) {
+      await this.performanceMonitor.stopMonitoring()
+    }
+
     if (this.cookieManager && this.isLaunched) {
       await this.cookieManager.autoSave(this)
     }
@@ -359,5 +411,28 @@ export class PlaywrightDriver implements BrowserDriver {
    */
   getCookieManager(): CookieManager | undefined {
     return this.cookieManager
+  }
+
+  /**
+   * Get captured responses from interceptor
+   */
+  getCapturedResponses(): Map<string, unknown> {
+    return this.interceptor ? this.interceptor.getCapturedResponses() : new Map()
+  }
+
+  /**
+   * Clear captured responses
+   */
+  clearCapturedResponses(): void {
+    if (this.interceptor) {
+      this.interceptor.clearCapturedResponses()
+    }
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics(): PerformanceMetrics | undefined {
+    return this.performanceMonitor ? this.performanceMonitor.getMetrics() : undefined
   }
 }

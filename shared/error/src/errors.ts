@@ -12,16 +12,10 @@
 import type { ErrorCode, ErrorCategory, ErrorRecovery } from './codes.js'
 import { getErrorMetadata } from './codes.js'
 
-/**
- * Context data attached to errors
- */
 export interface ErrorContext {
   [key: string]: unknown
 }
 
-/**
- * Base error class for all Lesca errors
- */
 export class LescaError extends Error {
   public readonly code: ErrorCode
   public readonly category: ErrorCategory
@@ -52,50 +46,31 @@ export class LescaError extends Error {
     this.context = options?.context ?? {}
     this.timestamp = new Date()
 
-    // Maintain proper stack trace
     Error.captureStackTrace(this, this.constructor)
   }
 
-  /**
-   * Check if this error is recoverable
-   */
   isRecoverable(): boolean {
     return this.recovery === 'recoverable'
   }
 
-  /**
-   * Check if this error requires user action
-   */
   requiresUserAction(): boolean {
     return this.recovery === 'user-action'
   }
 
-  /**
-   * Check if this error is fatal
-   */
   isFatal(): boolean {
     return this.recovery === 'fatal'
   }
 
-  /**
-   * Get help text for resolving this error
-   */
   getResolution(): readonly string[] {
     const metadata = getErrorMetadata(this.code)
     return metadata.resolution
   }
 
-  /**
-   * Get common causes for this error
-   */
   getCommonCauses(): readonly string[] {
     const metadata = getErrorMetadata(this.code)
     return metadata.commonCauses
   }
 
-  /**
-   * Convert to JSON for logging
-   */
   toJSON(): Record<string, unknown> {
     return {
       name: this.name,
@@ -111,9 +86,6 @@ export class LescaError extends Error {
     }
   }
 
-  /**
-   * Get user-friendly error message with resolution hints
-   */
   getUserMessage(): string {
     const resolutions = this.getResolution()
     const resolutionText =
@@ -125,9 +97,6 @@ export class LescaError extends Error {
   }
 }
 
-/**
- * Authentication error
- */
 export class AuthError extends LescaError {
   constructor(
     code: Extract<
@@ -145,9 +114,6 @@ export class AuthError extends LescaError {
   }
 }
 
-/**
- * Network/API error
- */
 export class NetworkError extends LescaError {
   constructor(
     code: Extract<
@@ -162,9 +128,6 @@ export class NetworkError extends LescaError {
   }
 }
 
-/**
- * GraphQL error
- */
 export class GraphQLError extends LescaError {
   constructor(
     code: Extract<ErrorCode, 'GQL_QUERY_FAILED' | 'GQL_INVALID_RESPONSE'>,
@@ -176,9 +139,6 @@ export class GraphQLError extends LescaError {
   }
 }
 
-/**
- * Rate limit error (special case of NetworkError)
- */
 export class RateLimitError extends NetworkError {
   public readonly retryAfter: number | undefined
 
@@ -198,9 +158,6 @@ export class RateLimitError extends NetworkError {
   }
 }
 
-/**
- * Storage error
- */
 export class StorageError extends LescaError {
   constructor(
     code: Extract<
@@ -215,9 +172,6 @@ export class StorageError extends LescaError {
   }
 }
 
-/**
- * Browser automation error
- */
 export class BrowserError extends LescaError {
   constructor(
     code: Extract<
@@ -226,12 +180,23 @@ export class BrowserError extends LescaError {
       | 'BROWSER_NAVIGATION_FAILED'
       | 'BROWSER_SELECTOR_NOT_FOUND'
       | 'BROWSER_CRASH'
+      | 'BROWSER_TIMEOUT'
     >,
     message?: string,
     options?: { cause?: Error; context?: ErrorContext }
   ) {
     super(code, message, options)
     this.name = 'BrowserError'
+  }
+}
+
+export class BrowserTimeoutError extends BrowserError {
+  constructor(
+    message?: string,
+    options?: { cause?: Error; context?: ErrorContext }
+  ) {
+    super('BROWSER_TIMEOUT', message, options)
+    this.name = 'BrowserTimeoutError'
   }
 }
 

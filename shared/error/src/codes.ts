@@ -316,6 +316,23 @@ export const ERROR_CODES = {
     ],
   },
 
+  BROWSER_TIMEOUT: {
+    code: 'BROWSER_TIMEOUT',
+    category: 'browser' as ErrorCategory,
+    recovery: 'recoverable' as ErrorRecovery,
+    description: 'Browser operation timed out',
+    commonCauses: [
+      'Page took too long to load',
+      'Selector not found within timeout',
+      'Script execution timed out',
+    ],
+    resolution: [
+      'Increase timeout duration',
+      'Check network speed',
+      'Verify page structure',
+    ],
+  },
+
   BROWSER_SELECTOR_NOT_FOUND: {
     code: 'BROWSER_SELECTOR_NOT_FOUND',
     category: 'browser' as ErrorCategory,

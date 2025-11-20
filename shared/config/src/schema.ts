@@ -11,6 +11,9 @@ const AuthConfigSchema = z.object({
   cookiePath: z.string().optional(),
   sessionTimeout: z.number().min(0).default(3600),
   autoRefresh: z.boolean().default(true),
+  autoSave: z.boolean().default(true),
+  validateOnLoad: z.boolean().default(true),
+  secureStorage: z.enum(['keytar', 'file']).default('file'),
 })
 
 // API configuration
@@ -104,6 +107,22 @@ const BrowserConfigSchema = z.object({
     maxSize: z.number().min(1).default(3),
     maxIdleTime: z.number().default(300000), // 5 minutes
     reusePages: z.boolean().default(true),
+  }).default({}),
+  interception: z.object({
+    enabled: z.boolean().default(true),
+    blockResources: z.array(z.string()).default(['image', 'font', 'media']),
+    captureResponses: z.boolean().default(false),
+    capturePattern: z.string().optional(),
+  }).default({}),
+  retry: z.object({
+    enabled: z.boolean().default(true),
+    maxAttempts: z.number().min(1).default(3),
+    backoff: z.enum(['linear', 'exponential']).default('exponential'),
+    initialDelay: z.number().default(1000),
+  }).default({}),
+  monitoring: z.object({
+    enabled: z.boolean().default(false),
+    logMetrics: z.boolean().default(false),
   }).default({}),
 })
 
