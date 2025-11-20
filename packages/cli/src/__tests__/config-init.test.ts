@@ -75,8 +75,7 @@ describe('Configuration Initialization', () => {
       const config = createDefaultConfig()
       const yaml = exportConfigToYaml(config)
 
-      // Should have proper YAML structure
-      expect(yaml).toMatch(/^storage:\s*$/m)
+            expect(yaml).toMatch(/^storage:\s*$/m)
       expect(yaml).toMatch(/^\s+path:/m)
       expect(yaml).toMatch(/^output:\s*$/m)
       expect(yaml).toMatch(/^\s+format:/m)
@@ -86,12 +85,10 @@ describe('Configuration Initialization', () => {
       const config = createDefaultConfig()
       const yaml = exportConfigToYaml(config)
 
-      // Write to temp file
-      const configPath = join(tempDir, 'test-config.yaml')
+            const configPath = join(tempDir, 'test-config.yaml')
       writeFileSync(configPath, yaml, 'utf-8')
 
-      // Should be able to parse it back
-      const manager = ConfigManager.initialize({ configPath })
+            const manager = ConfigManager.initialize({ configPath })
       const loadedConfig = manager.getConfig()
 
       expect(loadedConfig.storage.path).toBeDefined()
@@ -127,9 +124,7 @@ describe('Configuration Initialization', () => {
       const configPath = join(tempDir, 'invalid-config.yaml')
       writeFileSync(configPath, 'invalid: yaml: content: [[[', 'utf-8')
 
-      // ConfigManager may throw or fall back to defaults
-      // depending on implementation
-      try {
+            try {
         const manager = ConfigManager.initialize({ configPath })
         const config = manager.getConfig()
         expect(config).toBeDefined()
@@ -141,8 +136,7 @@ describe('Configuration Initialization', () => {
     it('should handle non-existent config file gracefully', () => {
       const configPath = join(tempDir, 'non-existent.yaml')
 
-      // ConfigManager may throw or fall back to defaults
-      try {
+            try {
         const manager = ConfigManager.initialize({ configPath })
         const config = manager.getConfig()
         expect(config).toBeDefined()
@@ -156,8 +150,7 @@ describe('Configuration Initialization', () => {
     it('should prevent overwriting existing config without force flag', () => {
       const configPath = join(tempDir, 'existing-config.yaml')
 
-      // Create existing config
-      const config = createDefaultConfig()
+            const config = createDefaultConfig()
       const yaml = exportConfigToYaml(config)
       writeFileSync(configPath, yaml, 'utf-8')
 
@@ -172,19 +165,16 @@ describe('Configuration Initialization', () => {
     it('should allow overwriting with force flag', () => {
       const configPath = join(tempDir, 'existing-config.yaml')
 
-      // Create existing config
-      const config1 = createDefaultConfig()
+            const config1 = createDefaultConfig()
       config1.storage.path = '/old/path'
       const yaml1 = exportConfigToYaml(config1)
       writeFileSync(configPath, yaml1, 'utf-8')
 
-      // Create new config with different values
-      const config2 = createDefaultConfig()
+            const config2 = createDefaultConfig()
       config2.storage.path = '/new/path'
       const yaml2 = exportConfigToYaml(config2)
 
-      // Overwrite (simulating force flag)
-      writeFileSync(configPath, yaml2, 'utf-8')
+            writeFileSync(configPath, yaml2, 'utf-8')
 
       // Load and verify
       const manager = ConfigManager.initialize({ configPath })
@@ -240,8 +230,7 @@ describe('Configuration Initialization', () => {
     it('should validate output format', () => {
       const config = createDefaultConfig()
 
-      // Valid formats
-      config.output.format = 'markdown'
+            config.output.format = 'markdown'
       expect(config.output.format).toBe('markdown')
 
       config.output.format = 'obsidian'
@@ -251,8 +240,7 @@ describe('Configuration Initialization', () => {
     it('should validate auth method', () => {
       const config = createDefaultConfig()
 
-      // Valid methods
-      config.auth.method = 'cookie'
+            config.auth.method = 'cookie'
       expect(config.auth.method).toBe('cookie')
 
       config.auth.method = 'none'

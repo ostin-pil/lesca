@@ -98,7 +98,6 @@ describe('CLI Helpers', () => {
       handleCliError('Operation failed', error, true)
 
       expect(logger.error).toHaveBeenCalledWith('Operation failed', error)
-      // Should not call log if no stack trace
       expect(logger.log).not.toHaveBeenCalled()
     })
 
@@ -199,7 +198,7 @@ describe('CLI Helpers', () => {
 
     it('should throw error for invalid number', () => {
       expect(() => parseNumber('abc', 'count')).toThrow('count must be a valid number, got: abc')
-      expect(parseNumber('12.5', 'count')).toBe(12) // parseInt truncates
+      expect(parseNumber('12.5', 'count')).toBe(12)
       expect(() => parseNumber('', 'count')).toThrow('count must be a valid number')
     })
   })

@@ -6,7 +6,7 @@ import { resolve , dirname } from 'path'
 
 import { GraphQLClient, RateLimiter } from '@/packages/api-client/src/index.js'
 import { CookieFileAuth } from '@/packages/auth/src/index.js'
-import { PlaywrightDriver } from '@/packages/browser-automation/src/index.js'
+import { PlaywrightDriver, CookieManager, AuthHelper } from '@/packages/browser-automation/src/index.js'
 import {
   LeetCodeScraper,
   BatchScraper,
@@ -101,6 +101,14 @@ interface InitOptions {
   force?: boolean
 }
 
+interface LoginOptions {
+  username?: string
+  password?: string
+  cookiePath?: string
+  headless?: boolean
+  manual?: boolean
+}
+
 /**
  * Global configuration instance
  * Will be initialized before each command runs
@@ -150,10 +158,8 @@ program
   .option('--config <path>', 'Path to configuration file')
   .option('--debug', 'Enable debug mode with verbose logging')
   .hook('preAction', (thisCommand) => {
-    // Initialize config before any command runs
     const opts = thisCommand.optsWithGlobals<{ config?: string; debug?: boolean }>()
 
-    // Enable debug logging if requested
     if (opts.debug) {
       logger.setConfig({
         level: 'debug',
@@ -184,17 +190,14 @@ program
       const configPath = resolve(options.configPath)
       const paths = getDefaultPaths()
 
-      // Check if config already exists
       if (existsSync(configPath) && options.force !== true) {
         spinner.fail(chalk.red(`Configuration already exists at ${configPath}`))
         logger.warn(chalk.yellow('Use --force to overwrite'))
         process.exit(1)
       }
 
-      // Create default configuration
       const config = createDefaultConfig()
 
-      // Apply user preferences
       if (options.cookiePath) {
         config.auth.cookiePath = resolve(options.cookiePath)
       }
@@ -205,33 +208,28 @@ program
         config.output.format = options.format as 'markdown' | 'obsidian'
       }
 
-      // Create necessary directories
       const lescaDir = paths.lescaDir
       if (!existsSync(lescaDir)) {
         mkdirSync(lescaDir, { recursive: true })
         spinner.text = `Created directory: ${lescaDir}`
       }
 
-      // Create cache directory
       const cacheDir = paths.cacheDir
       if (!existsSync(cacheDir)) {
         mkdirSync(cacheDir, { recursive: true })
         spinner.text = `Created cache directory: ${cacheDir}`
       }
 
-      // Ensure config directory exists
       const configDir = dirname(configPath)
       if (!existsSync(configDir)) {
         mkdirSync(configDir, { recursive: true })
       }
 
-      // Write configuration file
       const yamlContent = exportConfigToYaml(config)
       writeFileSync(configPath, yamlContent, 'utf-8')
 
       spinner.succeed(chalk.green(`Configuration created at ${configPath}`))
 
-      // Create example cookie file if it doesn't exist
       const cookieExamplePath = resolve(lescaDir, 'cookies.example.json')
       if (!existsSync(cookieExamplePath)) {
         const exampleCookies = JSON.stringify([
@@ -260,7 +258,6 @@ program
         logger.log(chalk.gray(`Example cookie file created at ${cookieExamplePath}`))
       }
 
-      // Print next steps
       logger.log('\n' + chalk.bold('Next steps:'))
       logger.log(chalk.cyan('1. Copy your LeetCode cookies to:'), paths.cookieFile)
       logger.log(chalk.cyan('2. Start scraping:'), 'lesca scrape two-sum')
@@ -269,6 +266,149 @@ program
     } catch (error) {
       spinner.fail(chalk.red('Failed to initialize configuration'))
       handleCliError('Failed to initialize configuration', error)
+      process.exit(1)
+    }
+  })
+
+/**
+ * Interactive login to LeetCode
+ */
+program
+  .command('login')
+  .description('Interactive login to LeetCode and save authentication cookies')
+  .option('-u, --username <username>', 'LeetCode username or email')
+  .option('-p, --password <password>', 'LeetCode password (not recommended, use prompt instead)')
+  .option('-c, --cookie-path <path>', 'Path to save cookies (overrides config)')
+  .option('--no-headless', 'Run browser in visible mode (useful for CAPTCHA)')
+  .option('--manual', 'Wait for manual login (for CAPTCHA/2FA scenarios)')
+  .action(async (options: LoginOptions) => {
+    const spinner = ora('Initializing login...').start()
+
+    let driver: PlaywrightDriver | undefined
+
+    try {
+      // Get configuration
+      const config = configManager.getConfig()
+      const paths = getDefaultPaths()
+
+      // Determine cookie save path
+      const cookiePath = options.cookiePath || config.auth.cookiePath || paths.cookieFile
+
+      // Determine if headless
+      const headless = options.headless !== false && config.browser.headless
+
+      // Initialize browser driver
+      driver = new PlaywrightDriver()
+      const cookieManager = new CookieManager()
+      const authHelper = new AuthHelper(driver, cookieManager)
+
+      spinner.text = 'Launching browser...'
+      await driver.launch({
+        headless,
+        timeout: config.browser.timeout,
+      })
+
+      spinner.succeed('Browser launched')
+
+      if (options.manual) {
+        logger.log(chalk.yellow('\nManual login mode:'))
+        logger.log(chalk.cyan('1. A browser window will open'))
+        logger.log(chalk.cyan('2. Complete the login process manually (including CAPTCHA/2FA)'))
+        logger.log(chalk.cyan('3. Wait for automatic cookie detection'))
+        logger.log()
+
+        spinner.start('Waiting for manual login...')
+
+        const result = await authHelper.waitForManualLogin()
+
+        if (result.success) {
+          spinner.succeed(chalk.green('Login successful!'))
+
+          await cookieManager.saveCookies(driver, cookiePath)
+          logger.log(chalk.green(`✓ Cookies saved to: ${cookiePath}`))
+          logger.log()
+          logger.log(chalk.bold('Next steps:'))
+          logger.log(chalk.cyan('You can now run scraping commands with authentication'))
+        } else {
+          spinner.fail(chalk.red('Manual login failed or timed out'))
+          logger.error(result.message || 'Login failed')
+          process.exit(1)
+        }
+      } else {
+        // Interactive login with credentials
+        const username = options.username
+        const password = options.password
+
+        // Prompt for credentials if not provided
+        if (!username || !password) {
+          spinner.stop()
+
+          if (!username) {
+            logger.error(chalk.red('Username required. Use --username option or --manual for manual login'))
+            process.exit(1)
+          }
+          if (!password) {
+            logger.error(chalk.red('Password required. Use --password option or --manual for manual login'))
+            logger.warn(chalk.yellow('Note: For security, consider using --manual mode instead of passing password as argument'))
+            process.exit(1)
+          }
+        }
+
+        spinner.start('Logging in to LeetCode...')
+
+        const result = await authHelper.login(
+          {
+            username: username,
+            password: password,
+          },
+          {
+            saveCookies: true,
+            cookiePath: cookiePath,
+            timeout: 60000,
+          }
+        )
+
+        if (result.success) {
+          spinner.succeed(chalk.green('Login successful!'))
+          logger.log(chalk.green(`✓ Cookies saved to: ${cookiePath}`))
+          logger.log()
+          logger.log(chalk.bold('Next steps:'))
+          logger.log(chalk.cyan('You can now run scraping commands with authentication'))
+        } else {
+          spinner.fail(chalk.red('Login failed'))
+
+          if (result.state === 'captcha') {
+            logger.error(chalk.red('CAPTCHA detected'))
+            logger.log()
+            logger.log(chalk.yellow('Try again with manual mode:'))
+            logger.log(chalk.cyan('  lesca login --manual --no-headless'))
+          } else if (result.state === 'rate-limited') {
+            logger.error(chalk.red('Rate limited by LeetCode'))
+            logger.log(chalk.yellow('Please wait a few minutes and try again'))
+          } else {
+            logger.error(result.message || 'Login failed. Please check your credentials.')
+          }
+
+          process.exit(1)
+        }
+      }
+
+      if (driver) {
+        await driver.close()
+      }
+    } catch (error) {
+      spinner.fail(chalk.red('Login failed'))
+      handleCliError('Login failed with error', error)
+
+      // Clean up
+      if (driver) {
+        try {
+          await driver.close()
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+
       process.exit(1)
     }
   })
@@ -290,7 +430,6 @@ program
     const spinner = ora('Initializing...').start()
 
     try {
-      // Get configuration
       const config = configManager.getConfig()
 
       // Merge CLI options with config (CLI options take precedence)
@@ -319,7 +458,6 @@ program
 
       // 2. Set up cache (if enabled)
       if (cacheEnabled && cacheDir) {
-        // Cache setup here if needed by other components
         spinner.info('Cache enabled')
       }
 
@@ -398,7 +536,6 @@ program
     const spinner = ora('Initializing...').start()
 
     try {
-      // Get configuration
       const config = configManager.getConfig()
 
       // Merge CLI options with config (CLI options take precedence)
@@ -425,7 +562,6 @@ program
 
       // 2. Set up cache (if enabled)
       if (cacheEnabled && cacheDir) {
-        // Cache setup here if needed by other components
         spinner.info('Cache enabled')
       }
 
@@ -597,7 +733,6 @@ program
     const spinner = ora('Initializing browser automation...').start()
 
     try {
-      // Get configuration
       const config = configManager.getConfig()
 
       // Merge CLI options with config (CLI options take precedence)
@@ -716,7 +851,6 @@ program
     const spinner = ora('Initializing browser automation...').start()
 
     try {
-      // Get configuration
       const config = configManager.getConfig()
 
       // Merge CLI options with config (CLI options take precedence)
@@ -817,5 +951,4 @@ program
     }
   })
 
-// Parse arguments
 program.parse()

@@ -27,7 +27,7 @@ describe('CLI Application', () => {
 
     beforeEach(() => {
       program = new Command()
-      program.exitOverride() // Prevent actual process exit
+      program.exitOverride()
 
       program
         .command('scrape')
@@ -50,8 +50,6 @@ describe('CLI Application', () => {
 
     it('should have required problem argument', () => {
       const scrapeCommand = program.commands.find((cmd) => cmd.name() === 'scrape')
-      // Commander doesn't populate args until parse() is called
-      // We verify the command exists and has been configured
       expect(scrapeCommand).toBeDefined()
     })
 
@@ -197,7 +195,6 @@ describe('CLI Application', () => {
 
     it('should require problem argument', () => {
       const editorialCommand = program.commands.find((cmd) => cmd.name() === 'scrape-editorial')
-      // Commander doesn't populate args until parse() is called
       expect(editorialCommand).toBeDefined()
     })
   })
@@ -384,7 +381,6 @@ describe('CLI Application', () => {
         .command('test')
         .argument('<required>', 'A required argument')
 
-      // Verify the command was created successfully
       expect(cmd).toBeDefined()
       expect(cmd.name()).toBe('test')
     })
@@ -397,7 +393,6 @@ describe('CLI Application', () => {
         .command('test')
         .argument('[optional]', 'An optional argument')
 
-      // Verify the command was created successfully
       expect(cmd).toBeDefined()
       expect(cmd.name()).toBe('test')
     })

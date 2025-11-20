@@ -20,7 +20,6 @@ export function initializeConfig(
     const opts = configPath ? { configPath } : {}
     return ConfigManagerClass.initialize(opts)
   } catch (error) {
-    // If config loading fails, use defaults
     logger.warn('Could not load config file, using defaults')
     return ConfigManagerClass.initialize({})
   }
@@ -33,7 +32,6 @@ export function handleCliError(message: string, error?: unknown, debug?: boolean
   if (error instanceof Error) {
     logger.error(message, error)
 
-    // In debug mode, show stack trace
     if (debug && error.stack) {
       logger.log(chalk.gray('\nStack trace:'))
       logger.log(chalk.gray(error.stack))
@@ -141,7 +139,6 @@ export function validateProblemSlug(slug: string): string {
     throw new Error('Problem slug cannot be empty')
   }
 
-  // Basic validation: should be lowercase with hyphens
   if (!/^[a-z0-9-]+$/.test(trimmed)) {
     throw new Error(
       `Invalid problem slug format: ${slug}. Should be lowercase with hyphens (e.g., "two-sum")`
