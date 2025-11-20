@@ -35,19 +35,16 @@ export class FileSystemStorage implements StorageAdapter {
     try {
       const filePath = join(this.basePath, key)
 
-      // Create directory if needed
       if (this.options.createDirs) {
         await this.ensureDirectory(dirname(filePath))
       }
 
-      // Write content
       if (this.options.atomicWrites) {
         await this.atomicWrite(filePath, content)
       } else {
         await writeFile(filePath, content, this.options.encoding)
       }
 
-      // Save metadata if provided
       if (metadata) {
         const metaPath = this.getMetadataPath(filePath)
         await writeFile(metaPath, JSON.stringify(metadata, null, 2), 'utf-8')
@@ -67,7 +64,6 @@ export class FileSystemStorage implements StorageAdapter {
     try {
       const filePath = join(this.basePath, key)
 
-      // Check if file exists
       if (!(await this.exists(key))) {
         return null
       }
@@ -103,17 +99,16 @@ export class FileSystemStorage implements StorageAdapter {
       const filePath = join(this.basePath, key)
 
       if (!(await this.exists(key))) {
-        return // Already deleted
+        return
       }
 
       await unlink(filePath)
 
-      // Delete metadata file if exists
       const metaPath = this.getMetadataPath(filePath)
       try {
         await unlink(metaPath)
       } catch {
-        // Ignore if metadata doesn't exist
+        // Ignore cleanup errors - metadata deletion is not critical
       }
     } catch (error) {
       throw new StorageError(
@@ -135,7 +130,6 @@ export class FileSystemStorage implements StorageAdapter {
         return files
       }
 
-      // Simple pattern matching (* wildcard)
       const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$')
 
       return files.filter((file) => regex.test(file))
@@ -158,7 +152,7 @@ export class FileSystemStorage implements StorageAdapter {
       try {
         await access(metaPath)
       } catch {
-        return null // No metadata file
+        return null
       }
 
       const content = await readFile(metaPath, 'utf-8')
@@ -207,10 +201,8 @@ export class FileSystemStorage implements StorageAdapter {
     const tempPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`
 
     try {
-      // Write to temp file
       await writeFile(tempPath, content, this.options.encoding)
 
-      // Rename to final path (atomic operation)
       await this.rename(tempPath, filePath)
     } catch (error) {
       // Clean up temp file if it exists
@@ -258,21 +250,15 @@ export class FileSystemStorage implements StorageAdapter {
       const fullPath = join(dirPath, entry.name)
 
       if (entry.isDirectory()) {
-        // Skip hidden directories
         if (entry.name.startsWith('.')) {
           continue
         }
-
-        // Recurse into subdirectory
         const subFiles = await this.listRecursive(fullPath, baseDir)
         files.push(...subFiles)
       } else if (entry.isFile()) {
-        // Skip metadata files and hidden files
         if (entry.name.startsWith('.')) {
           continue
         }
-
-        // Get path relative to base
         const relativePath = fullPath.slice(baseDir.length + 1)
         files.push(relativePath)
       }

@@ -84,6 +84,19 @@ export function getDefaultConfig(): Config {
         height: 1080,
       },
       blockedResources: ['image', 'font', 'media'],
+      session: {
+        enabled: false,
+        name: 'default',
+        autoSave: true,
+        autoRestore: true,
+      },
+      pool: {
+        enabled: true,
+        minSize: 0,
+        maxSize: 3,
+        maxIdleTime: 300000,
+        reusePages: true,
+      },
     },
     cache: {
       enabled: true,

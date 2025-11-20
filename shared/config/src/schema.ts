@@ -92,6 +92,19 @@ const BrowserConfigSchema = z.object({
     height: z.number().min(240).default(1080),
   }).default({}),
   blockedResources: z.array(z.string()).default(['image', 'font', 'media']),
+  session: z.object({
+    enabled: z.boolean().default(false),
+    name: z.string().default('default'),
+    autoSave: z.boolean().default(true),
+    autoRestore: z.boolean().default(true),
+  }).default({}),
+  pool: z.object({
+    enabled: z.boolean().default(true),
+    minSize: z.number().min(0).default(0),
+    maxSize: z.number().min(1).default(3),
+    maxIdleTime: z.number().default(300000), // 5 minutes
+    reusePages: z.boolean().default(true),
+  }).default({}),
 })
 
 // Cache configuration
