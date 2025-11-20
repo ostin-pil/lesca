@@ -61,7 +61,6 @@ export class ObsidianConverter {
    * Generate YAML frontmatter for Obsidian
    */
   private generateFrontmatter(problem: Problem | ParsedProblem): ObsidianFrontmatter {
-    // Parse stats if available
     let stats: ProblemStats | null = null
     try {
       stats = problem.stats ? (JSON.parse(problem.stats) as ProblemStats) : null
@@ -69,7 +68,6 @@ export class ObsidianConverter {
       stats = null
     }
 
-    // Parse company tags if available
     let companies: string[] = []
     try {
       if (problem.companyTagStats) {
@@ -80,7 +78,6 @@ export class ObsidianConverter {
       // Ignore parsing errors
     }
 
-    // Parse similar questions
     let similarProblems: string[] = []
     try {
       if (problem.similarQuestions) {
@@ -138,10 +135,8 @@ export class ObsidianConverter {
   ): string {
     let content = markdown
 
-    // Add metadata section
     content = this.addMetadataSection(problem, content)
 
-    // Convert tags to Obsidian format if requested
     if (options?.tagPrefix) {
       content = this.formatTags(
         content,
@@ -150,12 +145,10 @@ export class ObsidianConverter {
       )
     }
 
-    // Convert links to wiki-links if requested
     if (options?.wikiLinks) {
       content = this.convertToWikiLinks(content)
     }
 
-    // Add backlinks section if requested
     if (options?.includeBacklinks) {
       content = this.addBacklinksSection(content, problem)
     }
@@ -169,18 +162,15 @@ export class ObsidianConverter {
   private addMetadataSection(problem: Problem, content: string): string {
     const metadata: string[] = []
 
-    // Add difficulty badge
     metadata.push(
       `**Difficulty:** ${this.getDifficultyEmoji(problem.difficulty)} ${problem.difficulty}`
     )
 
-    // Add tags
     if (problem.topicTags.length > 0) {
       const tags = problem.topicTags.map((t) => `\`${t.name}\``).join(' ')
       metadata.push(`**Tags:** ${tags}`)
     }
 
-    // Add stats
     try {
       const stats: ProblemStats | null = problem.stats ? (JSON.parse(problem.stats) as ProblemStats) : null
       if (stats) {
@@ -190,7 +180,6 @@ export class ObsidianConverter {
       // Ignore
     }
 
-    // Add LeetCode link
     metadata.push(`**LeetCode:** [Link](https://leetcode.com/problems/${problem.titleSlug}/)`)
 
     const metadataBlock = metadata.join('  \n') + '\n\n---\n\n'
@@ -220,27 +209,16 @@ export class ObsidianConverter {
     return emojiMap[difficulty] || '⚪'
   }
 
-  /**
-   * Format tags as Obsidian tags
-   */
   private formatTags(content: string, tags: string[], prefix: string): string {
     const tagSection = '\n\n## Tags\n\n' + tags.map((tag) => `#${prefix}/${tag}`).join(' ') + '\n'
 
     return content + tagSection
   }
 
-  /**
-   * Convert markdown links to wiki-links
-   * [Text](url) → [[url|Text]]
-   */
   private convertToWikiLinks(content: string): string {
-    // Only convert internal links (titleSlugs)
     return content.replace(/\[([^\]]+)\]\(\/problems\/([^)]+)\/?\)/g, '[[$2|$1]]')
   }
 
-  /**
-   * Add backlinks section for similar problems
-   */
   private addBacklinksSection(content: string, problem: Problem): string {
     if (!problem.similarQuestions) {
       return content

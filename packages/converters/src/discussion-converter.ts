@@ -55,11 +55,9 @@ export class DiscussionConverter implements Converter {
 
     const sections: string[] = []
 
-    // Title
     sections.push(`# Discussions: ${this.formatTitle(discussionList.titleSlug)}`)
     sections.push('')
 
-    // Metadata
     sections.push(`**Category**: ${discussionList.category}`)
     sections.push(`**Sort**: ${discussionList.sortBy}`)
     sections.push(`**Total**: ${discussionList.total} discussions`)
@@ -67,7 +65,6 @@ export class DiscussionConverter implements Converter {
     sections.push('---')
     sections.push('')
 
-    // Table of contents
     if (discussionList.discussions.length > 3) {
       sections.push('## Table of Contents')
       sections.push('')
@@ -85,7 +82,6 @@ export class DiscussionConverter implements Converter {
       sections.push('')
     }
 
-    // Individual discussions
     for (let i = 0; i < discussionList.discussions.length; i++) {
       const discussion = discussionList.discussions[i]
       if (!discussion) continue
@@ -94,7 +90,6 @@ export class DiscussionConverter implements Converter {
       sections.push(discussionMd)
       sections.push('')
 
-      // Add separator between discussions
       if (i < discussionList.discussions.length - 1) {
         sections.push('---')
         sections.push('')
@@ -113,7 +108,6 @@ export class DiscussionConverter implements Converter {
   ): Promise<string> {
     const sections: string[] = []
 
-    // YAML frontmatter
     sections.push('---')
     sections.push(`title: "Discussions: ${this.formatTitle(discussionList.titleSlug)}"`)
     sections.push(`slug: ${discussionList.titleSlug}`)
@@ -128,19 +122,16 @@ export class DiscussionConverter implements Converter {
     sections.push('---')
     sections.push('')
 
-    // Link back to problem
     sections.push(`> [!info] Problem`)
     sections.push(`> [[${discussionList.titleSlug}|${this.formatTitle(discussionList.titleSlug)}]]`)
     sections.push('')
 
-    // Summary callout
     sections.push(`> [!summary] Summary`)
     sections.push(`> **Category**: ${discussionList.category}`)
     sections.push(`> **Sort**: ${discussionList.sortBy}`)
     sections.push(`> **Discussions**: ${discussionList.total}`)
     sections.push('')
 
-    // Top discussions
     if (discussionList.discussions.length > 0) {
       sections.push('## Top Discussions')
       sections.push('')
@@ -168,7 +159,6 @@ export class DiscussionConverter implements Converter {
   ): Promise<string> {
     const sections: string[] = []
 
-    // Header with metadata
     sections.push(`## ${index}. ${discussion.title}`)
     sections.push('')
     sections.push(`**Author**: ${discussion.author}`)
@@ -188,7 +178,6 @@ export class DiscussionConverter implements Converter {
       sections.push('')
     }
 
-    // Comments
     if (discussion.comments && discussion.comments.length > 0) {
       sections.push('### Comments')
       sections.push('')
@@ -216,7 +205,6 @@ export class DiscussionConverter implements Converter {
   ): Promise<string> {
     const sections: string[] = []
 
-    // Callout for each discussion
     const voteIcon = discussion.votes > 100 ? '🔥' : discussion.votes > 50 ? '⭐' : '👍'
     sections.push(`> [!tip]+ ${index}. ${discussion.title} ${voteIcon}`)
     sections.push(`> **Author**: ${discussion.author}`)
@@ -229,7 +217,6 @@ export class DiscussionConverter implements Converter {
     }
     sections.push('>')
 
-    // Content inside callout
     if (discussion.content) {
       const markdown = await this.htmlConverter.convert(discussion.content, options)
       const lines = markdown.split('\n')
@@ -239,14 +226,12 @@ export class DiscussionConverter implements Converter {
       sections.push('>')
     }
 
-    // Comments
     if (discussion.comments && discussion.comments.length > 0) {
       sections.push('>')
       sections.push(`> **Comments (${discussion.comments.length})**:`)
       sections.push('>')
 
       for (const comment of discussion.comments.slice(0, 5)) {
-        // Limit to 5 comments
         sections.push(`> - **${comment.author}**: ${comment.content}`)
       }
 

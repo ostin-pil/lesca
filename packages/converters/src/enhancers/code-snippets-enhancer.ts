@@ -31,16 +31,14 @@ export class CodeSnippetsEnhancer implements ContentEnhancer {
       return markdown
     }
 
-    // Get language priority from options or use default
-    const languagePriority =
+        const languagePriority =
       options?.languagePriority || ['python3', 'java', 'cpp', 'javascript', 'typescript', 'c']
     const languageOrder = new Map<string, number>()
     languagePriority.forEach((lang, index) => {
       languageOrder.set(lang, index)
     })
 
-    // Sort snippets: prioritized languages first, then alphabetically
-    const sortedSnippets = [...problem.codeSnippets].sort((a: CodeSnippet, b: CodeSnippet) => {
+        const sortedSnippets = [...problem.codeSnippets].sort((a: CodeSnippet, b: CodeSnippet) => {
       const aOrder = languageOrder.get(a.langSlug) ?? 999
       const bOrder = languageOrder.get(b.langSlug) ?? 999
       if (aOrder !== bOrder) {

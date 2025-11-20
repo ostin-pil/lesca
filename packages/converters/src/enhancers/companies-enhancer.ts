@@ -42,7 +42,6 @@ export class CompaniesEnhancer implements ContentEnhancer {
         companies = Object.keys(companyData)
       }
     } catch {
-      // Ignore parsing errors
       return markdown
     }
 
@@ -50,8 +49,7 @@ export class CompaniesEnhancer implements ContentEnhancer {
       return markdown
     }
 
-    // Format company names (capitalize and format nicely)
-    const formattedCompanies = companies
+        const formattedCompanies = companies
       .map((company) => {
         // Convert slug to readable name
         return company
