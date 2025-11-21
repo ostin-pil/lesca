@@ -1,7 +1,7 @@
 import { homedir } from 'os'
 import { resolve } from 'path'
 
-import type { Config } from './schema.js'
+import type { Config } from './schema'
 
 /**
  * Default configuration values for Lesca
@@ -18,6 +18,9 @@ export function getDefaultConfig(): Config {
       cookiePath: resolve(lescaDir, 'cookies.json'),
       sessionTimeout: 3600,
       autoRefresh: true,
+      autoSave: true,
+      validateOnLoad: true,
+      secureStorage: 'file',
     },
     api: {
       endpoint: 'https://leetcode.com/graphql',
@@ -84,6 +87,21 @@ export function getDefaultConfig(): Config {
         height: 1080,
       },
       blockedResources: ['image', 'font', 'media'],
+      interception: {
+        enabled: false,
+        blockResources: ['image', 'font', 'media'],
+        captureResponses: false,
+      },
+      retry: {
+        enabled: true,
+        maxAttempts: 3,
+        backoff: 'linear',
+        initialDelay: 1000,
+      },
+      monitoring: {
+        enabled: false,
+        logMetrics: false,
+      },
       session: {
         enabled: false,
         name: 'default',
