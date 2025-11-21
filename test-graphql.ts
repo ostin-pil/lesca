@@ -6,7 +6,7 @@
  */
 
 /* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -14,13 +14,61 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { writeFile } from 'fs/promises'
+import type { Problem, TopicTag } from '@lesca/shared/types'
 
 interface GraphQLResponse<T> {
   data?: T
   errors?: Array<{ message: string }>
 }
 
-async function queryGraphQL<T>(query: string, variables: Record<string, any> = {}): Promise<T> {
+// GraphQL API response types
+interface QuestionResponse extends Omit<Problem, 'isPaidOnly'> {
+  // GraphQL returns everything Problem has except isPaidOnly
+}
+
+interface ProblemListResponse {
+  total: number
+  questions: Array<{
+    questionId: string
+    questionFrontendId: string
+    title: string
+    titleSlug: string
+    difficulty: string
+    acRate: number
+    paidOnly: boolean
+    topicTags: TopicTag[]
+  }>
+}
+
+interface DiscussionTopicsResponse {
+  edges: Array<{
+    node: {
+      title: string
+      viewCount: number
+      commentCount: number
+      post: {
+        voteCount: number
+        content: string | null
+      }
+    }
+  }>
+}
+
+interface MatchedUserResponse {
+  username: string
+  profile: {
+    ranking: number
+    reputation: number
+  }
+}
+
+interface QuestionTag {
+  name: string
+  slug: string
+  questionCount: number
+}
+
+async function queryGraphQL<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const response = await fetch('https://leetcode.com/graphql', {
     method: 'POST',
     headers: {
@@ -97,7 +145,7 @@ async function testProblemQuery() {
   `
 
   try {
-    const data = await queryGraphQL<any>(query, { titleSlug: 'two-sum' })
+    const data = await queryGraphQL<{ question: QuestionResponse }>(query, { titleSlug: 'two-sum' })
     const question = data.question
 
     console.log('✅ SUCCESS')
@@ -164,7 +212,7 @@ async function testProblemListQuery() {
   `
 
   try {
-    const data = await queryGraphQL<any>(query, {
+    const data = await queryGraphQL<{ problemsetQuestionList: ProblemListResponse }>(query, {
       categorySlug: 'algorithms',
       filters: {
         tags: ['array'],
@@ -232,7 +280,7 @@ async function testDiscussionQuery() {
   `
 
   try {
-    const data = await queryGraphQL<any>(query, { questionSlug: 'two-sum' })
+    const data = await queryGraphQL<{ questionDiscussionTopics: DiscussionTopicsResponse }>(query, { questionSlug: 'two-sum' })
 
     const discussions = data.questionDiscussionTopics
     console.log('✅ SUCCESS')
@@ -296,12 +344,13 @@ async function testUserQuery() {
   `
 
   try {
-    const data = await queryGraphQL<any>(query, { username: 'leetcode' })
+    const data = await queryGraphQL<{ matchedUser: MatchedUserResponse }>(query, { username: 'leetcode' })
+    const user = data.matchedUser
 
     console.log('✅ SUCCESS (Public data only)')
-    console.log(`   Username: ${data.matchedUser?.username}`)
-    console.log(`   Ranking: ${data.matchedUser?.profile?.ranking}`)
-    console.log(`   Reputation: ${data.matchedUser?.profile?.reputation}`)
+    console.log(`   Username: ${user?.username}`)
+    console.log(`   Ranking: ${user?.profile?.ranking}`)
+    console.log(`   Reputation: ${user?.profile?.reputation}`)
     console.log(`   Note: Personal submissions require authentication`)
 
     return {
@@ -332,7 +381,7 @@ async function testMetadataQuery() {
   `
 
   try {
-    const data = await queryGraphQL<any>(query)
+    const data = await queryGraphQL<{ questionTags: QuestionTag[] }>(query)
 
     const tags = data.questionTags
     console.log('✅ SUCCESS')
@@ -342,7 +391,7 @@ async function testMetadataQuery() {
       console.log(
         `   Sample Tags: ${tags
           .slice(0, 5)
-          .map((t: any) => `${t.name} (${t.questionCount})`)
+          .map((t: { name: string; questionCount: number }) => `${t.name} (${t.questionCount})`)
           .join(', ')}`
       )
     }
