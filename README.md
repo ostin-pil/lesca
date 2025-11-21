@@ -139,6 +139,10 @@ npm run dev -- scrape two-sum --no-cache
 
 # Visible browser mode (debugging)
 npm run dev -- scrape-editorial two-sum --no-headless
+
+# Manage configuration
+npm run dev -- config list
+npm run dev -- config get browser.headless
 ```
 
 See [CLI Reference](./docs/CLI_REFERENCE.md) for all commands and options.
