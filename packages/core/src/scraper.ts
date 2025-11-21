@@ -5,7 +5,7 @@ import {
   DiscussionConverter,
   EnhancementManager,
   type EnhancementConfig,
-} from '@/packages/converters/src/index.js'
+} from '@/packages/converters/src/index'
 import type {
   ScrapeRequest,
   ScrapeResult,
@@ -15,8 +15,8 @@ import type {
   StorageAdapter,
   DiscussionList,
   EditorialContent,
-} from '@/shared/types/src/index.js'
-import { LescaError } from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'
+import { LescaError } from '@/shared/types/src/index'
 
 /**
  * Main LeetCode scraper facade

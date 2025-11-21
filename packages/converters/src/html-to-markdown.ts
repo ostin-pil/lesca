@@ -1,5 +1,5 @@
-import type { Converter, ConverterOptions } from '@/shared/types/src/index.js'
-import { logger } from '@/shared/utils/src/index.js'
+import type { Converter, ConverterOptions } from '@/shared/types/src/index'
+import { logger } from '@/shared/utils/src/index'
 import { ParsingError } from '@lesca/error'
 import TurndownService from 'turndown'
 

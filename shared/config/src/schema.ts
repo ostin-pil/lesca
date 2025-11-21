@@ -36,7 +36,7 @@ const StorageConfigSchema = z.object({
   type: z.enum(['filesystem', 'sqlite']).default('filesystem'),
   path: z.string().default('./output'),
   database: z.string().optional(),
-  options: z.record(z.any()).default({}),
+  options: z.record(z.unknown()).default({}),
 })
 
 // Output configuration
@@ -68,7 +68,7 @@ const ScrapingConfigSchema = z.object({
 const ProcessingConfigSchema = z.object({
   converters: z.array(z.string()).default(['html-to-markdown']),
   pipeline: z.array(z.string()).optional(),
-  options: z.record(z.any()).default({}),
+  options: z.record(z.unknown()).default({}),
   enhancements: z.object({
     enabled: z.boolean().default(true),
     hints: z.object({
@@ -158,7 +158,7 @@ const PluginConfigSchema = z.object({
   plugins: z.array(z.object({
     name: z.string(),
     enabled: z.boolean().default(true),
-    options: z.record(z.any()).default({}),
+    options: z.record(z.unknown()).default({}),
   })).default([]),
 })
 

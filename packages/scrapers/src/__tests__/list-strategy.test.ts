@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ListScraperStrategy } from '../list-strategy.js'
-import type { ListScrapeRequest, ProblemList } from '../../../../shared/types/src/index.js'
-import { GraphQLClient } from '../../../api-client/src/index.js'
+import { ListScraperStrategy } from '../list-strategy'
+import type { ListScrapeRequest, ProblemList, ScrapeRequest } from '@lesca/shared/types'
+import { GraphQLClient } from '@lesca/api-client'
 
 describe('ListScraperStrategy', () => {
   let strategy: ListScraperStrategy
@@ -50,9 +50,9 @@ describe('ListScraperStrategy', () => {
     })
 
     it('should return false for non-list requests', () => {
-      expect(strategy.canHandle({ type: 'problem' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'discussion' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'editorial' } as any)).toBe(false)
+      expect(strategy.canHandle({ type: 'problem' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'discussion' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'editorial' } as unknown as ScrapeRequest)).toBe(false)
     })
   })
 

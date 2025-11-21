@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { BrowserPool } from '../pool.js'
+import { BrowserPool } from '../pool'
 import type { Browser } from 'playwright'
 import { chromium } from 'playwright'
 

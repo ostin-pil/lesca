@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { CookieManager } from '../cookie-manager.js'
-import { PlaywrightDriver } from '../playwright-driver.js'
+import { CookieManager } from '../cookie-manager'
+import { PlaywrightDriver } from '../playwright-driver'
 import { mkdir, rm, readFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'

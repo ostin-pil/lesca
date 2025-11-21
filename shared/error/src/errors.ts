@@ -9,8 +9,8 @@
  * - Original cause
  */
 
-import type { ErrorCode, ErrorCategory, ErrorRecovery } from './codes.js'
-import { getErrorMetadata } from './codes.js'
+import type { ErrorCode, ErrorCategory, ErrorRecovery } from './codes'
+import { getErrorMetadata } from './codes'
 
 export interface ErrorContext {
   [key: string]: unknown

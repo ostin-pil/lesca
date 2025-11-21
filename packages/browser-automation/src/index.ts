@@ -3,32 +3,32 @@
  * Provides headless browser automation for JavaScript-rendered content
  */
 
-export { PlaywrightDriver } from './playwright-driver.js'
-export { SelectorManager } from './selector-manager.js'
-export { SessionManager } from './session-manager.js'
-export { BrowserPool } from './pool.js'
-export { CookieManager } from './cookie-manager.js'
-export { AuthHelper } from './auth-helper.js'
+export { PlaywrightDriver } from './playwright-driver'
+export { SelectorManager } from './selector-manager'
+export { SessionManager } from './session-manager'
+export { BrowserPool } from './pool'
+export { CookieManager } from './cookie-manager'
+export { AuthHelper } from './auth-helper'
 
 export type {
   SessionData,
   SessionMetadata,
   SessionOptions,
-} from './session-manager.js'
+} from './session-manager'
 export type {
   BrowserPoolConfig,
   BrowserPoolStats,
-} from './pool.js'
+} from './pool'
 export type {
   CookieValidationResult,
   MergeStrategy,
-} from './cookie-manager.js'
+} from './cookie-manager'
 export type {
   LoginCredentials,
   LoginOptions,
   LoginResult,
-} from './auth-helper.js'
-export type { LoginState } from './detectors.js'
+} from './auth-helper'
+export type { LoginState } from './detectors'
 
 export {
   detectLoginState,
@@ -40,4 +40,4 @@ export {
   detectErrorPage,
   detectPremiumRequired,
   waitForState,
-} from './detectors.js'
+} from './detectors'

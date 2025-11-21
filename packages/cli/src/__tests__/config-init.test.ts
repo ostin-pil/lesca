@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
-import { ConfigManager, createDefaultConfig, exportConfigToYaml } from '../../../../shared/config/src/index.js'
+import { ConfigManager, createDefaultConfig, exportConfigToYaml } from '@lesca/shared/config'
 
 /**
  * Configuration Initialization Tests

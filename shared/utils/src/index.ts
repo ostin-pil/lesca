@@ -3,16 +3,16 @@
  * Common utilities used across packages
  */
 
-export { FileCache, MemoryCache, TieredCache } from './cache.js'
-export type { CacheStats } from './cache.js'
+export { FileCache, MemoryCache, TieredCache } from './cache'
+export type { CacheStats } from './cache'
 export {
   Logger,
   ChildLogger,
   LogLevel,
   logger,
   createLogger,
-} from './logger.js'
-export type { LoggerConfig, LogLevelName, LogEntry } from './logger.js'
+} from './logger'
+export type { LoggerConfig, LogLevelName, LogEntry } from './logger'
 export {
   sanitizeString,
   sanitizeObject,
@@ -20,5 +20,5 @@ export {
   createSanitizer,
   containsSensitiveData,
   findSensitiveKeys,
-} from './sanitizer.js'
-export type { SanitizerOptions } from './sanitizer.js'
+} from './sanitizer'
+export type { SanitizerOptions } from './sanitizer'

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { BatchScraper } from '../batch-scraper.js'
-import { LeetCodeScraper } from '../scraper.js'
-import type { ProblemScrapeRequest, ScrapeResult } from '../../../../shared/types/src/index.js'
+import { BatchScraper, type BatchProgress } from '../batch-scraper'
+import { LeetCodeScraper } from '../scraper'
+import type { ProblemScrapeRequest, ScrapeResult } from '@lesca/shared/types'
 
 describe('BatchScraper', () => {
   let mockScraper: LeetCodeScraper
@@ -16,7 +16,29 @@ describe('BatchScraper', () => {
     success: true,
     filePath: '/path/to/file.md',
     request: mockRequest,
-    data: { title: 'Two Sum' } as any,
+    data: {
+      type: 'problem',
+      content: '# Two Sum\n\nContent...',
+      frontmatter: {
+        title: 'Two Sum',
+        id: '1',
+      },
+      metadata: {
+        originalData: {
+          type: 'problem',
+          data: {
+            title: 'Two Sum',
+            questionId: '1',
+            // Minimal required fields for Problem to satisfy RawData -> Problem
+          } as any,
+          metadata: {
+            scrapedAt: new Date(),
+          },
+        },
+        processors: ['markdown'],
+        processedAt: new Date(),
+      },
+    },
   }
 
   const mockFailureResult: ScrapeResult = {
@@ -110,7 +132,7 @@ describe('BatchScraper', () => {
     })
 
     it('should provide accurate progress data', async () => {
-      const progressUpdates: any[] = []
+      const progressUpdates: BatchProgress[] = []
       const onProgress = vi.fn((progress) => progressUpdates.push(progress))
 
       batchScraper = new BatchScraper(mockScraper, { concurrency: 1, onProgress })
@@ -119,8 +141,8 @@ describe('BatchScraper', () => {
       await batchScraper.scrapeAll(requests)
 
       const lastProgress = progressUpdates[progressUpdates.length - 1]
-      expect(lastProgress.completed).toBe(3)
-      expect(lastProgress.total).toBe(3)
+      expect(lastProgress?.completed).toBe(3)
+      expect(lastProgress?.total).toBe(3)
     })
   })
 

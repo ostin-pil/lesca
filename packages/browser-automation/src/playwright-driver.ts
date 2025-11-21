@@ -6,14 +6,14 @@ import type {
   BrowserDriver,
   BrowserLaunchOptions,
   AuthCredentials,
-} from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'
+import { logger } from '@/shared/utils/src/index'
 import { BrowserError, BrowserTimeoutError } from '@lesca/error'
-import { logger } from '@/shared/utils/src/index.js'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
-import type { CookieManager } from './cookie-manager.js'
-import { RequestInterceptor } from './interceptor.js'
-import { PerformanceMonitor, type PerformanceMetrics } from './performance.js'
+import type { CookieManager } from './cookie-manager'
+import { RequestInterceptor } from './interceptor'
+import { PerformanceMonitor, type PerformanceMetrics } from './performance'
 
 /**
  * Playwright browser driver
@@ -65,16 +65,16 @@ export class PlaywrightDriver implements BrowserDriver {
       if (interception?.enabled || blockResources.length > 0) {
         this.interceptor = new RequestInterceptor({
           blockResources: [...blockResources, ...(interception?.blockResources || [])],
-          capturePattern: interception?.capturePattern ? new RegExp(interception.capturePattern) : undefined,
-          captureResponses: interception?.captureResponses,
-        } as any) // Cast to any to match internal options if needed, or update interface
+          ...(interception?.capturePattern ? { capturePattern: new RegExp(interception.capturePattern) } : {}),
+          ...(interception?.captureResponses !== undefined ? { captureResponses: interception.captureResponses } : {}),
+        })
         await this.interceptor.attach(this.page)
       }
 
       // Setup Performance Monitor
       if (options.monitoring?.enabled) {
         this.performanceMonitor = new PerformanceMonitor()
-        await this.performanceMonitor.startMonitoring(this.page)
+        this.performanceMonitor.startMonitoring(this.page)
       }
 
       // Inject authentication cookies if provided
@@ -117,7 +117,7 @@ export class PlaywrightDriver implements BrowserDriver {
     throw new BrowserError(
       'BROWSER_NAVIGATION_FAILED',
       `Failed to navigate to ${url} after ${retries} attempts`,
-      { cause: lastError instanceof Error ? lastError : undefined, context: { url } }
+      { ...(lastError instanceof Error ? { cause: lastError } : {}), context: { url } }
     )
   }
 
@@ -135,7 +135,7 @@ export class PlaywrightDriver implements BrowserDriver {
     } catch (error) {
       throw new BrowserTimeoutError(
         `Timeout waiting for selector: ${selector}`,
-        { cause: error instanceof Error ? error : undefined, context: { selector, timeout } }
+        { ...(error instanceof Error ? { cause: error } : {}), context: { selector, timeout } }
       )
     }
   }
@@ -417,7 +417,7 @@ export class PlaywrightDriver implements BrowserDriver {
    * Get captured responses from interceptor
    */
   getCapturedResponses(): Map<string, unknown> {
-    return this.interceptor ? this.interceptor.getCapturedResponses() : new Map()
+    return this.interceptor ? this.interceptor.getCapturedResponses() : new Map<string, unknown>()
   }
 
   /**

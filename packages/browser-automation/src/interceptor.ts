@@ -1,9 +1,11 @@
-import { logger } from '@/shared/utils/src/index.js'
+import { logger } from '@/shared/utils/src/index'
 import type { Page, Request, Route } from 'playwright'
 
 export interface InterceptorOptions {
   /** Resource types to block (e.g., 'image', 'font') */
   blockResources?: string[]
+  /** Enable response capturing */
+  captureResponses?: boolean
   /** Regex pattern to capture API responses */
   capturePattern?: RegExp
   /** Custom headers to inject */
@@ -49,7 +51,7 @@ export class RequestInterceptor {
           if (contentType && contentType.includes('application/json')) {
             try {
               const json = await response.json()
-              this.responses.set(url, json)
+              this.responses.set(url, json as unknown)
               logger.debug(`Captured response from: ${url}`)
             } catch (e) {
               logger.warn(`Failed to parse JSON from captured response: ${url}`)

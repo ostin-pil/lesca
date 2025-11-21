@@ -3,4 +3,4 @@
  * Data persistence adapters
  */
 
-export { FileSystemStorage } from './filesystem-storage.js'
+export { FileSystemStorage } from './filesystem-storage'

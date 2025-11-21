@@ -3,11 +3,11 @@
  * Content transformation utilities
  */
 
-export { HtmlToMarkdownConverter } from './html-to-markdown.js'
-export { ObsidianConverter } from './obsidian-converter.js'
-export type { ObsidianFrontmatter } from './obsidian-converter.js'
-export { EditorialConverter } from './editorial-converter.js'
-export { DiscussionConverter } from './discussion-converter.js'
+export { HtmlToMarkdownConverter } from './html-to-markdown'
+export { ObsidianConverter } from './obsidian-converter'
+export type { ObsidianFrontmatter } from './obsidian-converter'
+export { EditorialConverter } from './editorial-converter'
+export { DiscussionConverter } from './discussion-converter'
 
-export * from './enhancers/index.js'
-export { EnhancementManager, type EnhancementConfig } from './enhancement-manager.js'
+export * from './enhancers/index'
+export { EnhancementManager, type EnhancementConfig } from './enhancement-manager'

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { AuthHelper } from '../auth-helper.js'
-import { CookieManager } from '../cookie-manager.js'
-import { PlaywrightDriver } from '../playwright-driver.js'
-import * as detectors from '../detectors.js'
+import { AuthHelper } from '../auth-helper'
+import { CookieManager } from '../cookie-manager'
+import { PlaywrightDriver } from '../playwright-driver'
+import * as detectors from '../detectors'
 import type { Cookie } from 'playwright'
 
 vi.mock('../detectors.js', () => ({

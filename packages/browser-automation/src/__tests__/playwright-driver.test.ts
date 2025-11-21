@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { PlaywrightDriver } from '../playwright-driver.js'
+import { PlaywrightDriver } from '../playwright-driver'
 import type { Browser, Page, BrowserContext, ElementHandle } from 'playwright'
 
 vi.mock('playwright', () => ({

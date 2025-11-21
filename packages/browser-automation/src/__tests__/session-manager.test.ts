@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { SessionManager } from '../session-manager.js'
+import { SessionManager } from '../session-manager'
 import { mkdir, rm, readFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'

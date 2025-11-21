@@ -16,14 +16,14 @@ export {
   isFatal,
   getErrorCodesByCategory,
   getRecoverableErrorCodes,
-} from './codes.js'
+} from './codes'
 
 export type {
   ErrorCode,
   ErrorCategory,
   ErrorRecovery,
   ErrorCodeMetadata,
-} from './codes.js'
+} from './codes'
 
 // Export error classes
 export {
@@ -43,9 +43,9 @@ export {
   SystemError,
   isLescaError,
   wrapError,
-} from './errors.js'
+} from './errors'
 
-export type { ErrorContext } from './errors.js'
+export type { ErrorContext } from './errors'
 
 // Export recovery utilities
 export {
@@ -55,10 +55,10 @@ export {
   withRetryAndCircuitBreaker,
   withTimeout,
   createRetryableCheck,
-} from './recovery.js'
+} from './recovery'
 
 export type {
   RetryOptions,
   CircuitBreakerState,
   CircuitBreakerOptions,
-} from './recovery.js'
+} from './recovery'

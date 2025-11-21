@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { GraphQLClient, RateLimiter } from '../graphql-client.js'
-import { GraphQLError, RateLimitError } from '../../../../shared/types/src/index.js'
-import type { AuthCredentials, Problem } from '../../../../shared/types/src/index.js'
-import { TieredCache } from '../../../../shared/utils/src/index.js'
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
+import { GraphQLClient, RateLimiter } from '../graphql-client'
+import { GraphQLError, RateLimitError } from '@lesca/shared/types'
+import type { AuthCredentials, Problem } from '@lesca/shared/types'
+import { TieredCache } from '@lesca/shared/utils'
 import { resolve } from 'path'
 import { existsSync, rmSync, mkdirSync } from 'fs'
 
@@ -115,8 +115,7 @@ describe('RateLimiter', () => {
 })
 
 describe('GraphQLClient', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let fetchSpy: any
+  let fetchSpy: MockInstance
   const testCacheDir = resolve(__dirname, '__test_graphql_cache__')
 
   beforeEach(() => {
@@ -480,6 +479,7 @@ describe('GraphQLClient', () => {
         solution: null,
         mysqlSchemas: [],
         dataSchemas: [],
+        isPaidOnly: false,
       }
 
       fetchSpy.mockResolvedValue({

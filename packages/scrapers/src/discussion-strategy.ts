@@ -1,4 +1,4 @@
-import { SelectorManager } from '@/packages/browser-automation/src/index.js'
+import { SelectorManager } from '@/packages/browser-automation/src/index'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -6,9 +6,9 @@ import type {
   BrowserDriver,
   DiscussionScrapeRequest,
   Discussion,
-} from '@/shared/types/src/index.js'
-import { LescaError } from '@/shared/types/src/index.js'
-import { logger } from '@/shared/utils/src/index.js'
+} from '@/shared/types/src/index'
+import { LescaError } from '@/shared/types/src/index'
+import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
 
 /**
@@ -238,8 +238,9 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       for (const titleSelector of titleSelectors) {
         try {
           const fullSelector = `${nthPostSelector} ${titleSelector}`
-          title = await this.browserDriver.extractContent(fullSelector)
-          if (title && title.trim().length > 0) {
+          const extracted = await this.browserDriver.extractContent(fullSelector)
+          if (extracted?.trim()?.length > 0) {
+            title = extracted
             break
           }
         } catch {
@@ -257,8 +258,9 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       for (const authorSelector of authorSelectors) {
         try {
           const fullSelector = `${nthPostSelector} ${authorSelector}`
-          author = await this.browserDriver.extractContent(fullSelector)
-          if (author && author.trim().length > 0) {
+          const extracted = await this.browserDriver.extractContent(fullSelector)
+          if (extracted?.trim()?.length > 0) {
+            author = extracted
             break
           }
         } catch {
@@ -273,8 +275,10 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
         try {
           const fullSelector = `${nthPostSelector} ${voteSelector}`
           const voteText = await this.browserDriver.extractContent(fullSelector)
-          votes = parseInt(voteText.replace(/[^0-9]/g, '')) || 0
-          break
+          if (voteText) {
+            votes = parseInt(voteText.replace(/[^0-9]/g, '')) || 0
+            break
+          }
         } catch {
           continue
         }
@@ -286,8 +290,9 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       for (const timestampSelector of timestampSelectors) {
         try {
           const fullSelector = `${nthPostSelector} ${timestampSelector}`
-          timestamp = await this.browserDriver.extractContent(fullSelector)
-          if (timestamp && timestamp.trim().length > 0) {
+          const extracted = await this.browserDriver.extractContent(fullSelector)
+          if (extracted?.trim()?.length > 0) {
+            timestamp = extracted
             break
           }
         } catch {
@@ -302,8 +307,9 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
         try {
           const fullSelector = `${nthPostSelector} ${contentSelector}`
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          content = await this.browserDriver.getHtml(fullSelector)
-          if (content && content.trim().length > 0) {
+          const extracted = await this.browserDriver.getHtml(fullSelector)
+          if (extracted?.trim()?.length > 0) {
+            content = extracted
             break
           }
         } catch {

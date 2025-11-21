@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { dirname } from 'path'
 
-import { getDefaultPaths } from './defaults.js'
+import { getDefaultPaths } from './defaults'
 import {
   loadConfig,
   loadConfigWithCLI,
@@ -10,9 +10,9 @@ import {
   findConfigFile,
   exportConfigToYaml,
   exportConfigToJson
-} from './loader.js'
-import type { Config, PartialConfig } from './schema.js'
-import { createDefaultConfig } from './schema.js'
+} from './loader'
+import type { Config, PartialConfig } from './schema'
+import { createDefaultConfig } from './schema'
 
 /**
  * ConfigManager - Central configuration management for Lesca

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { LeetCodeScraper } from '../scraper.js'
+import { LeetCodeScraper } from '../scraper'
 import type {
   ScraperStrategy,
   StorageAdapter,
   ProblemScrapeRequest,
-} from '../../../../shared/types/src/index.js'
+} from '@lesca/shared/types'
 
 describe('LeetCodeScraper', () => {
   let mockStrategy: ScraperStrategy

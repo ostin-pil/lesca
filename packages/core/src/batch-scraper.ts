@@ -3,11 +3,11 @@ import { writeFile, readFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 
 
-import type { ScrapeRequest, ScrapeResult } from '@/shared/types/src/index.js'
-import { logger } from '@/shared/utils/src/index.js'
+import type { ScrapeRequest, ScrapeResult } from '@/shared/types/src/index'
+import { logger } from '@/shared/utils/src/index'
 import { SystemError } from '@lesca/error'
 
-import type { LeetCodeScraper } from './scraper.js'
+import type { LeetCodeScraper } from './scraper'
 
 /**
  * Batch scraping options

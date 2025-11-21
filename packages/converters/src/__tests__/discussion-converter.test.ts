@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { DiscussionConverter } from '../discussion-converter.js'
-import type { DiscussionList, Discussion } from '../../../../shared/types/src/index.js'
+import { DiscussionConverter } from '../discussion-converter'
+import type { DiscussionList, Discussion } from '@lesca/shared/types'
 
 describe('DiscussionConverter', () => {
   let converter: DiscussionConverter

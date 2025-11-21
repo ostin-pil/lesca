@@ -7,7 +7,8 @@ import { LeetCodeScraper } from '@lesca/core'
 import { FileSystemStorage } from '@lesca/storage'
 import { ProblemScraperStrategy } from '@lesca/scrapers'
 import { GraphQLClient } from '@lesca/api-client'
-import type { ProblemScrapeRequest } from '@lesca/shared/types'
+import type { ProblemScrapeRequest, Problem } from '@lesca/shared/types'
+import type { BatchProgress } from '@lesca/core'
 
 /**
  * End-to-End Integration Test: Batch Scraping
@@ -26,7 +27,7 @@ describe('E2E: Batch Scraping', () => {
   let batchScraper: BatchScraper
   let storage: FileSystemStorage
 
-  const mockProblemMap: Record<string, any> = {
+  const mockProblemMap: Record<string, Problem> = {
     'two-sum': {
       questionId: '1',
       questionFrontendId: '1',
@@ -40,10 +41,11 @@ describe('E2E: Batch Scraping', () => {
       hints: [],
       mysqlSchemas: [],
       dataSchemas: [],
-      similarQuestions: [],
-      companyTagStats: {},
-      stats: {},
+      similarQuestions: '[]',
+      companyTagStats: '{}',
+      stats: '{}',
       solution: null,
+      isPaidOnly: false,
     },
     'add-two-numbers': {
       questionId: '2',
@@ -58,10 +60,11 @@ describe('E2E: Batch Scraping', () => {
       hints: [],
       mysqlSchemas: [],
       dataSchemas: [],
-      similarQuestions: [],
-      companyTagStats: {},
-      stats: {},
+      similarQuestions: '[]',
+      companyTagStats: '{}',
+      stats: '{}',
       solution: null,
+      isPaidOnly: false,
     },
     'longest-substring-without-repeating-characters': {
       questionId: '3',
@@ -76,10 +79,11 @@ describe('E2E: Batch Scraping', () => {
       hints: [],
       mysqlSchemas: [],
       dataSchemas: [],
-      similarQuestions: [],
-      companyTagStats: {},
-      stats: {},
+      similarQuestions: '[]',
+      companyTagStats: '{}',
+      stats: '{}',
       solution: null,
+      isPaidOnly: false,
     },
   }
 
@@ -95,7 +99,7 @@ describe('E2E: Batch Scraping', () => {
       getProblem: async (titleSlug: string) => {
         const item = mockProblemMap[titleSlug]
         if (item) return item
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },
@@ -173,7 +177,7 @@ describe('E2E: Batch Scraping', () => {
 
         const item = mockProblemMap[titleSlug]
         if (item) return item
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },
@@ -196,7 +200,7 @@ describe('E2E: Batch Scraping', () => {
   }, 60000)
 
   it('should provide progress updates', async () => {
-    const progressEvents: any[] = []
+    const progressEvents: BatchProgress[] = []
 
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
@@ -204,7 +208,7 @@ describe('E2E: Batch Scraping', () => {
         await new Promise((resolve) => setTimeout(resolve, 10))
         const item = mockProblemMap[titleSlug]
         if (item) return item
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },
@@ -228,6 +232,8 @@ describe('E2E: Batch Scraping', () => {
     // Expect at least one progress event and final completed equals total
     expect(progressEvents.length).toBeGreaterThan(0)
     const final = progressEvents[progressEvents.length - 1]
-    expect(final.completed).toBeGreaterThanOrEqual(result.results.length)
+    if (final) {
+      expect(final.completed).toBeGreaterThanOrEqual(result.results.length)
+    }
   }, 60000)
 })

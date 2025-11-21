@@ -3,10 +3,10 @@
  * Scraping strategies for different content types
  */
 
-export { ProblemScraperStrategy } from './problem-strategy.js'
-export { ListScraperStrategy } from './list-strategy.js'
-export { EditorialScraperStrategy } from './editorial-strategy.js'
-export { DiscussionScraperStrategy } from './discussion-strategy.js'
+export { ProblemScraperStrategy } from './problem-strategy'
+export { ListScraperStrategy } from './list-strategy'
+export { EditorialScraperStrategy } from './editorial-strategy'
+export { DiscussionScraperStrategy } from './discussion-strategy'
 
 // Re-export types from shared/types
 export type {
@@ -16,4 +16,4 @@ export type {
   Discussion,
   DiscussionList,
   CodeSnippet,
-} from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'

@@ -10,7 +10,7 @@
  */
 
 // Main exports
-export { ConfigManager, configManager, getConfig, getConfigValue, isEnabled } from './config-manager.js'
+export { ConfigManager, configManager, getConfig, getConfigValue, isEnabled } from './config-manager'
 
 // Schema and types
 export {
@@ -31,7 +31,7 @@ export {
   type CacheConfig,
   type LoggingConfig,
   type PluginConfig,
-} from './schema.js'
+} from './schema'
 
 // Loader functions
 export {
@@ -45,7 +45,7 @@ export {
   exportConfigToYaml,
   exportConfigToJson,
   type LoaderOptions,
-} from './loader.js'
+} from './loader'
 
 // Default values and paths
 export {
@@ -53,4 +53,4 @@ export {
   getDefaultPaths,
   getConfigSearchPaths,
   ENV_MAPPINGS,
-} from './defaults.js'
+} from './defaults'

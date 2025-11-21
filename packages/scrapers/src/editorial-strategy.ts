@@ -1,4 +1,4 @@
-import { SelectorManager } from '@/packages/browser-automation/src/index.js'
+import { SelectorManager } from '@/packages/browser-automation/src/index'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -8,8 +8,8 @@ import type {
   EditorialScrapeRequest,
   EditorialContent,
   CodeSnippet,
-} from '@/shared/types/src/index.js'
-import { LescaError } from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'
+import { LescaError } from '@/shared/types/src/index'
 import { BrowserError } from '@lesca/error'
 
 

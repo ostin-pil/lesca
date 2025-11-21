@@ -1,10 +1,10 @@
-import type { RawData } from '@/shared/types/src/index.js'
+import type { RawData } from '@/shared/types/src/index'
 
-import type { CodeSnippetsOptions } from './enhancers/code-snippets-enhancer.js';
-import { CodeSnippetsEnhancer } from './enhancers/code-snippets-enhancer.js'
-import { CompaniesEnhancer } from './enhancers/companies-enhancer.js'
-import type { ContentEnhancer, EnhancementOptions } from './enhancers/content-enhancer.js'
-import { HintsEnhancer } from './enhancers/hints-enhancer.js'
+import type { CodeSnippetsOptions } from './enhancers/code-snippets-enhancer';
+import { CodeSnippetsEnhancer } from './enhancers/code-snippets-enhancer'
+import { CompaniesEnhancer } from './enhancers/companies-enhancer'
+import type { ContentEnhancer, EnhancementOptions } from './enhancers/content-enhancer'
+import { HintsEnhancer } from './enhancers/hints-enhancer'
 
 /**
  * Configuration for enhancements

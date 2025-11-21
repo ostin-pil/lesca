@@ -1,18 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ConfigManager } from '../config-manager.js'
+import { ConfigManager } from '../config-manager'
 import {
   ConfigSchema,
   createDefaultConfig,
   validateConfig,
   validatePartialConfig,
-} from '../schema.js'
+  type Config,
+  type PartialConfig,
+} from '../schema'
 import {
   loadConfigFile,
   loadEnvConfig,
   mergeConfigs,
   findConfigFile,
-} from '../loader.js'
-import { getDefaultConfig, getDefaultPaths } from '../defaults.js'
+} from '../loader'
+import { getDefaultConfig, getDefaultPaths } from '../defaults'
 import { mkdtempSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -30,7 +32,7 @@ describe('Configuration System', () => {
       }
     })
     // Reset singleton
-    ;(ConfigManager as any).instance = null
+    ;(ConfigManager as unknown as { instance: unknown }).instance = null
   })
 
   describe('Schema Validation', () => {
@@ -157,8 +159,8 @@ scraping:
   describe('Configuration Merging', () => {
     it('should merge configurations with correct priority', () => {
       const defaultConfig = getDefaultConfig()
-      const fileConfig = { output: { format: 'obsidian' as const } } as any
-      const envConfig = { output: { format: 'json' as const } } as any
+      const fileConfig = { output: { format: 'obsidian' as const } } as unknown as Config
+      const envConfig = { output: { format: 'json' as const } } as unknown as Config
 
       const merged = mergeConfigs(defaultConfig, fileConfig, envConfig)
       expect(merged.output.format).toBe('json') // Last one wins
@@ -175,7 +177,7 @@ scraping:
           timeout: 30000,
           rateLimit: { requestsPerMinute: 40 },
         },
-      } as any
+      } as unknown as Config
 
       const merged = mergeConfigs(config1, config2)
       expect(merged.api.timeout).toBe(30000)
@@ -276,7 +278,7 @@ scraping:
 
     it('should handle CLI overrides', async () => {
       const manager = await ConfigManager.initialize({
-        cliOptions: { output: { format: 'json' as const } } as any
+        cliOptions: { output: { format: 'json' as const } } as unknown as PartialConfig
       })
 
       const config = manager.getEffectiveConfig()

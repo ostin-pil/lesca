@@ -4,7 +4,7 @@ import { join, dirname } from 'path'
 import { promisify } from 'util'
 import { gzip, gunzip } from 'zlib'
 
-import { logger } from './logger.js'
+import { logger } from './logger'
 
 const gzipAsync = promisify(gzip)
 const gunzipAsync = promisify(gunzip)

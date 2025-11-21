@@ -98,6 +98,7 @@ export const twoSumProblem: Problem = {
   solution: null,
   mysqlSchemas: [],
   dataSchemas: [],
+  isPaidOnly: false,
 }
 
 export const addTwoNumbersProblem: Problem = {
@@ -151,6 +152,7 @@ export const addTwoNumbersProblem: Problem = {
   solution: null,
   mysqlSchemas: [],
   dataSchemas: [],
+  isPaidOnly: false,
 }
 
 export const problemFixtures = {

@@ -1,6 +1,6 @@
-import type { Problem, RawData, CodeSnippet } from '@/shared/types/src/index.js'
+import type { Problem, RawData, CodeSnippet } from '@/shared/types/src/index'
 
-import type { ContentEnhancer, EnhancementOptions } from './content-enhancer.js'
+import type { ContentEnhancer, EnhancementOptions } from './content-enhancer'
 
 /**
  * Options for code snippets enhancement

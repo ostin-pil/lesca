@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { FileSystemStorage } from '../filesystem-storage.js'
-import { StorageError } from '../../../../shared/types/src/index.js'
+import { FileSystemStorage } from '../filesystem-storage'
+import { StorageError } from '@lesca/shared/types'
 import { existsSync } from 'fs'
 import { rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, join } from 'path'

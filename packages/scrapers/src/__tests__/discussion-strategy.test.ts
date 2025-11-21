@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { DiscussionScraperStrategy } from '../discussion-strategy.js'
-import type { DiscussionScrapeRequest, DiscussionList } from '../../../../shared/types/src/index.js'
-import type { BrowserDriver } from '../../../../shared/types/src/index.js'
-import { LescaError } from '../../../../shared/types/src/index.js'
+import { DiscussionScraperStrategy } from '../discussion-strategy'
+import type { DiscussionScrapeRequest, DiscussionList, ScrapeRequest } from '@lesca/shared/types'
+import type { BrowserDriver } from '@lesca/shared/types'
+import { LescaError } from '@lesca/shared/types'
 
 describe('DiscussionScraperStrategy', () => {
   let strategy: DiscussionScraperStrategy
@@ -35,9 +35,9 @@ describe('DiscussionScraperStrategy', () => {
     })
 
     it('should return false for non-discussion requests', () => {
-      expect(strategy.canHandle({ type: 'problem' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'list' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'editorial' } as any)).toBe(false)
+      expect(strategy.canHandle({ type: 'problem' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'list' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'editorial' } as unknown as ScrapeRequest)).toBe(false)
     })
   })
 
@@ -55,7 +55,7 @@ describe('DiscussionScraperStrategy', () => {
 
   describe('execute', () => {
     it('should throw error for invalid request type', async () => {
-      const request = { type: 'problem' } as any
+      const request = { type: 'problem' } as unknown as ScrapeRequest
       await expect(strategy.execute(request)).rejects.toThrow(LescaError)
       await expect(strategy.execute(request)).rejects.toThrow(
         'DiscussionScraperStrategy cannot handle request type: problem'

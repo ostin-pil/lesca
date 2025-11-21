@@ -1,6 +1,6 @@
-import { logger } from '@/shared/utils/src/index.js'
+import { logger } from '@/shared/utils/src/index'
 
-import type { PlaywrightDriver } from './playwright-driver.js'
+import type { PlaywrightDriver } from './playwright-driver'
 
 /**
  * Login state types

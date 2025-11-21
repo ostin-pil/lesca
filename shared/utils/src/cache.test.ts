@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { FileCache, MemoryCache, TieredCache } from './cache.js'
+import { FileCache, MemoryCache, TieredCache } from './cache'
 import { existsSync, mkdirSync, rmSync } from 'fs'
 import { resolve } from 'path'
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HtmlToMarkdownConverter } from '../html-to-markdown.js'
+import { HtmlToMarkdownConverter } from '../html-to-markdown'
 
 describe('HtmlToMarkdownConverter', () => {
   let converter: HtmlToMarkdownConverter

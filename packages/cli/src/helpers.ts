@@ -5,8 +5,8 @@
  */
 
 
-import type { ConfigManager } from '@/shared/config/src/index.js'
-import { logger } from '@/shared/utils/src/index.js'
+import type { ConfigManager } from '@/shared/config/src/index'
+import { logger } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 
 /**

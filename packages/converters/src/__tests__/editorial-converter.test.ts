@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { EditorialConverter } from '../editorial-converter.js'
-import type { EditorialContent } from '../../../../shared/types/src/index.js'
+import { EditorialConverter } from '../editorial-converter'
+import type { EditorialContent } from '@lesca/shared/types'
 
 describe('EditorialConverter', () => {
   let converter: EditorialConverter

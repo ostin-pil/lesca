@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable no-console, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion */
 /**
  * Coverage Threshold Enforcement Script
  *
@@ -43,7 +43,7 @@ interface CoverageSummary {
     functions: { pct: number }
     branches: { pct: number }
   }
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**
@@ -94,8 +94,15 @@ function calculatePackageCoverage(coverageSummary: CoverageSummary): Map<string,
       })
     }
 
+    interface FileCoverage {
+      lines: { covered: number; total: number }
+      statements: { covered: number; total: number }
+      functions: { covered: number; total: number }
+      branches: { covered: number; total: number }
+    }
+
     const stats = packageStats.get(packageName)!
-    const fc = fileCoverage
+    const fc = fileCoverage as FileCoverage
 
     // Aggregate coverage stats
     stats.lines.covered += fc.lines?.covered || 0

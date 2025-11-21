@@ -1,11 +1,11 @@
-import type { GraphQLClient } from '@/packages/api-client/src/graphql-client.js'
+import type { GraphQLClient } from '@/packages/api-client/src/graphql-client'
 import type {
   ScraperStrategy,
   ScrapeRequest,
   ListScrapeRequest,
   RawData,
-} from '@/shared/types/src/index.js'
-import { GraphQLError } from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'
+import { GraphQLError } from '@/shared/types/src/index'
 import { ScrapingError } from '@lesca/error'
 
 

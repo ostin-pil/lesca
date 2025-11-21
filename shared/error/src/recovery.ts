@@ -7,7 +7,7 @@
  * - Error recovery helpers
  */
 
-import { LescaError } from './errors.js'
+import { LescaError } from './errors'
 
 /**
  * Retry options

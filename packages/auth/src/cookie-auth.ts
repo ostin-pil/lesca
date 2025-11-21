@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'fs/promises'
 
 
-import type { AuthStrategy, AuthCredentials, Cookie } from '@/shared/types/src/index.js'
-import { AuthError } from '@/shared/types/src/index.js'
+import type { AuthStrategy, AuthCredentials, Cookie } from '@/shared/types/src/index'
+import { AuthError } from '@/shared/types/src/index'
 import { ConfigError } from '@lesca/error'
 
 /**

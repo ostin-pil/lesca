@@ -5,9 +5,9 @@ import { ConfigError } from '@lesca/error'
 import { set, merge } from 'lodash-es'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 
-import { getDefaultConfig, ENV_MAPPINGS, getConfigSearchPaths } from './defaults.js'
-import type { Config, PartialConfig } from './schema.js'
-import { validatePartialConfig, ConfigSchema } from './schema.js'
+import { getDefaultConfig, ENV_MAPPINGS, getConfigSearchPaths } from './defaults'
+import type { Config, PartialConfig } from './schema'
+import { validatePartialConfig, ConfigSchema } from './schema'
 
 /**
  * Configuration loader that supports multiple sources:

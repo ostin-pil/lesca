@@ -1,14 +1,14 @@
-import { logger } from '@/shared/utils/src/index.js'
+import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
 import type { Cookie } from 'playwright'
 
-import type { CookieManager } from './cookie-manager.js'
+import type { CookieManager } from './cookie-manager'
 import {
   detectLoginState,
   detectCaptcha,
   type LoginState,
-} from './detectors.js'
-import type { PlaywrightDriver } from './playwright-driver.js'
+} from './detectors'
+import type { PlaywrightDriver } from './playwright-driver'
 
 /**
  * Login credentials

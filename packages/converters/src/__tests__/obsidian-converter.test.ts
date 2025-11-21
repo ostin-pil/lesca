@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ObsidianConverter } from '../obsidian-converter.js'
-import type { Problem, Difficulty } from '../../../../shared/types/src/index.js'
+import { ObsidianConverter } from '../obsidian-converter'
+import type { Problem, Difficulty } from '@lesca/shared/types'
 
 describe('ObsidianConverter', () => {
   let converter: ObsidianConverter

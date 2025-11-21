@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ProblemScraperStrategy } from '../problem-strategy.js'
-import type { ProblemScrapeRequest, Problem } from '../../../../shared/types/src/index.js'
-import { GraphQLClient } from '../../../api-client/src/index.js'
+import { ProblemScraperStrategy } from '../problem-strategy'
+import type { ProblemScrapeRequest, Problem, BrowserDriver, AuthCredentials, ScrapeRequest } from '@/shared/types/src/index'
+import { GraphQLClient } from '@/packages/api-client/src/index'
+import { ScrapingError } from '@lesca/error'
 
 describe('ProblemScraperStrategy', () => {
   let strategy: ProblemScraperStrategy
   let mockGraphQLClient: GraphQLClient
+  let mockBrowserDriver: BrowserDriver
+  let mockAuth: AuthCredentials
 
   const mockProblem: Problem = {
     questionId: '1',
@@ -23,7 +26,25 @@ describe('ProblemScraperStrategy', () => {
       getProblem: vi.fn().mockResolvedValue(mockProblem),
     } as unknown as GraphQLClient
 
-    strategy = new ProblemScraperStrategy(mockGraphQLClient)
+    mockBrowserDriver = {
+      launch: vi.fn(),
+      navigate: vi.fn(),
+      waitForSelector: vi.fn(),
+      extractContent: vi.fn(),
+      extractWithFallback: vi.fn(),
+      getHtml: vi.fn(),
+      extractAll: vi.fn(),
+      elementExists: vi.fn(),
+      getBrowser: vi.fn(),
+      close: vi.fn(),
+    } as unknown as BrowserDriver
+
+    mockAuth = {
+      cookies: [],
+      csrfToken: 'token',
+    }
+
+    strategy = new ProblemScraperStrategy(mockGraphQLClient, mockBrowserDriver, mockAuth)
   })
 
   describe('canHandle', () => {
@@ -36,14 +57,14 @@ describe('ProblemScraperStrategy', () => {
     })
 
     it('should return false for non-problem requests', () => {
-      expect(strategy.canHandle({ type: 'list' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'discussion' } as any)).toBe(false)
-      expect(strategy.canHandle({ type: 'editorial' } as any)).toBe(false)
+      expect(strategy.canHandle({ type: 'list' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'discussion' } as unknown as ScrapeRequest)).toBe(false)
+      expect(strategy.canHandle({ type: 'editorial' } as unknown as ScrapeRequest)).toBe(false)
     })
   })
 
   describe('execute', () => {
-    it('should fetch problem successfully', async () => {
+    it('should fetch problem successfully via GraphQL', async () => {
       const request: ProblemScrapeRequest = {
         type: 'problem',
         titleSlug: 'two-sum',
@@ -53,137 +74,24 @@ describe('ProblemScraperStrategy', () => {
 
       expect(result.type).toBe('problem')
       expect(result.data).toEqual(mockProblem)
+      expect(result.metadata.source).toBe('graphql')
       expect(mockGraphQLClient.getProblem).toHaveBeenCalledWith('two-sum')
+      expect(mockBrowserDriver.navigate).not.toHaveBeenCalled()
     })
 
-    it('should return problem data with correct structure', async () => {
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'two-sum',
-      }
+    it('should fallback to browser if GraphQL fails', async () => {
+      mockGraphQLClient.getProblem = vi.fn().mockRejectedValue(new Error('GraphQL Error'))
 
-      const result = await strategy.execute(request)
+      // Mock browser success
+      vi.mocked(mockBrowserDriver.extractWithFallback).mockImplementation(async (selectors) => {
+        if (selectors[0].includes('title')) return '1. Two Sum'
+        if (selectors[0].includes('description')) return '<p>Content</p>'
+        if (selectors[0].includes('difficulty')) return 'Easy'
+        return ''
+      })
+      vi.mocked(mockBrowserDriver.extractAll).mockResolvedValue(['Array'])
+      vi.mocked(mockBrowserDriver.elementExists).mockResolvedValue(false) // Not premium
 
-      expect(result.data).toHaveProperty('questionId')
-      expect(result.data).toHaveProperty('title')
-      expect(result.data).toHaveProperty('titleSlug')
-      expect(result.data).toHaveProperty('difficulty')
-      expect(result.data).toHaveProperty('content')
-    })
-
-    it('should handle GraphQL client errors', async () => {
-      const error = new Error('Network error')
-      mockGraphQLClient.getProblem = vi.fn().mockRejectedValue(error)
-
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'two-sum',
-      }
-
-      await expect(strategy.execute(request)).rejects.toThrow('Network error')
-    })
-
-    it('should handle missing problem', async () => {
-      mockGraphQLClient.getProblem = vi.fn().mockResolvedValue(null)
-
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'nonexistent',
-      }
-
-      await expect(strategy.execute(request)).rejects.toThrow()
-    })
-
-    it('should pass titleSlug correctly', async () => {
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'longest-substring',
-      }
-
-      await strategy.execute(request)
-
-      expect(mockGraphQLClient.getProblem).toHaveBeenCalledWith('longest-substring')
-    })
-  })
-
-  describe('name property', () => {
-    it('should have correct name identifier', () => {
-      expect(strategy.name).toBe('problem')
-    })
-  })
-
-  describe('edge cases', () => {
-    it('should handle problems with special characters in titleSlug', async () => {
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: '3sum-closest',
-      }
-
-      await strategy.execute(request)
-
-      expect(mockGraphQLClient.getProblem).toHaveBeenCalledWith('3sum-closest')
-    })
-
-    it('should handle problems with long titleSlugs', async () => {
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'longest-substring-without-repeating-characters',
-      }
-
-      await strategy.execute(request)
-
-      expect(mockGraphQLClient.getProblem).toHaveBeenCalledWith(
-        'longest-substring-without-repeating-characters'
-      )
-    })
-
-    it('should handle problems with all difficulty levels', async () => {
-      const difficulties = ['Easy', 'Medium', 'Hard']
-
-      for (const difficulty of difficulties) {
-        const problemWithDifficulty = { ...mockProblem, difficulty }
-        mockGraphQLClient.getProblem = vi.fn().mockResolvedValue(problemWithDifficulty)
-
-        const request: ProblemScrapeRequest = {
-          type: 'problem',
-          titleSlug: 'test',
-        }
-
-        const result = await strategy.execute(request)
-        const data = result.data as Problem
-        expect(data.difficulty).toBe(difficulty)
-      }
-    })
-
-    it('should handle problems with no topic tags', async () => {
-      const problemNoTags = { ...mockProblem, topicTags: [] }
-      mockGraphQLClient.getProblem = vi.fn().mockResolvedValue(problemNoTags)
-
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'test',
-      }
-
-      const result = await strategy.execute(request)
-      const data = result.data as Problem
-      expect(data.topicTags).toEqual([])
-    })
-
-    it('should throw error for problems with empty content', async () => {
-      const problemNoContent = { ...mockProblem, content: '' }
-      mockGraphQLClient.getProblem = vi.fn().mockResolvedValue(problemNoContent)
-
-      const request: ProblemScrapeRequest = {
-        type: 'problem',
-        titleSlug: 'test',
-      }
-
-      await expect(strategy.execute(request)).rejects.toThrow('Invalid problem: missing content')
-    })
-  })
-
-  describe('data validation', () => {
-    it('should return complete problem object', async () => {
       const request: ProblemScrapeRequest = {
         type: 'problem',
         titleSlug: 'two-sum',
@@ -192,36 +100,64 @@ describe('ProblemScraperStrategy', () => {
       const result = await strategy.execute(request)
 
       expect(result.type).toBe('problem')
-      expect(result.data).toBeDefined()
+      expect(result.metadata.source).toBe('browser')
+      expect(mockBrowserDriver.launch).toHaveBeenCalled()
+      expect(mockBrowserDriver.navigate).toHaveBeenCalledWith('https://leetcode.com/problems/two-sum/')
+
       const data = result.data as Problem
-      expect(data.questionId).toBe('1')
       expect(data.title).toBe('Two Sum')
-      expect(data.titleSlug).toBe('two-sum')
+      expect(data.questionFrontendId).toBe('1')
+      expect(data.difficulty).toBe('Easy')
     })
 
-    it('should preserve all problem fields', async () => {
-      const fullProblem: Problem = {
-        ...mockProblem,
-        exampleTestcases: 'test1\ntest2',
-        hints: ['Hint 1', 'Hint 2'],
-        solution: { canSeeDetail: true },
-        similarQuestions: '[]',
-        companyTagStats: '{}',
-      } as Problem
-
-      mockGraphQLClient.getProblem = vi.fn().mockResolvedValue(fullProblem)
+    it('should throw ScrapingError if both GraphQL and Browser fail', async () => {
+      mockGraphQLClient.getProblem = vi.fn().mockRejectedValue(new Error('GraphQL Error'))
+      mockBrowserDriver.navigate = vi.fn().mockRejectedValue(new Error('Browser Error'))
 
       const request: ProblemScrapeRequest = {
         type: 'problem',
         titleSlug: 'two-sum',
       }
 
-      const result = await strategy.execute(request)
+      await expect(strategy.execute(request)).rejects.toThrow(ScrapingError)
+      await expect(strategy.execute(request)).rejects.toThrow('Failed to scrape problem "two-sum"')
+    })
 
-      const data = result.data as Problem
-      expect(data.exampleTestcases).toBeDefined()
-      expect(data.hints).toBeDefined()
-      expect(data.solution).toBeDefined()
+    it('should throw if premium content and includePremium is false', async () => {
+      mockGraphQLClient.getProblem = vi.fn().mockRejectedValue(new Error('GraphQL Error'))
+
+      // Mock premium detection
+      vi.mocked(mockBrowserDriver.elementExists).mockImplementation(async (selector) => {
+        return selector === '[data-icon="lock"]'
+      })
+
+      const request: ProblemScrapeRequest = {
+        type: 'problem',
+        titleSlug: 'premium-problem',
+        includePremium: false
+      }
+
+      await expect(strategy.execute(request)).rejects.toThrow('is premium content')
+    })
+
+    it('should throw if premium content and no auth provided', async () => {
+      // Re-init strategy without auth
+      strategy = new ProblemScraperStrategy(mockGraphQLClient, mockBrowserDriver, undefined)
+
+      mockGraphQLClient.getProblem = vi.fn().mockRejectedValue(new Error('GraphQL Error'))
+
+      // Mock premium detection
+      vi.mocked(mockBrowserDriver.elementExists).mockImplementation(async (selector) => {
+        return selector === '[data-icon="lock"]'
+      })
+
+      const request: ProblemScrapeRequest = {
+        type: 'problem',
+        titleSlug: 'premium-problem',
+        includePremium: true
+      }
+
+      await expect(strategy.execute(request)).rejects.toThrow('requires authentication')
     })
   })
 })

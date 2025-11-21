@@ -18,7 +18,7 @@ import { performance } from 'perf_hooks'
 
 import { HtmlToMarkdownConverter } from '@lesca/converters'
 
-import { createProblem, createProblems } from '../factories/problem-factory.js'
+import { createProblem, createProblems } from '../factories/problem-factory'
 
 interface BenchmarkResult {
   name: string

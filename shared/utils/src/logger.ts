@@ -6,7 +6,7 @@
 import { appendFileSync, existsSync, statSync, renameSync, unlinkSync, mkdirSync } from 'fs'
 import { dirname } from 'path'
 
-import { sanitizeString, sanitizeObject, sanitizeError } from './sanitizer.js'
+import { sanitizeString, sanitizeObject, sanitizeError } from './sanitizer'
 
 /**
  * Log levels in order of severity

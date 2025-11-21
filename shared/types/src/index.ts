@@ -101,6 +101,8 @@ export interface Problem {
   // Database problems only
   mysqlSchemas: string[]
   dataSchemas: string[]
+
+  isPaidOnly: boolean
 }
 
 /**
@@ -248,6 +250,7 @@ export interface ProblemScrapeRequest extends BaseScrapeRequest {
   titleSlug: string
   includeDiscussions?: boolean
   includeSolution?: boolean
+  includePremium?: boolean
 }
 
 /**

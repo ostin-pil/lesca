@@ -2,11 +2,11 @@ import type {
   Converter,
   ConverterOptions,
   EditorialContent,
-} from '@/shared/types/src/index.js'
+} from '@/shared/types/src/index'
 import { ParsingError } from '@lesca/error'
 
 
-import { HtmlToMarkdownConverter } from './html-to-markdown.js'
+import { HtmlToMarkdownConverter } from './html-to-markdown'
 
 /**
  * Editorial to Markdown Converter

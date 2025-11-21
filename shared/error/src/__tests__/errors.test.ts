@@ -12,7 +12,7 @@ import {
   ValidationError,
   ScrapingError,
   ConversionError,
-} from '../errors.js'
+} from '../errors'
 
 describe('Error Classes', () => {
   describe('LescaError', () => {

@@ -47,6 +47,7 @@ export function createProblem(overrides: Partial<Problem> = {}): Problem {
     solution: null,
     mysqlSchemas: [],
     dataSchemas: [],
+    isPaidOnly: false,
     ...overrides,
   }
 }

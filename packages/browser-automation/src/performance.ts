@@ -1,4 +1,4 @@
-import { logger } from '@/shared/utils/src/index.js'
+import { logger } from '@/shared/utils/src/index'
 import type { Page } from 'playwright'
 
 export interface PerformanceMetrics {
@@ -28,7 +28,7 @@ export class PerformanceMonitor {
   private page?: Page
   private startTime: number = 0
 
-  async startMonitoring(page: Page): Promise<void> {
+  startMonitoring(page: Page): void {
     this.page = page
     this.resetMetrics()
     this.startTime = Date.now()
@@ -37,9 +37,10 @@ export class PerformanceMonitor {
       this.metrics.requestCount++
     })
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     page.on('response', async (response) => {
       try {
-        const length = response.headers()['content-length']
+        const length = await response.headerValue('content-length')
 
         if (length) {
           this.metrics.bytesTransferred += parseInt(length, 10)
@@ -74,12 +75,18 @@ export class PerformanceMonitor {
 
       // Get Memory usage if available (Chrome only)
       try {
-        const memory = await this.page.evaluate(() => {
-          // @ts-ignore - performance.memory is Chrome specific
-          return window.performance?.memory?.usedJSHeapSize
+        interface PerformanceWithMemory extends Performance {
+          memory?: {
+            usedJSHeapSize: number
+          }
+        }
+
+        const memory = await this.page.evaluate<number | undefined>(() => {
+          const perf = window.performance as PerformanceWithMemory
+          return perf.memory?.usedJSHeapSize
         })
         if (memory) {
-          this.metrics.jsHeapSize = memory
+          this.metrics.jsHeapSize = memory as number
         }
       } catch {
         // Ignore if memory API not available

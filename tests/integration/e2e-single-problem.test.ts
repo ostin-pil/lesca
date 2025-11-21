@@ -6,7 +6,7 @@ import { LeetCodeScraper } from '@lesca/core'
 import { FileSystemStorage } from '@lesca/storage'
 import { ProblemScraperStrategy } from '@lesca/scrapers'
 import { GraphQLClient } from '@lesca/api-client'
-import type { ProblemScrapeRequest } from '@lesca/shared/types'
+import type { ProblemScrapeRequest, Problem } from '@lesca/shared/types'
 
 /**
  * End-to-End Integration Test: Single Problem Scraping
@@ -37,11 +37,12 @@ describe('E2E: Single Problem Scraping', () => {
     hints: [],
     mysqlSchemas: [],
     dataSchemas: [],
-    similarQuestions: [],
-    companyTagStats: {},
-    stats: {},
+    similarQuestions: '[]',
+    companyTagStats: '{}',
+    stats: '{}',
     solution: null,
-  } as any
+    isPaidOnly: false,
+  } as unknown as Problem
 
   beforeEach(() => {
     // Create temporary directory for test output
@@ -54,7 +55,7 @@ describe('E2E: Single Problem Scraping', () => {
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
         if (titleSlug === 'two-sum') return mockProblem
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },
@@ -134,7 +135,7 @@ describe('E2E: Single Problem Scraping', () => {
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
         if (titleSlug === 'two-sum') return mockProblem
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },
@@ -153,7 +154,7 @@ describe('E2E: Single Problem Scraping', () => {
     const mdContent = await import('fs/promises').then((fs) => fs.readFile(mdPath, 'utf-8'))
 
     // Markdown format should not include YAML frontmatter
-    expect(mdContent).not.toMatch(/---\n/) 
+    expect(mdContent).not.toMatch(/---\n/)
   }, 30000)
 
   it('should apply content enhancements correctly', async () => {
@@ -165,12 +166,12 @@ describe('E2E: Single Problem Scraping', () => {
         { lang: 'Python', langSlug: 'python3', code: 'def solve(): pass' },
       ],
       companyTagStats: JSON.stringify({ 'google': 1 }),
-    } as any
+    } as unknown as Problem
 
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
         if (titleSlug === 'two-sum') return enhancedProblem
-        const err: any = new Error(`Problem not found: ${titleSlug}`)
+        const err = new Error(`Problem not found: ${titleSlug}`) as Error & { status: number }
         err.status = 404
         throw err
       },

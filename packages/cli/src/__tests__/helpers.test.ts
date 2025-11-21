@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-import { ConfigManager } from '../../../../shared/config/src/index.js'
-import { logger } from '../../../../shared/utils/src/index.js'
+import { ConfigManager } from '@lesca/shared/config'
+import { logger } from '@lesca/shared/utils'
 import {
   initializeConfig,
   handleCliError,
@@ -13,7 +13,7 @@ import {
   formatSuccessMessage,
   formatErrorMessage,
   validateProblemSlug,
-} from '../helpers.js'
+} from '../helpers'
 
 describe('CLI Helpers', () => {
   describe('initializeConfig', () => {
