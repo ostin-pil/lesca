@@ -43,6 +43,12 @@ module.exports = {
         ],
         'newlines-between': 'always',
         alphabetize: { order: 'asc', caseInsensitive: true },
+        pathGroups: [
+          {
+            pattern: '@/**',
+            group: 'internal',
+          },
+        ],
       },
     ],
     'import/no-unresolved': 'off', // TypeScript handles this
@@ -51,16 +57,25 @@ module.exports = {
     'no-console': 'error', // No console statements allowed
     'prefer-const': 'error',
     'no-var': 'error',
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      {
+        ts: 'never',
+        tsx: 'never',
+        js: 'never',
+        jsx: 'never',
+      },
+    ],
+    'import/no-relative-parent-imports': 'off', // We want to allow ../ but discourage deep nesting
   },
   settings: {
     'import/resolver': {
-      node: {
-        extensions: ['.ts', '.tsx', '.js', '.json'],
-      },
       typescript: {
         alwaysTryTypes: true,
         project: './tsconfig.json',
       },
+      node: true,
     },
   },
   ignorePatterns: [
