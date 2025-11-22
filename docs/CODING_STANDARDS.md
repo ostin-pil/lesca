@@ -221,10 +221,18 @@ package/
 
 ### Import Order
 
+**Rules:**
+- ❌ Never include file extensions (.js, .ts, .tsx) in import statements
+- ✅ Use `@/` alias for shared packages
+- ✅ Use `@lesca/...` aliases for cross-package imports
+- ✅ Use relative imports (without extensions) for same-package imports
+
+**Order:**
 1. Node built-ins
 2. External packages
-3. Internal packages (from workspace)
-4. Local imports (types, utilities, etc.)
+3. Shared packages (via @ alias)
+4. Internal packages (from workspace)
+5. Local imports (types, utilities, etc.)
 
 ```typescript
 // Node built-ins
@@ -235,12 +243,13 @@ import { existsSync } from 'fs'
 import chalk from 'chalk'
 import ora from 'ora'
 
-// Internal packages
-import type { Config } from '../../../shared/types'
-import { logger } from '../../../shared/utils'
+// Shared packages (@ alias)
+import type { Config } from '@/shared/types'
+import { logger } from '@/shared/utils'
+import { ConfigManager } from '@/shared/config'
 
-// Local imports
-import { ConfigManager } from './config-manager'
+// Local imports (same package)
+import { helperFunction } from './helpers'
 import type { LoaderOptions } from './types'
 ```
 

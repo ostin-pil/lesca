@@ -127,12 +127,18 @@ Read tool: ARCHITECTURE_REVIEW.md
 
 ### 2. Implementation Phase
 
+**Import Rules:**
+- ❌ Never include file extensions (.js, .ts, .tsx)
+- ✅ Use `@/` alias for shared packages
+- ✅ Use relative imports (without extensions) for same-package imports
+
 ```typescript
 // Import order
-import { resolve } from 'path'          // Node built-ins
-import chalk from 'chalk'                // External packages
-import type { Config } from '@shared/types'  // Internal types
-import { ConfigManager } from './config'     // Local imports
+import { resolve } from 'path'               // Node built-ins
+import chalk from 'chalk'                     // External packages
+import type { Config } from '@/shared/types' // Shared types (@ alias)
+import { logger } from '@/shared/utils'       // Shared utils (@ alias)
+import { ConfigManager } from './config'      // Local imports (no extension)
 ```
 
 ### 3. Validation Phase

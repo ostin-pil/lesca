@@ -125,6 +125,121 @@ Next steps:
 
 ---
 
+### `config`
+
+Manage and inspect Lesca configuration.
+
+#### Syntax
+
+```bash
+npm run dev -- config <subcommand> [options]
+```
+
+#### Subcommands
+
+##### `config list`
+
+Display the full current configuration in YAML format.
+
+**Syntax:**
+```bash
+npm run dev -- config list
+```
+
+**Example:**
+```bash
+npm run dev -- config list
+```
+
+**Output:**
+```yaml
+auth:
+  cookiePath: /home/user/.lesca/cookies.json
+  sessionTimeout: 3600
+api:
+  endpoint: https://leetcode.com/graphql
+  timeout: 30000
+  retries: 3
+browser:
+  headless: true
+  timeout: 30000
+storage:
+  path: ./output
+... (full configuration)
+```
+
+##### `config get <key>`
+
+Get a specific configuration value using dot notation.
+
+**Syntax:**
+```bash
+npm run dev -- config get <key>
+```
+
+**Arguments:**
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `<key>` | Yes | Configuration key in dot notation (e.g., `browser.headless`, `api.timeout`) |
+
+**Examples:**
+
+**Get single value:**
+```bash
+npm run dev -- config get browser.headless
+# Output: true
+```
+
+**Get nested object:**
+```bash
+npm run dev -- config get auth
+# Output:
+# {
+#   "cookiePath": "/home/user/.lesca/cookies.json",
+#   "sessionTimeout": 3600
+# }
+```
+
+**Get array or complex value:**
+```bash
+npm run dev -- config get cache.ttl
+# Output: JSON formatted object
+```
+
+**Common configuration keys:**
+- `auth.cookiePath` - Cookie file location
+- `browser.headless` - Browser headless mode setting
+- `api.endpoint` - LeetCode GraphQL API endpoint
+- `api.timeout` - API request timeout in milliseconds
+- `storage.path` - Output directory path
+- `scraping.concurrency` - Number of parallel scrapes
+
+##### `config path`
+
+Show information about the loaded configuration.
+
+**Syntax:**
+```bash
+npm run dev -- config path
+```
+
+**Example:**
+```bash
+npm run dev -- config path
+# Output: Configuration loaded.
+```
+
+**Note:** The configuration is loaded from standard locations in this priority order:
+1. `--config` CLI option
+2. `LESCA_CONFIG_PATH` environment variable
+3. `./lesca.config.yaml`
+4. `./lesca.config.json`
+5. `~/.lesca/config.yaml`
+6. Default values
+
+---
+
 ### `scrape`
 
 Scrape a single LeetCode problem.

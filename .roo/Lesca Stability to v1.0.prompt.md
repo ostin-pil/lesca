@@ -5,10 +5,18 @@
 This document outlines the comprehensive implementation plan for taking Lesca from v0.1.0 (MVP Complete) to v1.0.0 (Stable Production Release). The plan combines immediate stability priorities with medium-term feature development, creating a cohesive roadmap spanning approximately 8-12 weeks.
 
 **Current State:** v0.1.0 - MVP Complete
-- 539 passing tests (73.66% coverage)
+- 631 passing tests (68.43% coverage)
 - Zero TypeScript/ESLint errors
-- 9 packages, ~9,500 lines of code
+- 9 packages, ~15,000 lines of code
 - Core functionality working
+
+**Recent Improvements (Nov 2025):**
+- ✅ Import refactoring: removed .js extensions, using @ path aliases
+- ✅ CLI refactored to modular command structure
+- ✅ New `config` command with list/get/path subcommands
+- ✅ Browser fallback functionality in problem scraper
+- ✅ Integration tests for core workflows
+- ✅ Refactoring automation scripts created
 
 **Target State:** v1.0.0 - Production Stable
 - 90%+ test coverage with comprehensive integration tests
