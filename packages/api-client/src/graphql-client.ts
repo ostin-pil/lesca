@@ -1,3 +1,5 @@
+import { createHash } from 'crypto'
+
 import type {
   Problem,
   ProblemList,
@@ -6,6 +8,7 @@ import type {
 } from '@/shared/types/src/index'
 import type { TieredCache } from '@/shared/utils/src/index'
 import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
+import { getDefaultConfig } from '@lesca/shared/config'
 
 interface GraphQLResponse<T> {
   data?: T
@@ -36,7 +39,9 @@ export class GraphQLClient {
     variables?: Record<string, unknown>,
     options: { noCache?: boolean; ttl?: number } = {}
   ): Promise<T> {
-    const cacheKey = `graphql:${JSON.stringify({ query, variables })}`
+    const queryHash = createHash('sha256').update(query).digest('hex')
+    const varsStr = JSON.stringify(variables || {})
+    const cacheKey = `graphql:${queryHash}:${varsStr}`
 
     if (this.cache && !options.noCache) {
       const cached = await this.cache.get<T>(cacheKey)
@@ -95,15 +100,16 @@ export class GraphQLClient {
       }
 
       if (this.cache && !options.noCache) {
+        const config = getDefaultConfig()
         let ttl = options.ttl
 
         if (!ttl) {
-          if (query.includes('getQuestionDetail') || query.includes('question(')) {
-            ttl = 7 * 24 * 60 * 60 * 1000 // 7 days for static problem data
+          if (query.includes('question(')) {
+            ttl = config.cache.ttl.problem
           } else if (query.includes('questionList')) {
-            ttl = 60 * 60 * 1000 // 1 hour for lists
+            ttl = config.cache.ttl.list
           } else {
-            ttl = 60 * 60 * 1000 // Default 1 hour
+            ttl = config.cache.ttl.problem // Default to problem TTL
           }
         }
         await this.cache.set(cacheKey, result.data, ttl)

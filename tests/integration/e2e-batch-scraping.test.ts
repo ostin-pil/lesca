@@ -130,8 +130,6 @@ describe('E2E: Batch Scraping', () => {
   })
 
   it('should scrape multiple problems concurrently', async () => {
-    // TODO: Implement with mocked API responses
-
     const requests: ProblemScrapeRequest[] = [
       { type: 'problem', titleSlug: 'two-sum' },
       { type: 'problem', titleSlug: 'add-two-numbers' },
@@ -157,8 +155,6 @@ describe('E2E: Batch Scraping', () => {
   }, 60000)
 
   it('should handle partial failures in batch', async () => {
-    // TODO: Mix of successful and failing requests
-
     const requests: ProblemScrapeRequest[] = [
       { type: 'problem', titleSlug: 'two-sum' },
       { type: 'problem', titleSlug: 'non-existent-problem' },

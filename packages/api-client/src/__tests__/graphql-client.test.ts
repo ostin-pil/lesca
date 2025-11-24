@@ -458,6 +458,99 @@ describe('GraphQLClient', () => {
       expect(result2).toEqual({ result: 'query2' })
       expect(fetchSpy).toHaveBeenCalledTimes(2) // Different queries = different cache keys
     })
+
+    it('should bypass cache when noCache option is true', async () => {
+      const mockResponse1 = { data: { test: 'value1' } }
+      const mockResponse2 = { data: { test: 'value2' } }
+
+      fetchSpy
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => mockResponse1,
+          headers: new Headers(),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => mockResponse2,
+          headers: new Headers(),
+        } as Response)
+
+      const cache = new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined, cache)
+
+      // First call with cache
+      const result1 = await client.query('{ test }')
+      expect(result1).toEqual({ test: 'value1' })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+      // Second call with noCache: true - should fetch again
+      const result2 = await client.query('{ test }', undefined, { noCache: true })
+      expect(result2).toEqual({ test: 'value2' })
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should respect TTL expiration', async () => {
+      const mockResponse = { data: { test: 'value' } }
+
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      } as Response)
+
+      const cache = new TieredCache(testCacheDir, {
+        memorySize: 10,
+        fileTtl: 50, // Short TTL for test
+      })
+      const client = new GraphQLClient(undefined, undefined, cache)
+
+      // First call - cache miss, network hit
+      const result1 = await client.query<{ test: string }>('{ test }', undefined, { ttl: 50 })
+      expect(result1).toEqual({ test: 'value' })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+      // Wait for TTL to expire
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // Second call - cache expired, network hit again
+      const result2 = await client.query<{ test: string }>('{ test }')
+      expect(result2).toEqual({ test: 'value' })
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should invalidate cache entries', async () => {
+      const mockResponse = { data: { test: 'value' } }
+      const queryStr = '{ test }'
+      const queryHash = require('crypto').createHash('sha256').update(queryStr).digest('hex')
+      const varsStr = JSON.stringify({})
+      const cacheKey = `graphql:${queryHash}:${varsStr}`
+
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+        headers: new Headers(),
+      } as Response)
+
+      const cache = new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined, cache)
+
+      // First call - cache miss
+      const result1 = await client.query('{ test }')
+      expect(result1).toEqual({ test: 'value' })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+      // Invalidate cache
+      await cache.delete(cacheKey)
+
+      // Second call - cache miss after invalidation
+      const result2 = await client.query('{ test }')
+      expect(result2).toEqual({ test: 'value' })
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('getProblem method', () => {

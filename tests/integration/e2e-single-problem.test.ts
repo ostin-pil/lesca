@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -27,18 +27,25 @@ describe('E2E: Single Problem Scraping', () => {
 
   const mockProblem = {
     questionId: '1',
+    questionFrontendId: '1',
     title: 'Two Sum',
     titleSlug: 'two-sum',
     content: '<p>Example problem content</p>',
     difficulty: 'Easy',
     exampleTestcases: '[]',
     topicTags: [{ name: 'array', slug: 'array' }],
-    codeSnippets: [],
-    hints: [],
+    codeSnippets: [
+      {
+        lang: 'Python3',
+        langSlug: 'python3',
+        code: 'class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        '
+      }
+    ],
+    hints: ['Try using a hash map'],
     mysqlSchemas: [],
     dataSchemas: [],
     similarQuestions: '[]',
-    companyTagStats: '{}',
+    companyTagStats: JSON.stringify({ google: 1 }),
     stats: '{}',
     solution: null,
     isPaidOnly: false,
@@ -112,8 +119,6 @@ describe('E2E: Single Problem Scraping', () => {
   }, 30000)
 
   it('should handle non-existent problem gracefully', async () => {
-    // TODO: Implement with mocked API response
-
     const request: ProblemScrapeRequest = {
       type: 'problem',
       titleSlug: 'non-existent-problem-xyz',
@@ -165,13 +170,8 @@ describe('E2E: Single Problem Scraping', () => {
   }, 30000)
 
   it('should apply content enhancements correctly', async () => {
-    // Provide hints, codeSnippets, and companyTagStats so enhancers apply
-    const enhancedProblem = {
-      ...mockProblem,
-      hints: ['Try using a hash map'],
-      codeSnippets: [{ lang: 'Python', langSlug: 'python3', code: 'def solve(): pass' }],
-      companyTagStats: JSON.stringify({ google: 1 }),
-    } as unknown as Problem
+    // Use fixture which already has hints, codeSnippets, etc.
+    const enhancedProblem = mockProblem
 
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
@@ -214,5 +214,71 @@ describe('E2E: Single Problem Scraping', () => {
     expect(content).toContain('## Hints')
     expect(content).toContain('## Code Templates')
     expect(content).toContain('## Companies')
+  }, 30000)
+
+  it('should fallback to browser successfully when GraphQL fails', async () => {
+    const graphqlClient = {
+      getProblem: async () => {
+        const err = new Error('GraphQL network error') as Error & { status: number }
+        err.status = 500
+        throw err
+      },
+    } as unknown as GraphQLClient
+
+    const mockExtractWithFallback = vi.fn()
+      .mockResolvedValueOnce('123. Fallback Test Problem') // title
+      .mockResolvedValueOnce('<div>Fallback content from browser</div>') // content
+      .mockResolvedValueOnce('Medium') // difficulty
+
+    const mockExtractAll = vi.fn()
+      .mockResolvedValueOnce(['Array', 'Hash Table']) // tags
+
+    const mockElementExists = vi.fn()
+      .mockResolvedValue(false)
+
+    const mockWaitForSelector = vi.fn()
+      .mockResolvedValue(undefined)
+
+    const mockNavigate = vi.fn()
+      .mockResolvedValue(undefined)
+
+    const mockLaunch = vi.fn()
+      .mockResolvedValue(undefined)
+
+    const browserDriver = {
+      launch: mockLaunch,
+      close: async () => {},
+      navigate: mockNavigate,
+      waitForSelector: mockWaitForSelector,
+      extractContent: async () => '<h1>Test Problem Fallback</h1>',
+      extractWithFallback: mockExtractWithFallback,
+      extractAll: mockExtractAll,
+      elementExists: mockElementExists,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
+    const fallbackStorage = new FileSystemStorage(tempDir)
+    const fallbackScraper = new LeetCodeScraper([problemStrategy], fallbackStorage, {
+      format: 'obsidian',
+      enhancements: { enabled: false },
+    })
+
+    const request: ProblemScrapeRequest = {
+      type: 'problem',
+      titleSlug: 'fallback-test-problem',
+    }
+
+    const result = await fallbackScraper.scrape(request)
+    expect(result.success).toBe(true)
+    if (!result.success) return
+
+    const absolutePath = fallbackStorage.getAbsolutePath(result.filePath!)
+    expect(existsSync(absolutePath)).toBe(true)
+
+    const content = readFileSync(absolutePath, 'utf-8')
+    expect(content).toContain('Fallback content from browser')
+    expect(content).toContain('Medium')
+    expect(content).toContain('Array')
   }, 30000)
 })
