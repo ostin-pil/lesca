@@ -7,6 +7,7 @@
 
 import type { ConfigManager } from '@/shared/config/src/index'
 import { logger } from '@/shared/utils/src/index'
+import { ValidationError } from '@lesca/error'
 import chalk from 'chalk'
 
 /**
@@ -68,7 +69,7 @@ export function parseDifficulty(difficulty?: string): 'Easy' | 'Medium' | 'Hard'
     return normalized as 'Easy' | 'Medium' | 'Hard'
   }
 
-  throw new Error(`Invalid difficulty: ${difficulty}. Must be Easy, Medium, or Hard.`)
+  throw new ValidationError('VAL_INVALID_INPUT', `Invalid difficulty: ${difficulty}. Must be Easy, Medium, or Hard.`)
 }
 
 /**
@@ -78,15 +79,15 @@ export function parseNumber(value: string, optionName: string, min?: number, max
   const parsed = parseInt(value, 10)
 
   if (isNaN(parsed)) {
-    throw new Error(`${optionName} must be a valid number, got: ${value}`)
+    throw new ValidationError('VAL_INVALID_INPUT', `${optionName} must be a valid number, got: ${value}`)
   }
 
   if (min !== undefined && parsed < min) {
-    throw new Error(`${optionName} must be at least ${min}, got: ${parsed}`)
+    throw new ValidationError('VAL_INVALID_INPUT', `${optionName} must be at least ${min}, got: ${parsed}`)
   }
 
   if (max !== undefined && parsed > max) {
-    throw new Error(`${optionName} must be at most ${max}, got: ${parsed}`)
+    throw new ValidationError('VAL_INVALID_INPUT', `${optionName} must be at most ${max}, got: ${parsed}`)
   }
 
   return parsed
@@ -99,7 +100,7 @@ export function validateFormat(format: string): 'markdown' | 'obsidian' {
   if (format === 'markdown' || format === 'obsidian') {
     return format
   }
-  throw new Error(`Invalid format: ${format}. Must be 'markdown' or 'obsidian'.`)
+  throw new ValidationError('VAL_INVALID_INPUT', `Invalid format: ${format}. Must be 'markdown' or 'obsidian'.`)
 }
 
 /**
@@ -109,7 +110,7 @@ export function validateSortOrder(sort: string): 'hot' | 'most-votes' | 'recent'
   if (sort === 'hot' || sort === 'most-votes' || sort === 'recent') {
     return sort
   }
-  throw new Error(`Invalid sort order: ${sort}. Must be 'hot', 'most-votes', or 'recent'.`)
+  throw new ValidationError('VAL_INVALID_INPUT', `Invalid sort order: ${sort}. Must be 'hot', 'most-votes', or 'recent'.`)
 }
 
 /**
@@ -136,11 +137,12 @@ export function validateProblemSlug(slug: string): string {
   const trimmed = slug.trim()
 
   if (trimmed.length === 0) {
-    throw new Error('Problem slug cannot be empty')
+    throw new ValidationError('VAL_INVALID_INPUT', 'Problem slug cannot be empty')
   }
 
   if (!/^[a-z0-9-]+$/.test(trimmed)) {
-    throw new Error(
+    throw new ValidationError(
+      'VAL_INVALID_INPUT',
       `Invalid problem slug format: ${slug}. Should be lowercase with hyphens (e.g., "two-sum")`
     )
   }

@@ -9,7 +9,7 @@ import type { ProblemScrapeRequest, ListScrapeRequest, ProblemListFilters, Diffi
 import { logger } from '@/shared/utils/src/index'
 import { ScrapingError } from '@lesca/error'
 import chalk from 'chalk'
-import cliProgress from 'cli-progress'
+import { SingleBar, Presets } from 'cli-progress'
 import { Command } from 'commander'
 import ora from 'ora'
 
@@ -133,7 +133,7 @@ export const scrapeListCommand = new Command('scrape-list')
       logger.log()
 
       // 8. Create progress bar
-      const progressBar = new cliProgress.SingleBar(
+      const progressBar = new SingleBar(
         {
           format:
             chalk.cyan('{bar}') +
@@ -146,7 +146,7 @@ export const scrapeListCommand = new Command('scrape-list')
           barIncompleteChar: '\u2591',
           hideCursor: true,
         },
-        cliProgress.Presets.shades_classic
+        Presets.shades_classic
       )
 
       // 9. Create problem requests

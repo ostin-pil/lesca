@@ -16,6 +16,7 @@ interface LoginOptions {
 }
 
 export const loginCommand = new Command('login')
+  .alias('auth')
   .description('Interactive login to LeetCode and save authentication cookies')
   .option('-u, --username <username>', 'LeetCode username or email')
   .option('-p, --password <password>', 'LeetCode password (not recommended, use prompt instead)')

@@ -4,13 +4,16 @@ import { ConfigManager } from '@/shared/config/src/index'
 import { logger } from '@/shared/utils/src/index'
 import { Command } from 'commander'
 
+import { authCommand } from './commands/auth'
 import { configCommand } from './commands/config'
 import { initCommand } from './commands/init'
+import { listCommand } from './commands/list'
 import { loginCommand } from './commands/login'
 import { scrapeCommand } from './commands/scrape'
 import { scrapeDiscussionsCommand } from './commands/scrape-discussions'
 import { scrapeEditorialCommand } from './commands/scrape-editorial'
 import { scrapeListCommand } from './commands/scrape-list'
+import { searchCommand } from './commands/search'
 
 /**
  * CLI Application for Lesca
@@ -24,7 +27,6 @@ function initializeConfig(configPath?: string): void {
     const opts = configPath ? { configPath } : {}
     ConfigManager.initialize(opts)
   } catch (error) {
-    // If config loading fails, use defaults
     logger.warn('Could not load config file, using defaults')
     ConfigManager.initialize({})
   }
@@ -53,9 +55,11 @@ program
     initializeConfig(opts.config)
   })
 
-// Register commands
 program.addCommand(initCommand)
+program.addCommand(authCommand)
 program.addCommand(loginCommand)
+program.addCommand(listCommand)
+program.addCommand(searchCommand)
 program.addCommand(scrapeCommand)
 program.addCommand(scrapeListCommand)
 program.addCommand(scrapeEditorialCommand)
