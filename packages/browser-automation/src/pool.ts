@@ -60,10 +60,7 @@ export class BrowserPool {
   private isShuttingDown = false
   private cleanupHandler?: (() => void) | undefined
 
-  constructor(
-    config: BrowserPoolConfig = {},
-    launchOptions: LaunchOptions = {}
-  ) {
+  constructor(config: BrowserPoolConfig = {}, launchOptions: LaunchOptions = {}) {
     this.config = {
       enabled: config.enabled ?? true,
       minSize: config.minSize ?? 0,
@@ -84,11 +81,9 @@ export class BrowserPool {
     }
 
     if (this.config.minSize > this.config.maxSize) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'minSize cannot be greater than maxSize',
-        { context: { minSize: this.config.minSize, maxSize: this.config.maxSize } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'minSize cannot be greater than maxSize', {
+        context: { minSize: this.config.minSize, maxSize: this.config.maxSize },
+      })
     }
 
     this.startCleanupInterval()
@@ -101,6 +96,8 @@ export class BrowserPool {
     })
   }
 
+  private pendingCreates = 0
+
   /**
    * Acquire a browser from the pool
    */
@@ -111,10 +108,7 @@ export class BrowserPool {
     }
 
     if (this.isShuttingDown) {
-      throw new BrowserError(
-        'BROWSER_CRASH',
-        'Browser pool is shutting down'
-      )
+      throw new BrowserError('BROWSER_CRASH', 'Browser pool is shutting down')
     }
 
     const idleBrowser = this.pool.find((pb) => !pb.inUse)
@@ -141,25 +135,30 @@ export class BrowserPool {
       return idleBrowser.browser
     }
 
-    if (this.pool.length < this.config.maxSize) {
-      const browser = await this.createBrowser()
-      const pooledBrowser: PooledBrowser = {
-        browser,
-        inUse: true,
-        createdAt: Date.now(),
-        lastUsedAt: Date.now(),
-        usageCount: 1,
+    if (this.pool.length + this.pendingCreates < this.config.maxSize) {
+      this.pendingCreates++
+      try {
+        const browser = await this.createBrowser()
+        const pooledBrowser: PooledBrowser = {
+          browser,
+          inUse: true,
+          createdAt: Date.now(),
+          lastUsedAt: Date.now(),
+          usageCount: 1,
+        }
+
+        this.pool.push(pooledBrowser)
+        this.updateStats()
+
+        logger.debug('Created new browser for pool', {
+          poolSize: this.pool.length,
+          maxSize: this.config.maxSize,
+        })
+
+        return browser
+      } finally {
+        this.pendingCreates--
       }
-
-      this.pool.push(pooledBrowser)
-      this.updateStats()
-
-      logger.debug('Created new browser for pool', {
-        poolSize: this.pool.length,
-        maxSize: this.config.maxSize,
-      })
-
-      return browser
     }
 
     logger.warn('Browser pool at max capacity, waiting for available browser')
@@ -252,11 +251,9 @@ export class BrowserPool {
 
       return browser
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to create browser instance',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to create browser instance', {
+        cause: error as Error,
+      })
     }
   }
 

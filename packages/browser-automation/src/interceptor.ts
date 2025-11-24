@@ -50,8 +50,8 @@ export class RequestInterceptor {
 
           if (contentType && contentType.includes('application/json')) {
             try {
-              const json = await response.json()
-              this.responses.set(url, json as unknown)
+              const json: unknown = await response.json()
+              this.responses.set(url, json)
               logger.debug(`Captured response from: ${url}`)
             } catch (e) {
               logger.warn(`Failed to parse JSON from captured response: ${url}`)

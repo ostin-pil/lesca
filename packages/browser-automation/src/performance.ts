@@ -86,7 +86,7 @@ export class PerformanceMonitor {
           return perf.memory?.usedJSHeapSize
         })
         if (memory) {
-          this.metrics.jsHeapSize = memory as number
+          this.metrics.jsHeapSize = memory
         }
       } catch {
         // Ignore if memory API not available

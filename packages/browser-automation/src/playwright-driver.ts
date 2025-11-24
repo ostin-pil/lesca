@@ -149,7 +149,7 @@ export class PlaywrightDriver implements BrowserDriver {
     try {
       const element = await this.page!.waitForSelector(selector)
       if (!element) {
-        throw new Error('Element not found')
+        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', { context: { selector } })
       }
       const content = await element.textContent()
       return content || ''
@@ -203,7 +203,7 @@ export class PlaywrightDriver implements BrowserDriver {
     try {
       const element = await this.page!.waitForSelector(selector)
       if (!element) {
-        throw new Error('Element not found')
+        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', { context: { selector } })
       }
       return await element.innerHTML()
     } catch (error) {
