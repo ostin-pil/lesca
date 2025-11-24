@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
 import { GraphQLClient, RateLimiter } from '../graphql-client'
-import { GraphQLError, RateLimitError } from '@lesca/shared/types'
+import { GraphQLError, RateLimitError } from '@lesca/error'
 import type { AuthCredentials, Problem } from '@lesca/shared/types'
 import { TieredCache } from '@lesca/shared/utils'
 import { resolve } from 'path'
@@ -355,7 +355,9 @@ describe('GraphQLClient', () => {
       await client.query('{ test }')
 
       const call = fetchSpy.mock.calls[0]
-      const headers = (call?.[1] as RequestInit | undefined)?.headers as Record<string, string> | undefined
+      const headers = (call?.[1] as RequestInit | undefined)?.headers as
+        | Record<string, string>
+        | undefined
 
       expect(headers?.['Cookie']).toBeUndefined()
     })
@@ -384,9 +386,7 @@ describe('GraphQLClient', () => {
     })
   })
 
-  // Cache integration tests disabled - caching removed from GraphQLClient
-  // TODO: Re-enable when caching is re-implemented
-  describe.skip('cache integration', () => {
+  describe('cache integration', () => {
     it('should use cached results when available', async () => {
       const mockResponse = { data: { test: 'value' } }
 
@@ -397,11 +397,11 @@ describe('GraphQLClient', () => {
         headers: new Headers(),
       } as Response)
 
-      new TieredCache(testCacheDir, {
+      const cache = new TieredCache(testCacheDir, {
         memorySize: 10,
         fileTtl: 10000,
       })
-      const client = new GraphQLClient(undefined, undefined)
+      const client = new GraphQLClient(undefined, undefined, cache)
 
       // First call - should hit network
       const result1 = await client.query('{ test }')
@@ -424,8 +424,8 @@ describe('GraphQLClient', () => {
         headers: new Headers(),
       } as Response)
 
-      new TieredCache(testCacheDir)
-      const client = new GraphQLClient(undefined, undefined)
+      const cache = new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined, cache)
 
       // Problem queries should have 7-day TTL
       await client.query('query { question(titleSlug: "test") { title } }')
@@ -434,8 +434,8 @@ describe('GraphQLClient', () => {
     })
 
     it('should generate unique cache keys for different queries', async () => {
-      new TieredCache(testCacheDir)
-      const client = new GraphQLClient(undefined, undefined)
+      const cache = new TieredCache(testCacheDir)
+      const client = new GraphQLClient(undefined, undefined, cache)
 
       fetchSpy
         .mockResolvedValueOnce({

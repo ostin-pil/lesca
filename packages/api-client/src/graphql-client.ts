@@ -4,11 +4,9 @@ import type {
   ProblemListFilters,
   AuthCredentials,
 } from '@/shared/types/src/index'
-import { GraphQLError, RateLimitError } from '@/shared/types/src/index'
+import type { TieredCache } from '@/shared/utils/src/index'
+import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
 
-/**
- * GraphQL response wrapper
- */
 interface GraphQLResponse<T> {
   data?: T
   errors?: Array<{
@@ -29,13 +27,24 @@ export class GraphQLClient {
 
   constructor(
     private auth?: AuthCredentials,
-    private rateLimiter?: RateLimiter
+    private rateLimiter?: RateLimiter,
+    private cache?: TieredCache
   ) {}
 
-  /**
-   * Execute a GraphQL query
-   */
-  async query<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  async query<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+    options: { noCache?: boolean; ttl?: number } = {}
+  ): Promise<T> {
+    const cacheKey = `graphql:${JSON.stringify({ query, variables })}`
+
+    if (this.cache && !options.noCache) {
+      const cached = await this.cache.get<T>(cacheKey)
+      if (cached) {
+        return cached
+      }
+    }
+
     if (this.rateLimiter) {
       await this.rateLimiter.acquire()
     }
@@ -61,37 +70,55 @@ export class GraphQLClient {
 
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After')
-        throw new RateLimitError(
-          'Rate limit exceeded',
-          retryAfter ? parseInt(retryAfter) : undefined
-        )
+        throw new RateLimitError('Rate limit exceeded', {
+          ...(retryAfter ? { retryAfter: parseInt(retryAfter) } : {}),
+        })
       }
 
       if (!response.ok) {
-        throw new GraphQLError(`HTTP ${response.status}: ${response.statusText}`, response.status)
+        throw new GraphQLError(
+          'GQL_QUERY_FAILED',
+          `HTTP ${response.status}: ${response.statusText}`,
+          { statusCode: response.status }
+        )
       }
 
-      const result = await response.json() as GraphQLResponse<T>
+      const result = (await response.json()) as GraphQLResponse<T>
 
       if (result.errors && result.errors.length > 0) {
         const errorMessages = result.errors.map((e) => e.message).join(', ')
-        throw new GraphQLError(`GraphQL errors: ${errorMessages}`)
+        throw new GraphQLError('GQL_QUERY_FAILED', `GraphQL errors: ${errorMessages}`)
       }
 
       if (!result.data) {
-        throw new GraphQLError('No data returned from GraphQL query')
+        throw new GraphQLError('GQL_INVALID_RESPONSE', 'No data returned from GraphQL query')
+      }
+
+      if (this.cache && !options.noCache) {
+        let ttl = options.ttl
+
+        if (!ttl) {
+          if (query.includes('getQuestionDetail') || query.includes('question(')) {
+            ttl = 7 * 24 * 60 * 60 * 1000 // 7 days for static problem data
+          } else if (query.includes('questionList')) {
+            ttl = 60 * 60 * 1000 // 1 hour for lists
+          } else {
+            ttl = 60 * 60 * 1000 // Default 1 hour
+          }
+        }
+        await this.cache.set(cacheKey, result.data, ttl)
       }
 
       return result.data
     } catch (error) {
-      if (error instanceof GraphQLError || error instanceof RateLimitError) {
+      if (error instanceof NetworkError) {
         throw error
       }
 
       throw new GraphQLError(
+        'GQL_QUERY_FAILED',
         `Failed to execute GraphQL query: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -143,7 +170,9 @@ export class GraphQLClient {
     const data = await this.query<{ question: Problem }>(query, { titleSlug })
 
     if (!data.question) {
-      throw new GraphQLError(`Problem not found: ${titleSlug}`, 404)
+      throw new GraphQLError('GQL_QUERY_FAILED', `Problem not found: ${titleSlug}`, {
+        statusCode: 404,
+      })
     }
 
     return data.question
@@ -280,7 +309,7 @@ export class GraphQLClient {
     const data = await this.query<{ matchedUser: unknown }>(query, { username })
 
     if (!data.matchedUser) {
-      throw new GraphQLError(`User not found: ${username}`, 404)
+      throw new GraphQLError('GQL_QUERY_FAILED', `User not found: ${username}`, { statusCode: 404 })
     }
 
     return data.matchedUser

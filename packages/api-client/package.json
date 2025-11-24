@@ -9,6 +9,7 @@
   "dependencies": {
     "@lesca/shared-types": "*",
     "@lesca/shared-utils": "*",
+    "@lesca/error": "*",
     "p-throttle": "^6.1.0"
   }
 }

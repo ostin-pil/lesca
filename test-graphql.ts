@@ -14,6 +14,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { writeFile } from 'fs/promises'
+
+import { logger } from '@/shared/utils/src/index'
 import type { Problem, TopicTag } from '@lesca/shared/types'
 
 interface GraphQLResponse<T> {
@@ -94,8 +96,8 @@ async function queryGraphQL<T>(query: string, variables: Record<string, unknown>
 
 // Test 1: Problem Data
 async function testProblemQuery() {
-  console.log('\n📝 Test 1: Problem Query')
-  console.log('Testing: Fetch single problem data')
+  logger.info('\n📝 Test 1: Problem Query')
+  logger.info('Testing: Fetch single problem data')
 
   const query = `
     query getProblem($titleSlug: String!) {
@@ -148,24 +150,24 @@ async function testProblemQuery() {
     const data = await queryGraphQL<{ question: QuestionResponse }>(query, { titleSlug: 'two-sum' })
     const question = data.question
 
-    console.log('✅ SUCCESS')
-    console.log(`   Title: ${question.title}`)
-    console.log(`   ID: ${question.questionId} (Frontend: ${question.questionFrontendId})`)
-    console.log(`   Difficulty: ${question.difficulty}`)
-    console.log(`   Content Length: ${question.content?.length || 0} chars`)
-    console.log(`   Has HTML Content: ${question.content?.includes('<') ? 'YES' : 'NO'}`)
-    console.log(`   Examples: ${question.exampleTestcases ? 'YES' : 'NO'}`)
-    console.log(`   Hints: ${question.hints?.length || 0}`)
-    console.log(`   Tags: ${question.topicTags?.length || 0}`)
-    console.log(`   Code Snippets: ${question.codeSnippets?.length || 0}`)
-    console.log(`   Similar Questions: ${question.similarQuestions ? 'YES' : 'NO'}`)
-    console.log(
+    logger.log('✅ SUCCESS')
+    logger.log(`   Title: ${question.title}`)
+    logger.log(`   ID: ${question.questionId} (Frontend: ${question.questionFrontendId})`)
+    logger.log(`   Difficulty: ${question.difficulty}`)
+    logger.log(`   Content Length: ${question.content?.length || 0} chars`)
+    logger.log(`   Has HTML Content: ${question.content?.includes('<') ? 'YES' : 'NO'}`)
+    logger.log(`   Examples: ${question.exampleTestcases ? 'YES' : 'NO'}`)
+    logger.log(`   Hints: ${question.hints?.length || 0}`)
+    logger.log(`   Tags: ${question.topicTags?.length || 0}`)
+    logger.log(`   Code Snippets: ${question.codeSnippets?.length || 0}`)
+    logger.log(`   Similar Questions: ${question.similarQuestions ? 'YES' : 'NO'}`)
+    logger.log(
       `   Solution Available: ${question.solution?.canSeeDetail ? 'YES' : 'NO (may require premium)'}`
     )
 
     // Save sample for inspection
     await writeFile('./graphql-test-problem.json', JSON.stringify(data, null, 2))
-    console.log('   Sample saved to: graphql-test-problem.json')
+    logger.log('   Sample saved to: graphql-test-problem.json')
 
     return {
       success: true,
@@ -176,16 +178,16 @@ async function testProblemQuery() {
       canSeeSolution: question.solution?.canSeeDetail,
     }
   } catch (error) {
-    console.log('❌ FAILED')
-    console.log(`   Error: ${error}`)
+    logger.log('❌ FAILED')
+    logger.log(`   Error: ${error}`)
     return { success: false }
   }
 }
 
 // Test 2: Problem List
 async function testProblemListQuery() {
-  console.log('\n📋 Test 2: Problem List Query')
-  console.log('Testing: Fetch list of problems with filters')
+  logger.log('\n📋 Test 2: Problem List Query')
+  logger.log('Testing: Fetch list of problems with filters')
 
   const query = `
     query problemsetQuestionList($categorySlug: String, $filters: QuestionListFilterInput) {
@@ -221,17 +223,17 @@ async function testProblemListQuery() {
     })
 
     const list = data.problemsetQuestionList
-    console.log('✅ SUCCESS')
-    console.log(`   Total Problems: ${list.total}`)
-    console.log(`   Returned: ${list.questions?.length || 0}`)
+    logger.log('✅ SUCCESS')
+    logger.log(`   Total Problems: ${list.total}`)
+    logger.log(`   Returned: ${list.questions?.length || 0}`)
     if (list.questions?.length > 0) {
-      console.log(`   Sample: ${list.questions[0].title} (${list.questions[0].difficulty})`)
-      console.log(`   Acceptance: ${list.questions[0].acRate}%`)
-      console.log(`   Premium Only: ${list.questions[0].paidOnly ? 'YES' : 'NO'}`)
+      logger.log(`   Sample: ${list.questions[0]!.title} (${list.questions[0]!.difficulty})`)
+      logger.log(`   Acceptance: ${list.questions[0]!.acRate}%`)
+      logger.log(`   Premium Only: ${list.questions[0]!.paidOnly ? 'YES' : 'NO'}`)
     }
 
     await writeFile('./graphql-test-list.json', JSON.stringify(data, null, 2))
-    console.log('   Sample saved to: graphql-test-list.json')
+    logger.log('   Sample saved to: graphql-test-list.json')
 
     return {
       success: true,
@@ -239,16 +241,16 @@ async function testProblemListQuery() {
       returnsPaginatedData: true,
     }
   } catch (error) {
-    console.log('❌ FAILED')
-    console.log(`   Error: ${error}`)
+    logger.log('❌ FAILED')
+    logger.log(`   Error: ${error}`)
     return { success: false }
   }
 }
 
 // Test 3: Discussion Topics
 async function testDiscussionQuery() {
-  console.log('\n💬 Test 3: Discussion Query')
-  console.log('Testing: Fetch discussion threads for a problem')
+  logger.log('\n💬 Test 3: Discussion Query')
+  logger.log('Testing: Fetch discussion threads for a problem')
 
   const query = `
     query discussionTopics($questionSlug: String!) {
@@ -280,24 +282,26 @@ async function testDiscussionQuery() {
   `
 
   try {
-    const data = await queryGraphQL<{ questionDiscussionTopics: DiscussionTopicsResponse }>(query, { questionSlug: 'two-sum' })
+    const data = await queryGraphQL<{ questionDiscussionTopics: DiscussionTopicsResponse }>(query, {
+      questionSlug: 'two-sum',
+    })
 
     const discussions = data.questionDiscussionTopics
-    console.log('✅ SUCCESS')
-    console.log(`   Returned: ${discussions.edges?.length || 0}`)
+    logger.log('✅ SUCCESS')
+    logger.log(`   Returned: ${discussions.edges?.length || 0}`)
 
     if (discussions.edges?.length > 0) {
-      const first = discussions.edges[0].node
-      console.log(`   Sample: "${first.title}"`)
-      console.log(`   Views: ${first.viewCount}`)
-      console.log(`   Upvotes: ${first.post.voteCount}`)
-      console.log(`   Comments: ${first.commentCount}`)
-      console.log(`   Has Content: ${first.post.content ? 'YES' : 'NO'}`)
-      console.log(`   Content Length: ${first.post.content?.length || 0} chars`)
+      const first = discussions.edges[0]!.node
+      logger.log(`   Sample: "${first.title}"`)
+      logger.log(`   Views: ${first.viewCount}`)
+      logger.log(`   Upvotes: ${first.post.voteCount}`)
+      logger.log(`   Comments: ${first.commentCount}`)
+      logger.log(`   Has Content: ${first.post.content ? 'YES' : 'NO'}`)
+      logger.log(`   Content Length: ${first.post.content?.length || 0} chars`)
     }
 
     await writeFile('./graphql-test-discussions.json', JSON.stringify(data, null, 2))
-    console.log('   Sample saved to: graphql-test-discussions.json')
+    logger.log('   Sample saved to: graphql-test-discussions.json')
 
     return {
       success: true,
@@ -306,16 +310,16 @@ async function testDiscussionQuery() {
       hasAuthorInfo: true,
     }
   } catch (error) {
-    console.log('❌ FAILED')
-    console.log(`   Error: ${error}`)
+    logger.log('❌ FAILED')
+    logger.log(`   Error: ${error}`)
     return { success: false }
   }
 }
 
 // Test 4: User Profile (requires authentication)
 async function testUserQuery() {
-  console.log('\n👤 Test 4: User Query (without auth)')
-  console.log('Testing: Fetch user profile data')
+  logger.log('\n👤 Test 4: User Query (without auth)')
+  logger.log('Testing: Fetch user profile data')
 
   const query = `
     query getUserProfile($username: String!) {
@@ -344,14 +348,16 @@ async function testUserQuery() {
   `
 
   try {
-    const data = await queryGraphQL<{ matchedUser: MatchedUserResponse }>(query, { username: 'leetcode' })
+    const data = await queryGraphQL<{ matchedUser: MatchedUserResponse }>(query, {
+      username: 'leetcode',
+    })
     const user = data.matchedUser
 
-    console.log('✅ SUCCESS (Public data only)')
-    console.log(`   Username: ${user?.username}`)
-    console.log(`   Ranking: ${user?.profile?.ranking}`)
-    console.log(`   Reputation: ${user?.profile?.reputation}`)
-    console.log(`   Note: Personal submissions require authentication`)
+    logger.log('✅ SUCCESS (Public data only)')
+    logger.log(`   Username: ${user?.username}`)
+    logger.log(`   Ranking: ${user?.profile?.ranking}`)
+    logger.log(`   Reputation: ${user?.profile?.reputation}`)
+    logger.log(`   Note: Personal submissions require authentication`)
 
     return {
       success: true,
@@ -359,16 +365,16 @@ async function testUserQuery() {
       canGetPublicProfile: true,
     }
   } catch (error) {
-    console.log('❌ FAILED')
-    console.log(`   Error: ${error}`)
+    logger.log('❌ FAILED')
+    logger.log(`   Error: ${error}`)
     return { success: false }
   }
 }
 
 // Test 5: Company and Tag Lists
 async function testMetadataQuery() {
-  console.log('\n🏢 Test 5: Metadata Query')
-  console.log('Testing: Fetch tags and categories')
+  logger.log('\n🏢 Test 5: Metadata Query')
+  logger.log('Testing: Fetch tags and categories')
 
   const query = `
     query getTags {
@@ -384,11 +390,11 @@ async function testMetadataQuery() {
     const data = await queryGraphQL<{ questionTags: QuestionTag[] }>(query)
 
     const tags = data.questionTags
-    console.log('✅ SUCCESS')
-    console.log(`   Total Tags: ${tags?.length || 0}`)
+    logger.log('✅ SUCCESS')
+    logger.log(`   Total Tags: ${tags?.length || 0}`)
 
     if (tags?.length > 0) {
-      console.log(
+      logger.log(
         `   Sample Tags: ${tags
           .slice(0, 5)
           .map((t: { name: string; questionCount: number }) => `${t.name} (${t.questionCount})`)
@@ -397,7 +403,7 @@ async function testMetadataQuery() {
     }
 
     await writeFile('./graphql-test-metadata.json', JSON.stringify(data, null, 2))
-    console.log('   Sample saved to: graphql-test-metadata.json')
+    logger.log('   Sample saved to: graphql-test-metadata.json')
 
     return {
       success: true,
@@ -405,16 +411,16 @@ async function testMetadataQuery() {
       hasCategories: true,
     }
   } catch (error) {
-    console.log('❌ FAILED')
-    console.log(`   Error: ${error}`)
+    logger.log('❌ FAILED')
+    logger.log(`   Error: ${error}`)
     return { success: false }
   }
 }
 
 // Main test runner
 async function main() {
-  console.log('🧪 LeetCode GraphQL API Coverage Test')
-  console.log('='.repeat(50))
+  logger.log('🧪 LeetCode GraphQL API Coverage Test')
+  logger.log('='.repeat(50))
 
   const results = {
     problem: await testProblemQuery(),
@@ -424,44 +430,44 @@ async function main() {
     metadata: await testMetadataQuery(),
   }
 
-  console.log('\n' + '='.repeat(50))
-  console.log('📊 SUMMARY')
-  console.log('='.repeat(50))
+  logger.log('\n' + '='.repeat(50))
+  logger.log('📊 SUMMARY')
+  logger.log('='.repeat(50))
 
   // Analyze results
-  console.log('\n✅ What GraphQL Provides:')
-  if (results.problem.hasContent) console.log('   ✓ Problem content (HTML)')
-  if (results.problem.hasExamples) console.log('   ✓ Example test cases')
-  if (results.problem.hasHints) console.log('   ✓ Hints')
-  if (results.list.canFilter) console.log('   ✓ Filtered problem lists')
-  if (results.discussions.hasDiscussionContent) console.log('   ✓ Discussion content')
-  if (results.discussions.hasVoteCounts) console.log('   ✓ Vote counts')
-  if (results.metadata.hasTags) console.log('   ✓ Tags and categories')
+  logger.log('\n✅ What GraphQL Provides:')
+  if (results.problem.hasContent) logger.log('   ✓ Problem content (HTML)')
+  if (results.problem.hasExamples) logger.log('   ✓ Example test cases')
+  if (results.problem.hasHints) logger.log('   ✓ Hints')
+  if (results.list.canFilter) logger.log('   ✓ Filtered problem lists')
+  if (results.discussions.hasDiscussionContent) logger.log('   ✓ Discussion content')
+  if (results.discussions.hasVoteCounts) logger.log('   ✓ Vote counts')
+  if (results.metadata.hasTags) logger.log('   ✓ Tags and categories')
 
-  console.log('\n⚠️  What May Require Browser/Auth:')
-  if (!results.problem.canSeeSolution) console.log('   ⚠ Editorial/Solution content (premium)')
-  console.log('   ⚠ User-specific submissions')
-  console.log('   ⚠ Code execution results')
-  console.log('   ⚠ Dynamic content (if any)')
+  logger.log('\n⚠️  What May Require Browser/Auth:')
+  if (!results.problem.canSeeSolution) logger.log('   ⚠ Editorial/Solution content (premium)')
+  logger.log('   ⚠ User-specific submissions')
+  logger.log('   ⚠ Code execution results')
+  logger.log('   ⚠ Dynamic content (if any)')
 
-  console.log('\n💡 Recommendation:')
+  logger.log('\n💡 Recommendation:')
   if (results.problem.success && results.list.success && results.discussions.success) {
-    console.log('   ✅ GraphQL covers most use cases!')
-    console.log('   ✅ Browser automation only needed for:')
-    console.log('      - Premium editorial content')
-    console.log('      - User-specific data (submissions)')
-    console.log('      - Any JavaScript-rendered content')
+    logger.log('   ✅ GraphQL covers most use cases!')
+    logger.log('   ✅ Browser automation only needed for:')
+    logger.log('      - Premium editorial content')
+    logger.log('      - User-specific data (submissions)')
+    logger.log('      - Any JavaScript-rendered content')
   } else {
-    console.log('   ⚠️  Some tests failed - review errors above')
-    console.log('   ⚠️  May need browser automation as fallback')
+    logger.log('   ⚠️  Some tests failed - review errors above')
+    logger.log('   ⚠️  May need browser automation as fallback')
   }
 
-  console.log('\n📝 Next Steps:')
-  console.log('   1. Review generated JSON files for data structure')
-  console.log('   2. Test with authentication (cookies) for premium content')
-  console.log('   3. Decide: Build GraphQL client first, add browser later')
+  logger.log('\n📝 Next Steps:')
+  logger.log('   1. Review generated JSON files for data structure')
+  logger.log('   2. Test with authentication (cookies) for premium content')
+  logger.log('   3. Decide: Build GraphQL client first, add browser later')
 
-  console.log('\n')
+  logger.log('\n')
 }
 
-main().catch(console.error)
+main().catch((err) => logger.error(String(err)))
