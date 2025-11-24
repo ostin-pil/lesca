@@ -2,7 +2,7 @@ import { mkdir, writeFile, readFile, unlink, access, readdir } from 'fs/promises
 import { join, dirname, basename } from 'path'
 
 import type { StorageAdapter } from '@/shared/types/src/index'
-import { StorageError } from '@/shared/types/src/index'
+import { StorageError } from '@lesca/error'
 
 /**
  * File system storage adapter
@@ -51,8 +51,9 @@ export class FileSystemStorage implements StorageAdapter {
       }
     } catch (error) {
       throw new StorageError(
+        'STORAGE_WRITE_FAILED',
         `Failed to save file ${key}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -72,8 +73,9 @@ export class FileSystemStorage implements StorageAdapter {
       return String(content)
     } catch (error) {
       throw new StorageError(
+        'STORAGE_READ_FAILED',
         `Failed to load file ${key}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -112,8 +114,9 @@ export class FileSystemStorage implements StorageAdapter {
       }
     } catch (error) {
       throw new StorageError(
+        'STORAGE_WRITE_FAILED',
         `Failed to delete file ${key}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -135,8 +138,9 @@ export class FileSystemStorage implements StorageAdapter {
       return files.filter((file) => regex.test(file))
     } catch (error) {
       throw new StorageError(
+        'STORAGE_READ_FAILED',
         `Failed to list files: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -159,8 +163,9 @@ export class FileSystemStorage implements StorageAdapter {
       return JSON.parse(content) as Record<string, unknown>
     } catch (error) {
       throw new StorageError(
+        'STORAGE_READ_FAILED',
         `Failed to load metadata for ${key}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -187,8 +192,9 @@ export class FileSystemStorage implements StorageAdapter {
       await mkdir(dirPath, { recursive: true })
     } catch (error) {
       throw new StorageError(
+        'STORAGE_WRITE_FAILED',
         `Failed to create directory ${dirPath}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }

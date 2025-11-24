@@ -84,9 +84,9 @@ describe('ProblemScraperStrategy', () => {
 
       // Mock browser success
       vi.mocked(mockBrowserDriver.extractWithFallback).mockImplementation(async (selectors) => {
-        if (selectors[0].includes('title')) return '1. Two Sum'
-        if (selectors[0].includes('description')) return '<p>Content</p>'
-        if (selectors[0].includes('difficulty')) return 'Easy'
+        if (selectors[0]?.includes('title')) return '1. Two Sum'
+        if (selectors[0]?.includes('description')) return '<p>Content</p>'
+        if (selectors[0]?.includes('difficulty')) return 'Easy'
         return ''
       })
       vi.mocked(mockBrowserDriver.extractAll).mockResolvedValue(['Array'])

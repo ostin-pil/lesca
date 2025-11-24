@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { FileSystemStorage } from '../filesystem-storage'
-import { StorageError } from '@lesca/shared/types'
+import { StorageError } from '@lesca/error'
 import { existsSync } from 'fs'
 import { rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, join } from 'path'
@@ -258,9 +258,7 @@ describe('FileSystemStorage', () => {
     it('should support disabling automatic directory creation', async () => {
       const storage = new FileSystemStorage(testDir, { createDirs: false })
 
-      await expect(storage.save('nonexistent/dir/file.md', 'content')).rejects.toThrow(
-        StorageError
-      )
+      await expect(storage.save('nonexistent/dir/file.md', 'content')).rejects.toThrow(StorageError)
     })
 
     it('should support different encodings', async () => {
@@ -333,20 +331,14 @@ describe('FileSystemStorage', () => {
 
       // Make parent directory read-only on Unix systems (won't work on Windows)
       if (process.platform !== 'win32') {
-        await import('fs/promises').then((fs) =>
-          fs.chmod(testDir, 0o444)
-        )
+        await import('fs/promises').then((fs) => fs.chmod(testDir, 0o444))
 
         const storage = new FileSystemStorage(testDir)
 
-        await expect(storage.save('new-file.md', 'content')).rejects.toThrow(
-          StorageError
-        )
+        await expect(storage.save('new-file.md', 'content')).rejects.toThrow(StorageError)
 
         // Restore permissions for cleanup
-        await import('fs/promises').then((fs) =>
-          fs.chmod(testDir, 0o755)
-        )
+        await import('fs/promises').then((fs) => fs.chmod(testDir, 0o755))
       }
     })
 

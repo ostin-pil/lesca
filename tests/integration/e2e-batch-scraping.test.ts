@@ -7,7 +7,7 @@ import { LeetCodeScraper } from '@lesca/core'
 import { FileSystemStorage } from '@lesca/storage'
 import { ProblemScraperStrategy } from '@lesca/scrapers'
 import { GraphQLClient } from '@lesca/api-client'
-import type { ProblemScrapeRequest, Problem } from '@lesca/shared/types'
+import type { ProblemScrapeRequest, Problem, BrowserDriver } from '@lesca/shared/types'
 import type { BatchProgress } from '@lesca/core'
 
 /**
@@ -105,7 +105,19 @@ describe('E2E: Batch Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
     scraper = new LeetCodeScraper([problemStrategy], storage, { format: 'obsidian' })
     batchScraper = new BatchScraper(scraper, { concurrency: 2 })
   })
@@ -183,7 +195,19 @@ describe('E2E: Batch Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
     scraper = new LeetCodeScraper([problemStrategy], storage, { format: 'obsidian' })
     batchScraper = new BatchScraper(scraper, { concurrency: 2 })
 
@@ -214,7 +238,19 @@ describe('E2E: Batch Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
     scraper = new LeetCodeScraper([problemStrategy], storage, { format: 'obsidian' })
     batchScraper = new BatchScraper(scraper, {
       concurrency: 2,

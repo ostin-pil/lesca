@@ -6,7 +6,7 @@ import { LeetCodeScraper } from '@lesca/core'
 import { FileSystemStorage } from '@lesca/storage'
 import { ProblemScraperStrategy } from '@lesca/scrapers'
 import { GraphQLClient } from '@lesca/api-client'
-import type { ProblemScrapeRequest, Problem } from '@lesca/shared/types'
+import type { ProblemScrapeRequest, Problem, BrowserDriver } from '@lesca/shared/types'
 
 /**
  * End-to-End Integration Test: Single Problem Scraping
@@ -45,13 +45,9 @@ describe('E2E: Single Problem Scraping', () => {
   } as unknown as Problem
 
   beforeEach(() => {
-    // Create temporary directory for test output
     tempDir = mkdtempSync(join(tmpdir(), 'lesca-test-'))
-
-    // Initialize components
     storage = new FileSystemStorage(tempDir)
 
-    // Mock GraphQL client to avoid hitting real API
     const graphqlClient = {
       getProblem: async (titleSlug: string) => {
         if (titleSlug === 'two-sum') return mockProblem
@@ -61,7 +57,19 @@ describe('E2E: Single Problem Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
 
     scraper = new LeetCodeScraper([problemStrategy], storage, {
       format: 'obsidian',
@@ -72,16 +80,12 @@ describe('E2E: Single Problem Scraping', () => {
   })
 
   afterEach(() => {
-    // Clean up temporary directory
     if (existsSync(tempDir)) {
       rmSync(tempDir, { recursive: true, force: true })
     }
   })
 
   it('should scrape a single problem and save to Obsidian format', async () => {
-    // TODO: Implement with mocked API response
-    // This test is skipped until we have proper fixtures
-
     const request: ProblemScrapeRequest = {
       type: 'problem',
       titleSlug: 'two-sum',
@@ -92,27 +96,18 @@ describe('E2E: Single Problem Scraping', () => {
     expect(result.success).toBe(true)
     if (!result.success) return
 
-    // Verify file was created (resolve against storage base path)
     expect(result.filePath).toBeDefined()
     const absolutePath = storage.getAbsolutePath(result.filePath!)
     expect(existsSync(absolutePath)).toBe(true)
 
-    // Verify content structure
     const content = readFileSync(absolutePath, 'utf-8')
 
     // Should have frontmatter (frontmatter may come after title in current converter)
     expect(content).toMatch(/---\n/)
 
-    // Should have title
     expect(content).toContain('# Two Sum')
-
-    // Should have difficulty
     expect(content).toMatch(/difficulty:/i)
-
-    // Should have tags
     expect(content).toMatch(/tags:/i)
-
-    // Should have problem content
     expect(content).toContain('Example problem content')
   }, 30000)
 
@@ -141,7 +136,19 @@ describe('E2E: Single Problem Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
     const mdStorage = new FileSystemStorage(tempDir)
     const mdScraper = new LeetCodeScraper([problemStrategy], mdStorage, { format: 'markdown' })
 
@@ -162,10 +169,8 @@ describe('E2E: Single Problem Scraping', () => {
     const enhancedProblem = {
       ...mockProblem,
       hints: ['Try using a hash map'],
-      codeSnippets: [
-        { lang: 'Python', langSlug: 'python3', code: 'def solve(): pass' },
-      ],
-      companyTagStats: JSON.stringify({ 'google': 1 }),
+      codeSnippets: [{ lang: 'Python', langSlug: 'python3', code: 'def solve(): pass' }],
+      companyTagStats: JSON.stringify({ google: 1 }),
     } as unknown as Problem
 
     const graphqlClient = {
@@ -177,7 +182,19 @@ describe('E2E: Single Problem Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const problemStrategy = new ProblemScraperStrategy(graphqlClient)
+    const browserDriver = {
+      launch: async () => {},
+      close: async () => {},
+      navigate: async () => {},
+      waitForSelector: async () => {},
+      extractContent: async () => '',
+      extractWithFallback: async () => '',
+      extractAll: async () => [],
+      elementExists: async () => false,
+      getBrowser: () => undefined,
+    } as unknown as BrowserDriver
+
+    const problemStrategy = new ProblemScraperStrategy(graphqlClient, browserDriver)
     const enhStorage = new FileSystemStorage(tempDir)
     const enhScraper = new LeetCodeScraper([problemStrategy], enhStorage, {
       format: 'obsidian',
@@ -189,7 +206,9 @@ describe('E2E: Single Problem Scraping', () => {
     expect(result.success).toBe(true)
     if (!result.success) return
 
-    const content = await import('fs/promises').then((fs) => fs.readFile(enhStorage.getAbsolutePath(result.filePath!), 'utf-8'))
+    const content = await import('fs/promises').then((fs) =>
+      fs.readFile(enhStorage.getAbsolutePath(result.filePath!), 'utf-8')
+    )
 
     // Enhancers should add their sections
     expect(content).toContain('## Hints')
