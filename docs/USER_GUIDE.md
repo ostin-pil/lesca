@@ -29,36 +29,27 @@ This creates a default configuration file at `./lesca.config.yaml` and sets up n
 
 ### 2. Set Up Authentication
 
-Export your LeetCode cookies and save them to `~/.lesca/cookies.json`:
+Interactive authentication is the easiest way to get started:
 
-```json
-[
-  {
-    "name": "LEETCODE_SESSION",
-    "value": "your-session-token-here",
-    "domain": ".leetcode.com",
-    "path": "/",
-    "expires": -1,
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "csrftoken",
-    "value": "your-csrf-token-here",
-    "domain": ".leetcode.com",
-    "path": "/",
-    "expires": -1,
-    "httpOnly": false,
-    "secure": true,
-    "sameSite": "Lax"
-  }
-]
+```bash
+npm run dev -- auth
 ```
 
-See [Authentication Setup](#authentication-setup) for detailed instructions.
+Follow the prompts to provide your cookie file path or paste your cookies.
 
-### 3. Scrape Your First Problem
+Alternatively, you can manually create the cookie file as described in [Authentication Setup](#authentication-setup).
+
+### 3. Explore Problems
+
+```bash
+# List easy problems
+npm run dev -- list --difficulty Easy
+
+# Search for a specific problem
+npm run dev -- search "two sum"
+```
+
+### 4. Scrape Your First Problem
 
 ```bash
 npm run dev -- scrape two-sum
@@ -152,6 +143,41 @@ npm run dev -- scrape two-sum --cookies /path/to/cookies.json
 # Edit lesca.config.yaml:
 auth:
   cookiePath: /path/to/cookies.json
+```
+
+---
+
+---
+
+## Discovery
+
+Before scraping, you can explore available problems directly from the CLI.
+
+### Listing Problems
+
+Use the `list` (or `ls`) command to see available problems:
+
+```bash
+# List first 20 problems
+npm run dev -- list --limit 20
+
+# Filter by difficulty
+npm run dev -- list --difficulty Hard
+
+# Filter by tags
+npm run dev -- list --tags "dynamic-programming"
+```
+
+### Searching Problems
+
+Use the `search` (or `s`) command to find specific problems:
+
+```bash
+# Search by keyword
+npm run dev -- search "substring"
+
+# Search with filters
+npm run dev -- search "palindrome" --difficulty Medium
 ```
 
 ---
@@ -318,6 +344,7 @@ npm run dev -- scrape-list --concurrency 3
 ```
 
 **Features**:
+
 - Problems have YAML frontmatter with metadata
 - Internal links between related problems
 - Tags for easy filtering
@@ -356,12 +383,14 @@ Lesca supports two output formats:
 Standard Markdown with GitHub Flavored Markdown syntax.
 
 **Best for**:
+
 - General Markdown editors
 - GitHub repositories
 - Static site generators (Jekyll, Hugo)
 
 **Example Output**:
-```markdown
+
+````markdown
 # 1. Two Sum
 
 **Difficulty**: Easy
@@ -374,6 +403,7 @@ Given an array of integers nums and an integer target...
 ## Examples
 
 ### Example 1
+
 ...
 
 ## Solution
@@ -382,7 +412,9 @@ Given an array of integers nums and an integer target...
 def twoSum(nums, target):
     ...
 ```
-```
+````
+
+````
 
 ---
 
@@ -420,9 +452,10 @@ Given an array of integers nums and an integer target...
 
 - [[3. Longest Substring Without Repeating Characters]]
 - [[15. 3Sum]]
-```
+````
 
 **Features**:
+
 - YAML frontmatter for metadata
 - Internal [[wiki-style]] links
 - Tag-based organization
@@ -461,6 +494,7 @@ npm run dev -- init --output-dir ./output --format obsidian
 See [CONFIGURATION.md](./CONFIGURATION.md) for detailed configuration options.
 
 **Key sections**:
+
 - `auth`: Authentication settings
 - `api`: API endpoint and rate limiting
 - `storage`: Output directory and storage type
@@ -498,24 +532,27 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all environment variables.
 Lesca caches API responses to improve performance and reduce API calls.
 
 **Benefits**:
+
 - Faster re-scraping
 - Reduced API load
 - Offline access to cached content
 
 **Configuration**:
+
 ```yaml
 cache:
   enabled: true
   directory: ~/.lesca/cache
-  memorySize: 50  # Number of items in memory
+  memorySize: 50 # Number of items in memory
   ttl:
-    problem: 604800000    # 7 days
-    list: 86400000        # 1 day
-    editorial: 604800000  # 7 days
-    discussion: 3600000   # 1 hour
+    problem: 604800000 # 7 days
+    list: 86400000 # 1 day
+    editorial: 604800000 # 7 days
+    discussion: 3600000 # 1 hour
 ```
 
 **Clear cache**:
+
 ```bash
 rm -rf ~/.lesca/cache
 ```
@@ -535,6 +572,7 @@ npm run dev -- scrape-list --limit 100 --resume
 ```
 
 **How it works**:
+
 - Progress saved to `.lesca-progress.json`
 - Skips already-scraped problems
 - Continues from interruption point
@@ -549,13 +587,14 @@ Lesca includes intelligent rate limiting to avoid API throttling:
 api:
   rateLimit:
     enabled: true
-    requestsPerMinute: 30  # Max requests per minute
-    minDelay: 2000         # Min delay between requests (ms)
-    maxDelay: 10000        # Max delay with jitter (ms)
-    jitter: true           # Add randomness to avoid patterns
+    requestsPerMinute: 30 # Max requests per minute
+    minDelay: 2000 # Min delay between requests (ms)
+    maxDelay: 10000 # Max delay with jitter (ms)
+    jitter: true # Add randomness to avoid patterns
 ```
 
 **Tips**:
+
 - Lower `requestsPerMinute` if getting rate limited
 - Increase delays for more conservative scraping
 - Enable jitter to avoid detection patterns
@@ -569,15 +608,16 @@ For content requiring JavaScript rendering (editorials, discussions):
 ```yaml
 browser:
   enabled: true
-  headless: true           # Run browser in background
-  timeout: 30000          # Page load timeout
-  blockedResources:       # Block unnecessary resources
+  headless: true # Run browser in background
+  timeout: 30000 # Page load timeout
+  blockedResources: # Block unnecessary resources
     - image
     - font
     - media
 ```
 
 **Debug mode**:
+
 ```bash
 # See browser in action
 npm run dev -- scrape-editorial two-sum --no-headless
@@ -621,7 +661,7 @@ Always use cache for re-scraping:
 
 ```yaml
 cache:
-  enabled: true  # ← Keep this true
+  enabled: true # ← Keep this true
 ```
 
 ### 4. Organize Output
@@ -670,6 +710,7 @@ Rate limit exceeded
 ```
 
 **Solutions**:
+
 - Reduce concurrency: `--concurrency 2`
 - Increase delays in config
 - Wait before retrying
@@ -722,9 +763,10 @@ Browser timeout after 30000ms
 ```
 
 **Solution**: Increase timeout in config:
+
 ```yaml
 browser:
-  timeout: 60000  # Increase to 60 seconds
+  timeout: 60000 # Increase to 60 seconds
 ```
 
 ### No Problems Found

@@ -26,6 +26,9 @@ cookies.json
 
 # IDE
 .vscode/
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo

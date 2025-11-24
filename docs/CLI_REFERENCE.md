@@ -69,22 +69,24 @@ npm run dev -- init [options]
 
 #### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--config-path <path>` | string | `./lesca.config.yaml` | Path to create config file |
-| `--cookie-path <path>` | string | `~/.lesca/cookies.json` | Path for cookie storage |
-| `--output-dir <path>` | string | `./output` | Default output directory |
-| `--format <format>` | string | `markdown` | Default output format (`markdown` or `obsidian`) |
-| `--force` | boolean | `false` | Overwrite existing configuration |
+| Option                 | Type    | Default                 | Description                                      |
+| ---------------------- | ------- | ----------------------- | ------------------------------------------------ |
+| `--config-path <path>` | string  | `./lesca.config.yaml`   | Path to create config file                       |
+| `--cookie-path <path>` | string  | `~/.lesca/cookies.json` | Path for cookie storage                          |
+| `--output-dir <path>`  | string  | `./output`              | Default output directory                         |
+| `--format <format>`    | string  | `markdown`              | Default output format (`markdown` or `obsidian`) |
+| `--force`              | boolean | `false`                 | Overwrite existing configuration                 |
 
 #### Examples
 
 **Basic initialization**:
+
 ```bash
 npm run dev -- init
 ```
 
 **Custom configuration**:
+
 ```bash
 npm run dev -- init \
   --config-path ./lesca.config.yaml \
@@ -93,11 +95,13 @@ npm run dev -- init \
 ```
 
 **Force overwrite existing config**:
+
 ```bash
 npm run dev -- init --force
 ```
 
 **Create config for Obsidian vault**:
+
 ```bash
 npm run dev -- init \
   --output-dir ./LeetCode-Vault \
@@ -125,6 +129,41 @@ Next steps:
 
 ---
 
+---
+
+### `auth`
+
+Authenticate with LeetCode interactively or via flags.
+
+#### Syntax
+
+```bash
+npm run dev -- auth [options]
+```
+
+#### Options
+
+| Option             | Short | Type    | Default | Description                           |
+| ------------------ | ----- | ------- | ------- | ------------------------------------- |
+| `--cookies <file>` | `-c`  | string  |         | Path to cookies.json file             |
+| `--browser`        |       | boolean | `false` | Use browser-based login (Coming Soon) |
+
+#### Examples
+
+**Interactive mode**:
+
+```bash
+npm run dev -- auth
+```
+
+**Use existing cookie file**:
+
+```bash
+npm run dev -- auth --cookies ~/.lesca/cookies.json
+```
+
+---
+
 ### `config`
 
 Manage and inspect Lesca configuration.
@@ -142,16 +181,19 @@ npm run dev -- config <subcommand> [options]
 Display the full current configuration in YAML format.
 
 **Syntax:**
+
 ```bash
 npm run dev -- config list
 ```
 
 **Example:**
+
 ```bash
 npm run dev -- config list
 ```
 
 **Output:**
+
 ```yaml
 auth:
   cookiePath: /home/user/.lesca/cookies.json
@@ -173,25 +215,28 @@ storage:
 Get a specific configuration value using dot notation.
 
 **Syntax:**
+
 ```bash
 npm run dev -- config get <key>
 ```
 
 **Arguments:**
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `<key>` | Yes | Configuration key in dot notation (e.g., `browser.headless`, `api.timeout`) |
+| Argument | Required | Description                                                                 |
+| -------- | -------- | --------------------------------------------------------------------------- |
+| `<key>`  | Yes      | Configuration key in dot notation (e.g., `browser.headless`, `api.timeout`) |
 
 **Examples:**
 
 **Get single value:**
+
 ```bash
 npm run dev -- config get browser.headless
 # Output: true
 ```
 
 **Get nested object:**
+
 ```bash
 npm run dev -- config get auth
 # Output:
@@ -202,12 +247,14 @@ npm run dev -- config get auth
 ```
 
 **Get array or complex value:**
+
 ```bash
 npm run dev -- config get cache.ttl
 # Output: JSON formatted object
 ```
 
 **Common configuration keys:**
+
 - `auth.cookiePath` - Cookie file location
 - `browser.headless` - Browser headless mode setting
 - `api.endpoint` - LeetCode GraphQL API endpoint
@@ -220,23 +267,109 @@ npm run dev -- config get cache.ttl
 Show information about the loaded configuration.
 
 **Syntax:**
+
 ```bash
 npm run dev -- config path
 ```
 
 **Example:**
+
 ```bash
 npm run dev -- config path
 # Output: Configuration loaded.
 ```
 
 **Note:** The configuration is loaded from standard locations in this priority order:
+
 1. `--config` CLI option
 2. `LESCA_CONFIG_PATH` environment variable
 3. `./lesca.config.yaml`
 4. `./lesca.config.json`
 5. `~/.lesca/config.yaml`
 6. Default values
+
+---
+
+---
+
+### `list`
+
+List available LeetCode problems without scraping.
+
+#### Syntax
+
+```bash
+npm run dev -- list [options]
+```
+
+#### Options
+
+| Option                 | Short | Type   | Default | Description                                     |
+| ---------------------- | ----- | ------ | ------- | ----------------------------------------------- |
+| `--difficulty <level>` | `-d`  | string | All     | Filter by difficulty (`Easy`, `Medium`, `Hard`) |
+| `--tags <tags>`        | `-t`  | string | All     | Filter by tags (comma-separated)                |
+| `--limit <number>`     | `-l`  | number | `50`    | Limit number of problems displayed              |
+| `--offset <number>`    |       | number | `0`     | Offset for pagination                           |
+
+#### Examples
+
+**List recent problems**:
+
+```bash
+npm run dev -- list
+```
+
+**Filter by difficulty**:
+
+```bash
+npm run dev -- list --difficulty Medium
+```
+
+**Filter by tags**:
+
+```bash
+npm run dev -- list --tags "array,dp"
+```
+
+---
+
+### `search`
+
+Search for problems by title or keywords.
+
+#### Syntax
+
+```bash
+npm run dev -- search <query> [options]
+```
+
+#### Arguments
+
+| Argument  | Required | Description         |
+| --------- | -------- | ------------------- |
+| `<query>` | Yes      | Search query string |
+
+#### Options
+
+| Option                 | Short | Type   | Default | Description             |
+| ---------------------- | ----- | ------ | ------- | ----------------------- |
+| `--difficulty <level>` | `-d`  | string | All     | Filter by difficulty    |
+| `--tags <tags>`        | `-t`  | string | All     | Filter by tags          |
+| `--limit <number>`     | `-l`  | number | `10`    | Limit number of results |
+
+#### Examples
+
+**Search by keyword**:
+
+```bash
+npm run dev -- search "two sum"
+```
+
+**Search with filters**:
+
+```bash
+npm run dev -- search "substring" --difficulty Hard
+```
 
 ---
 
@@ -252,54 +385,61 @@ npm run dev -- scrape <problem> [options]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `<problem>` | Yes | Problem title slug (e.g., `two-sum`, `longest-substring-without-repeating-characters`) |
+| Argument    | Required | Description                                                                            |
+| ----------- | -------- | -------------------------------------------------------------------------------------- |
+| `<problem>` | Yes      | Problem title slug (e.g., `two-sum`, `longest-substring-without-repeating-characters`) |
 
 #### Options
 
-| Option | Short | Type | Default | Description |
-|--------|-------|------|---------|-------------|
-| `--output <dir>` | `-o` | string | From config | Output directory |
-| `--format <format>` | `-f` | string | From config | Output format (`markdown`, `obsidian`) |
-| `--cookies <file>` | `-c` | string | From config | Cookie file path |
-| `--cache-dir <dir>` | | string | From config | Cache directory |
-| `--no-cache` | | boolean | `false` | Disable caching |
-| `--no-auth` | | boolean | `false` | Skip authentication |
+| Option              | Short | Type    | Default     | Description                            |
+| ------------------- | ----- | ------- | ----------- | -------------------------------------- |
+| `--output <dir>`    | `-o`  | string  | From config | Output directory                       |
+| `--format <format>` | `-f`  | string  | From config | Output format (`markdown`, `obsidian`) |
+| `--cookies <file>`  | `-c`  | string  | From config | Cookie file path                       |
+| `--cache-dir <dir>` |       | string  | From config | Cache directory                        |
+| `--no-cache`        |       | boolean | `false`     | Disable caching                        |
+| `--no-auth`         |       | boolean | `false`     | Skip authentication                    |
 
 #### Examples
 
 **Basic scraping**:
+
 ```bash
 npm run dev -- scrape two-sum
 ```
 
 **Custom output directory**:
+
 ```bash
 npm run dev -- scrape two-sum --output ./problems
 ```
 
 **Change output format**:
+
 ```bash
 npm run dev -- scrape two-sum --format obsidian
 ```
 
 **Without authentication** (public problems only):
+
 ```bash
 npm run dev -- scrape two-sum --no-auth
 ```
 
 **Custom cookie file**:
+
 ```bash
 npm run dev -- scrape two-sum --cookies ./my-cookies.json
 ```
 
 **Disable caching**:
+
 ```bash
 npm run dev -- scrape two-sum --no-cache
 ```
 
 **Multiple options combined**:
+
 ```bash
 npm run dev -- scrape longest-substring-without-repeating-characters \
   --output ./hard-problems \
@@ -310,6 +450,7 @@ npm run dev -- scrape longest-substring-without-repeating-characters \
 #### Output
 
 **Success**:
+
 ```
 ✔ Authentication loaded
 ✔ Cache enabled
@@ -324,6 +465,7 @@ npm run dev -- scrape longest-substring-without-repeating-characters \
 ```
 
 **Error**:
+
 ```
 ✖ Failed to scrape problem
 Error: Problem not found: invalid-slug
@@ -343,28 +485,30 @@ npm run dev -- scrape-list [options]
 
 #### Options
 
-| Option | Short | Type | Default | Description |
-|--------|-------|------|---------|-------------|
-| `--output <dir>` | `-o` | string | From config | Output directory |
-| `--format <format>` | `-f` | string | From config | Output format |
-| `--cookies <file>` | `-c` | string | From config | Cookie file path |
-| `--cache-dir <dir>` | | string | From config | Cache directory |
-| `--no-cache` | | boolean | `false` | Disable caching |
-| `--difficulty <level>` | `-d` | string | All | Filter by difficulty (`Easy`, `Medium`, `Hard`) |
-| `--tags <tags>` | `-t` | string | All | Filter by tags (comma-separated) |
-| `--limit <number>` | `-l` | number | `10` | Limit number of problems |
-| `--concurrency <number>` | | number | `3` | Number of parallel scrapes (1-10) |
-| `--resume` | | boolean | `false` | Resume from previous progress |
-| `--no-auth` | | boolean | `false` | Skip authentication |
+| Option                   | Short | Type    | Default     | Description                                     |
+| ------------------------ | ----- | ------- | ----------- | ----------------------------------------------- |
+| `--output <dir>`         | `-o`  | string  | From config | Output directory                                |
+| `--format <format>`      | `-f`  | string  | From config | Output format                                   |
+| `--cookies <file>`       | `-c`  | string  | From config | Cookie file path                                |
+| `--cache-dir <dir>`      |       | string  | From config | Cache directory                                 |
+| `--no-cache`             |       | boolean | `false`     | Disable caching                                 |
+| `--difficulty <level>`   | `-d`  | string  | All         | Filter by difficulty (`Easy`, `Medium`, `Hard`) |
+| `--tags <tags>`          | `-t`  | string  | All         | Filter by tags (comma-separated)                |
+| `--limit <number>`       | `-l`  | number  | `10`        | Limit number of problems                        |
+| `--concurrency <number>` |       | number  | `3`         | Number of parallel scrapes (1-10)               |
+| `--resume`               |       | boolean | `false`     | Resume from previous progress                   |
+| `--no-auth`              |       | boolean | `false`     | Skip authentication                             |
 
 #### Examples
 
 **Scrape first 10 problems**:
+
 ```bash
 npm run dev -- scrape-list
 ```
 
 **Filter by difficulty**:
+
 ```bash
 npm run dev -- scrape-list --difficulty Medium
 npm run dev -- scrape-list -d Easy
@@ -372,6 +516,7 @@ npm run dev -- scrape-list -d Hard --limit 50
 ```
 
 **Filter by tags**:
+
 ```bash
 # Single tag
 npm run dev -- scrape-list --tags array
@@ -387,12 +532,14 @@ npm run dev -- scrape-list \
 ```
 
 **Custom limit**:
+
 ```bash
 npm run dev -- scrape-list --limit 100
 npm run dev -- scrape-list -l 50
 ```
 
 **Adjust concurrency**:
+
 ```bash
 # Slower, more conservative
 npm run dev -- scrape-list --concurrency 2
@@ -405,6 +552,7 @@ npm run dev -- scrape-list --concurrency 5 --limit 200
 ```
 
 **Resume interrupted scraping**:
+
 ```bash
 # Start scraping
 npm run dev -- scrape-list --limit 500
@@ -414,6 +562,7 @@ npm run dev -- scrape-list --limit 500 --resume
 ```
 
 **Complex filtering**:
+
 ```bash
 npm run dev -- scrape-list \
   --difficulty Hard \
@@ -427,6 +576,7 @@ npm run dev -- scrape-list \
 #### Output
 
 **Progress bar**:
+
 ```
 ███████████████████░░░░░░░░░ | 65% | 65/100 | ✓ 63 ✗ 2 | ETA: 00:35
 
@@ -439,6 +589,7 @@ Summary:
 ```
 
 **With errors**:
+
 ```
 Errors:
   ✗ problem-slug-1: Authentication required
@@ -473,40 +624,44 @@ npm run dev -- scrape-editorial <problem> [options]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `<problem>` | Yes | Problem title slug |
+| Argument    | Required | Description        |
+| ----------- | -------- | ------------------ |
+| `<problem>` | Yes      | Problem title slug |
 
 #### Options
 
-| Option | Short | Type | Default | Description |
-|--------|-------|------|---------|-------------|
-| `--output <dir>` | `-o` | string | From config | Output directory |
-| `--format <format>` | `-f` | string | From config | Output format |
-| `--cookies <file>` | `-c` | string | From config | Cookie file path |
-| `--headless` | | boolean | From config | Run browser in headless mode |
-| `--no-headless` | | boolean | | Run browser in visible mode |
-| `--premium` | | boolean | `false` | Attempt to scrape premium content |
-| `--no-auth` | | boolean | `false` | Skip authentication |
+| Option              | Short | Type    | Default     | Description                       |
+| ------------------- | ----- | ------- | ----------- | --------------------------------- |
+| `--output <dir>`    | `-o`  | string  | From config | Output directory                  |
+| `--format <format>` | `-f`  | string  | From config | Output format                     |
+| `--cookies <file>`  | `-c`  | string  | From config | Cookie file path                  |
+| `--headless`        |       | boolean | From config | Run browser in headless mode      |
+| `--no-headless`     |       | boolean |             | Run browser in visible mode       |
+| `--premium`         |       | boolean | `false`     | Attempt to scrape premium content |
+| `--no-auth`         |       | boolean | `false`     | Skip authentication               |
 
 #### Examples
 
 **Basic editorial scraping**:
+
 ```bash
 npm run dev -- scrape-editorial two-sum
 ```
 
 **Premium content** (requires LeetCode subscription):
+
 ```bash
 npm run dev -- scrape-editorial two-sum --premium
 ```
 
 **Visible browser mode** (for debugging):
+
 ```bash
 npm run dev -- scrape-editorial two-sum --no-headless
 ```
 
 **Custom output**:
+
 ```bash
 npm run dev -- scrape-editorial two-sum \
   --output ./editorials \
@@ -514,6 +669,7 @@ npm run dev -- scrape-editorial two-sum \
 ```
 
 **Multiple editorials**:
+
 ```bash
 for problem in "two-sum" "three-sum" "four-sum"; do
   npm run dev -- scrape-editorial "$problem"
@@ -538,6 +694,7 @@ done
 #### Browser Requirements
 
 First-time setup:
+
 ```bash
 npx playwright install chromium
 ```
@@ -556,63 +713,71 @@ npm run dev -- scrape-discussions <problem> [options]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `<problem>` | Yes | Problem title slug |
+| Argument    | Required | Description        |
+| ----------- | -------- | ------------------ |
+| `<problem>` | Yes      | Problem title slug |
 
 #### Options
 
-| Option | Short | Type | Default | Description |
-|--------|-------|------|---------|-------------|
-| `--output <dir>` | `-o` | string | From config | Output directory |
-| `--format <format>` | `-f` | string | From config | Output format |
-| `--cookies <file>` | `-c` | string | From config | Cookie file path |
-| `--category <cat>` | | string | All | Filter category (`solution`, `general`, `interview-question`) |
-| `--sort <order>` | | string | `hot` | Sort order (`hot`, `most-votes`, `recent`) |
-| `--limit <number>` | | number | `10` | Number of discussions |
-| `--comments` | | boolean | `false` | Include comments |
-| `--headless` | | boolean | From config | Run browser in headless mode |
-| `--no-headless` | | boolean | | Run browser in visible mode |
-| `--no-auth` | | boolean | `false` | Skip authentication |
+| Option              | Short | Type    | Default     | Description                                                   |
+| ------------------- | ----- | ------- | ----------- | ------------------------------------------------------------- |
+| `--output <dir>`    | `-o`  | string  | From config | Output directory                                              |
+| `--format <format>` | `-f`  | string  | From config | Output format                                                 |
+| `--cookies <file>`  | `-c`  | string  | From config | Cookie file path                                              |
+| `--category <cat>`  |       | string  | All         | Filter category (`solution`, `general`, `interview-question`) |
+| `--sort <order>`    |       | string  | `hot`       | Sort order (`hot`, `most-votes`, `recent`)                    |
+| `--limit <number>`  |       | number  | `10`        | Number of discussions                                         |
+| `--comments`        |       | boolean | `false`     | Include comments                                              |
+| `--headless`        |       | boolean | From config | Run browser in headless mode                                  |
+| `--no-headless`     |       | boolean |             | Run browser in visible mode                                   |
+| `--no-auth`         |       | boolean | `false`     | Skip authentication                                           |
 
 #### Examples
 
 **Basic discussions**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum
 ```
 
 **Solution discussions only**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --category solution
 ```
 
 **Sort by votes**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --sort most-votes
 ```
 
 **Get recent discussions**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --sort recent
 ```
 
 **More discussions**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --limit 50
 ```
 
 **Include comments**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --comments
 ```
 
 **Visible browser**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum --no-headless
 ```
 
 **Complex query**:
+
 ```bash
 npm run dev -- scrape-discussions two-sum \
   --category solution \
@@ -725,11 +890,11 @@ npm run dev -- --config ./obsidian-config.yaml scrape-list
 
 Lesca uses standard exit codes:
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | General error (authentication, network, invalid input) |
-| `2` | Configuration error |
+| Code | Meaning                                                |
+| ---- | ------------------------------------------------------ |
+| `0`  | Success                                                |
+| `1`  | General error (authentication, network, invalid input) |
+| `2`  | Configuration error                                    |
 
 **Examples**:
 
@@ -841,6 +1006,7 @@ alias lesca-list="npm run dev -- scrape-list"
 ```
 
 Usage:
+
 ```bash
 lesca scrape two-sum
 lesca-list --difficulty Medium

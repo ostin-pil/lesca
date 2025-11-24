@@ -12,6 +12,7 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 ## ✨ Features
 
 ### Core Functionality
+
 - 🚀 **Comprehensive Scraping**: Problems, editorials, discussions, and problem lists
 - 🎯 **Type-Safe**: Built with strict TypeScript for maximum reliability
 - 📝 **Markdown Export**: Beautiful, readable Markdown output
@@ -21,6 +22,7 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 - 🔧 **Highly Configurable**: YAML/JSON config with environment variable support
 
 ### Developer Experience
+
 - 🔌 **Modular Architecture**: Clean separation with swappable components
 - 🧪 **Well-Tested**: 631 passing tests with 68.43% coverage
 - 📦 **Monorepo Structure**: Organized, maintainable codebase
@@ -34,13 +36,16 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 ## 📚 Documentation
 
 ### For Users
+
 - **[User Guide](./docs/USER_GUIDE.md)** - Complete usage guide with examples
 - **[Installation](./docs/INSTALLATION.md)** - Installation instructions
 - **[CLI Reference](./docs/CLI_REFERENCE.md)** - All commands and options
 - **[Configuration](./docs/CONFIGURATION.md)** - Configuration guide
+- **[Examples](./docs/EXAMPLES.md)** - Common usage patterns and recipes
 - **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### For Developers
+
 - **[Architecture Review](./ARCHITECTURE_REVIEW.md)** - Design decisions and patterns
 - **[Coding Standards](./docs/CODING_STANDARDS.md)** - Code style and best practices
 - **[Testing Guide](./docs/TESTING.md)** - Testing infrastructure and best practices
@@ -68,11 +73,23 @@ npm run dev -- init
 
 ### Set Up Authentication
 
-1. Log into LeetCode in your browser
-2. Export cookies using a browser extension ([EditThisCookie](https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg))
-3. Save cookies to `~/.lesca/cookies.json`
+1. Run the interactive authentication command:
+   ```bash
+   npm run dev -- auth
+   ```
+2. Follow the prompts to provide your cookie file path or paste your cookies.
 
 See [User Guide - Authentication Setup](./docs/USER_GUIDE.md#authentication-setup) for detailed instructions.
+
+### Explore Problems
+
+```bash
+# List easy problems
+npm run dev -- list --difficulty Easy
+
+# Search for a specific problem
+npm run dev -- search "two sum"
+```
 
 ### Scrape Your First Problem
 
@@ -215,19 +232,19 @@ npm run benchmark
 
 ### Test Coverage by Package
 
-| Package | Coverage | Tests | Status |
-|---------|----------|-------|--------|
-| **api-client** | 98.45% | 28 | ✅ Complete |
-| **auth** | 95.75% | 41 | ✅ Complete |
-| **browser-automation** | 96.48% | 65 | ✅ Complete |
-| **cli** | 15.62% | 61 | 🚧 In Progress |
-| **converters** | 85.97% | 154 | ✅ Complete |
-| **core** | 81.72% | 29 | ✅ Complete |
-| **scrapers** | 90.87% | 105 | ✅ Complete |
-| **storage** | 91.02% | 35 | ✅ Complete |
-| **shared/utils** | 80.22% | 23 | ✅ Complete |
-| **shared/config** | 93.09% | 28 | ✅ Complete |
-| **shared/error** | 100% | 34 | ✅ Complete |
+| Package                | Coverage | Tests | Status         |
+| ---------------------- | -------- | ----- | -------------- |
+| **api-client**         | 98.45%   | 28    | ✅ Complete    |
+| **auth**               | 95.75%   | 41    | ✅ Complete    |
+| **browser-automation** | 96.48%   | 65    | ✅ Complete    |
+| **cli**                | 15.62%   | 61    | 🚧 In Progress |
+| **converters**         | 85.97%   | 154   | ✅ Complete    |
+| **core**               | 81.72%   | 29    | ✅ Complete    |
+| **scrapers**           | 90.87%   | 105   | ✅ Complete    |
+| **storage**            | 91.02%   | 35    | ✅ Complete    |
+| **shared/utils**       | 80.22%   | 23    | ✅ Complete    |
+| **shared/config**      | 93.09%   | 28    | ✅ Complete    |
+| **shared/error**       | 100%     | 34    | ✅ Complete    |
 
 **Total: 631 tests passing • 68.43% coverage**
 
@@ -261,7 +278,7 @@ storage:
   path: ./output
 
 output:
-  format: obsidian  # or 'markdown'
+  format: obsidian # or 'markdown'
   frontmatter: true
 
 scraping:
@@ -271,7 +288,7 @@ scraping:
 cache:
   enabled: true
   ttl:
-    problem: 604800000  # 7 days
+    problem: 604800000 # 7 days
 ```
 
 See [Configuration Guide](./docs/CONFIGURATION.md) for all options.
@@ -307,21 +324,21 @@ npm run lint:fix
 
 ### Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Development mode with TypeScript watch |
-| `npm run build` | Build all packages |
-| `npm test` | Run unit tests (fast) |
-| `npm run test:unit` | Run unit tests only |
-| `npm run test:integration` | Run integration tests only |
-| `npm run test:all` | Run all tests (unit + integration) |
-| `npm run test:coverage` | Generate coverage report |
-| `npm run check-coverage` | Validate coverage thresholds |
-| `npm run benchmark` | Run performance benchmarks |
-| `npm run lint` | Lint codebase |
-| `npm run lint:fix` | Fix linting issues |
-| `npm run format` | Format code with Prettier |
-| `npm run typecheck` | Type check without emitting |
+| Command                    | Description                            |
+| -------------------------- | -------------------------------------- |
+| `npm run dev`              | Development mode with TypeScript watch |
+| `npm run build`            | Build all packages                     |
+| `npm test`                 | Run unit tests (fast)                  |
+| `npm run test:unit`        | Run unit tests only                    |
+| `npm run test:integration` | Run integration tests only             |
+| `npm run test:all`         | Run all tests (unit + integration)     |
+| `npm run test:coverage`    | Generate coverage report               |
+| `npm run check-coverage`   | Validate coverage thresholds           |
+| `npm run benchmark`        | Run performance benchmarks             |
+| `npm run lint`             | Lint codebase                          |
+| `npm run lint:fix`         | Fix linting issues                     |
+| `npm run format`           | Format code with Prettier              |
+| `npm run typecheck`        | Type check without emitting            |
 
 ### Testing Guidelines
 
@@ -344,18 +361,21 @@ See [Coding Standards](./docs/CODING_STANDARDS.md) for testing best practices.
 ### Upcoming Releases
 
 #### v0.2.0 - Production Ready
+
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] npm package publication
 - [ ] Binary releases (Windows, macOS, Linux)
 - [ ] Docker image
 
 #### v0.3.0 - Enhanced Features
+
 - [ ] Quality scoring (Wilson score algorithm)
 - [ ] SQLite storage adapter
 - [ ] Enhanced filtering options
 - [ ] Performance optimizations
 
 #### v1.0.0 - Stable Release
+
 - [ ] Plugin system
 - [ ] Web UI (optional)
 - [ ] Advanced analytics
@@ -401,6 +421,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) befo
 ## 🐛 Bug Reports
 
 Found a bug? Please open an issue with:
+
 - Lesca version (`npm run dev -- --version`)
 - Node.js version (`node --version`)
 - Operating system
