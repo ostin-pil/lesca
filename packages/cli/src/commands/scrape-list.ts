@@ -1,12 +1,22 @@
 import { GraphQLClient, RateLimiter } from '@/packages/api-client/src/index'
 import { CookieFileAuth } from '@/packages/auth/src/index'
 import { PlaywrightDriver } from '@/packages/browser-automation/src/index'
-import { LeetCodeScraper, BatchScraper, type BatchProgress, type BatchScrapingOptions } from '@/packages/core/src/index'
+import {
+  LeetCodeScraper,
+  BatchScraper,
+  type BatchProgress,
+  type BatchScrapingOptions,
+} from '@/packages/core/src/index'
 import { ProblemScraperStrategy, ListScraperStrategy } from '@/packages/scrapers/src/index'
 import { FileSystemStorage } from '@/packages/storage/src/index'
 import { ConfigManager } from '@/shared/config/src/index'
-import type { ProblemScrapeRequest, ListScrapeRequest, ProblemListFilters, Difficulty } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
+import type {
+  ProblemScrapeRequest,
+  ListScrapeRequest,
+  ProblemListFilters,
+  Difficulty,
+} from '@/shared/types/src/index'
+import { logger, createCache } from '@/shared/utils/src/index'
 import { ScrapingError } from '@lesca/error'
 import chalk from 'chalk'
 import { SingleBar, Presets } from 'cli-progress'
@@ -53,9 +63,9 @@ export const scrapeListCommand = new Command('scrape-list')
       const outputDir = options.output || config.storage.path
       const format = (options.format || config.output.format) as 'markdown' | 'obsidian'
       const cookiePath = options.cookies || config.auth.cookiePath
-      const cacheDir = options.cacheDir || config.cache.directory
-      const cacheEnabled = options.cache !== false && config.cache.enabled
-      const concurrency = options.concurrency ? parseInt(options.concurrency) : config.scraping.concurrency
+      const concurrency = options.concurrency
+        ? parseInt(options.concurrency)
+        : config.scraping.concurrency
       const limit = options.limit ? parseInt(options.limit) : config.scraping.batchSize
 
       // 1. Set up authentication
@@ -72,17 +82,15 @@ export const scrapeListCommand = new Command('scrape-list')
       }
 
       // 2. Set up cache (if enabled)
-      if (cacheEnabled && cacheDir) {
-        spinner.info('Cache enabled')
-      }
+      const cache = options.cache !== false ? createCache(config) : undefined
 
-      // 3. Set up clients with config values
+      // Set up GraphQL client with config values
       const rateLimiter = new RateLimiter(
         config.api.rateLimit.minDelay,
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter)
+      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
 
       // 4. Set up strategies
       const browserDriver = new PlaywrightDriver(auth?.getCredentials())

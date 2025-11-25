@@ -3,7 +3,7 @@ import { CookieFileAuth } from '@/packages/auth/src/index'
 import { ListScraperStrategy } from '@/packages/scrapers/src/index'
 import { ConfigManager } from '@/shared/config/src/index'
 import type { ListScrapeRequest, ProblemListFilters, Difficulty } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
+import { logger, createCache } from '@/shared/utils/src/index'
 import { ScrapingError } from '@lesca/error'
 import chalk from 'chalk'
 import { Command } from 'commander'
@@ -53,13 +53,16 @@ export const searchCommand = new Command('search')
         }
       }
 
+      // Set up cache
+      const cache = createCache(config)
+
       // 2. Set up client
       const rateLimiter = new RateLimiter(
         config.api.rateLimit.minDelay,
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter)
+      const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
 
       // 3. Fetch problem list
       spinner.start(`Searching for "${query}"...`)

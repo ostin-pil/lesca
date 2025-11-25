@@ -2,11 +2,15 @@ import { GraphQLClient, RateLimiter } from '@/packages/api-client/src/index'
 import { CookieFileAuth } from '@/packages/auth/src/index'
 import { PlaywrightDriver } from '@/packages/browser-automation/src/index'
 import { LeetCodeScraper } from '@/packages/core/src/index'
-import { ProblemScraperStrategy, ListScraperStrategy, EditorialScraperStrategy } from '@/packages/scrapers/src/index'
+import {
+  ProblemScraperStrategy,
+  ListScraperStrategy,
+  EditorialScraperStrategy,
+} from '@/packages/scrapers/src/index'
 import { FileSystemStorage } from '@/packages/storage/src/index'
 import { ConfigManager } from '@/shared/config/src/index'
 import type { EditorialScrapeRequest, AuthCredentials } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
+import { logger, createCache } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
@@ -20,6 +24,7 @@ interface ScrapeEditorialOptions {
   headless: boolean
   premium?: boolean
   auth: boolean
+  cache?: boolean // Added for the new cache option
 }
 
 export const scrapeEditorialCommand = new Command('scrape-editorial')
@@ -32,6 +37,7 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
   .option('--no-headless', 'Run browser in visible mode')
   .option('--premium', 'Attempt to scrape premium content (requires auth)')
   .option('--no-auth', 'Skip authentication (will fail on premium content)')
+  .option('--no-cache', 'Disable GraphQL caching') // Added new option
   .action(async (problem: string, options: ScrapeEditorialOptions) => {
     const spinner = ora('Initializing browser automation...').start()
 
@@ -76,13 +82,17 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
 
       spinner.succeed('Browser launched')
 
-      // 3. Set up strategies with config values
+      // 3. Set up strategies
+      // Set up cache
+      const cache = options.cache !== false ? createCache(config) : undefined
+
+      // Set up GraphQL client
       const rateLimiter = new RateLimiter(
         config.api.rateLimit.minDelay,
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth, rateLimiter)
+      const graphqlClient = new GraphQLClient(auth, rateLimiter, cache)
 
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth),

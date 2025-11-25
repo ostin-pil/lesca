@@ -2,11 +2,16 @@ import { GraphQLClient, RateLimiter } from '@/packages/api-client/src/index'
 import { CookieFileAuth } from '@/packages/auth/src/index'
 import { PlaywrightDriver } from '@/packages/browser-automation/src/index'
 import { LeetCodeScraper } from '@/packages/core/src/index'
-import { ProblemScraperStrategy, ListScraperStrategy, EditorialScraperStrategy, DiscussionScraperStrategy } from '@/packages/scrapers/src/index'
+import {
+  ProblemScraperStrategy,
+  ListScraperStrategy,
+  EditorialScraperStrategy,
+  DiscussionScraperStrategy,
+} from '@/packages/scrapers/src/index'
 import { FileSystemStorage } from '@/packages/storage/src/index'
 import { ConfigManager } from '@/shared/config/src/index'
 import type { DiscussionScrapeRequest, AuthCredentials } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
+import { logger, createCache } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
@@ -23,6 +28,7 @@ interface ScrapeDiscussionsOptions {
   comments: boolean
   headless: boolean
   auth: boolean
+  cache: boolean
 }
 
 export const scrapeDiscussionsCommand = new Command('scrape-discussions')
@@ -38,6 +44,7 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
   .option('--headless', 'Run browser in headless mode (overrides config)')
   .option('--no-headless', 'Run browser in visible mode')
   .option('--no-auth', 'Skip authentication')
+  .option('--no-cache', 'Do not use GraphQL caching')
   .action(async (problem: string, options: ScrapeDiscussionsOptions) => {
     const spinner = ora('Initializing browser automation...').start()
 
@@ -50,8 +57,13 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
       const format = (options.format || config.output.format) as 'markdown' | 'obsidian'
       const cookiePath = options.cookies || config.auth.cookiePath
       const headless = options.headless !== undefined ? options.headless : config.browser.headless
-      const sortOrder = (options.sort || config.scraping.discussion.defaultSort) as 'hot' | 'most-votes' | 'recent'
-      const limit = options.limit ? parseInt(options.limit) : config.scraping.discussion.defaultLimit
+      const sortOrder = (options.sort || config.scraping.discussion.defaultSort) as
+        | 'hot'
+        | 'most-votes'
+        | 'recent'
+      const limit = options.limit
+        ? parseInt(options.limit)
+        : config.scraping.discussion.defaultLimit
 
       // 1. Set up authentication
       let auth: AuthCredentials | undefined
@@ -79,13 +91,17 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
 
       spinner.succeed('Browser launched')
 
-      // 3. Set up strategies with config values
+      // 3. Set up strategies
+      // Set up cache
+      const cache = options.cache !== false ? createCache(config) : undefined
+
+      // Set up GraphQL client
       const rateLimiter = new RateLimiter(
         config.api.rateLimit.minDelay,
         config.api.rateLimit.maxDelay,
         config.api.rateLimit.jitter
       )
-      const graphqlClient = new GraphQLClient(auth, rateLimiter)
+      const graphqlClient = new GraphQLClient(auth, rateLimiter, cache)
 
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth),
@@ -110,7 +126,9 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
       const request: DiscussionScrapeRequest = {
         type: 'discussion',
         titleSlug: problem,
-        ...(options.category && { category: options.category as 'solution' | 'general' | 'interview-question' }),
+        ...(options.category && {
+          category: options.category as 'solution' | 'general' | 'interview-question',
+        }),
         sortBy: sortOrder,
         limit: limit,
         includeComments: options.comments,

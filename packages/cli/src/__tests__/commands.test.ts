@@ -105,6 +105,7 @@ vi.mock('@/shared/utils/src/index', () => ({
     info: vi.fn(),
     debug: vi.fn(),
   },
+  createCache: vi.fn(() => undefined), // Return undefined to disable caching in tests
 }))
 
 vi.mock('ora', () => ({
