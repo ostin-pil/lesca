@@ -162,33 +162,36 @@ describe('CLI Commands', () => {
 
     // Reset ListScraperStrategy mock to default happy path
     const { ListScraperStrategy } = await import('@/packages/scrapers/src/index')
-    vi.mocked(ListScraperStrategy).mockImplementation(() => ({
-      execute: vi.fn().mockResolvedValue({
-        type: 'list',
-        data: {
-          questions: [
-            {
-              questionId: '1',
-              questionFrontendId: '1',
-              title: 'Two Sum',
-              titleSlug: 'two-sum',
-              difficulty: 'Easy',
-              isPaidOnly: false,
-              acRate: 50.0,
+    vi.mocked(ListScraperStrategy).mockImplementation(
+      () =>
+        ({
+          execute: vi.fn().mockResolvedValue({
+            type: 'list',
+            data: {
+              questions: [
+                {
+                  questionId: '1',
+                  questionFrontendId: '1',
+                  title: 'Two Sum',
+                  titleSlug: 'two-sum',
+                  difficulty: 'Easy',
+                  isPaidOnly: false,
+                  acRate: 50.0,
+                },
+                {
+                  questionId: '2',
+                  questionFrontendId: '2',
+                  title: 'Add Two Numbers',
+                  titleSlug: 'add-two-numbers',
+                  difficulty: 'Medium',
+                  isPaidOnly: false,
+                  acRate: 40.0,
+                },
+              ],
             },
-            {
-              questionId: '2',
-              questionFrontendId: '2',
-              title: 'Add Two Numbers',
-              titleSlug: 'add-two-numbers',
-              difficulty: 'Medium',
-              isPaidOnly: false,
-              acRate: 40.0,
-            },
-          ],
-        },
-      }),
-    }))
+          }),
+        }) as any
+    )
   })
 
   afterEach(() => {
