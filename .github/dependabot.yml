@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    automerge: true
+    automerge-type: pr
+    target-branch: develop
+    rebase-strategy: auto
+    reviewers:
+      - pil
+    assignees:
+      - pil
