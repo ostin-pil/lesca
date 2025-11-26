@@ -1,0 +1,14 @@
+{
+  "question": {
+    "questionId": "1",
+    "titleSlug": "two-sum",
+    "solution": {
+      "id": "123",
+      "canSeeDetail": true,
+      "paidOnly": false,
+      "hasVideoSolution": true,
+      "paidOnlyVideo": false,
+      "content": "<h2>Solution</h2>\n<p><strong>Approach 1: Brute Force</strong></p>\n<p>The brute force approach is simple. Loop through each element <code>x</code> and find if there is another value that equals to <code>target - x</code>.</p>\n<pre><code class=\"language-java\">class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        for (int i = 0; i < nums.length; i++) {\n            for (int j = i + 1; j < nums.length; j++) {\n                if (nums[j] == target - nums[i]) {\n                    return new int[] { i, j };\n                }\n            }\n        }\n        return null;\n    }\n}</code></pre>\n<p><strong>Complexity Analysis</strong></p>\n<ul>\n<li>Time complexity: O(n^2). For each element, we try to find its complement by looping through the rest of the array which takes O(n) time. Therefore, the time complexity is O(n^2).</li>\n<li>Space complexity: O(1).</li>\n</ul>\n<p><strong>Approach 2: Two-pass Hash Table</strong></p>\n<p>To improve our runtime complexity, we need a more efficient way to check if the complement exists in the array. If the complement exists, we need to look up its index. What is the best way to maintain a mapping of each element in the array to its index? A hash table.</p>"
+    }
+  }
+}

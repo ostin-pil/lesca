@@ -1,0 +1,92 @@
+{
+  "problemsetQuestionList": {
+    "total": 3000,
+    "questions": [
+      {
+        "acRate": 51.2,
+        "difficulty": "Easy",
+        "freqBar": null,
+        "frontendQuestionId": "1",
+        "isFavor": false,
+        "paidOnly": false,
+        "status": null,
+        "title": "Two Sum",
+        "titleSlug": "two-sum",
+        "topicTags": [
+          {
+            "name": "Array",
+            "id": "VG9waWNUYWdOb2RlOjU=",
+            "slug": "array"
+          },
+          {
+            "name": "Hash Table",
+            "id": "VG9waWNUYWdOb2RlOjY=",
+            "slug": "hash-table"
+          }
+        ],
+        "hasSolution": true,
+        "hasVideoSolution": true
+      },
+      {
+        "acRate": 42.1,
+        "difficulty": "Medium",
+        "freqBar": null,
+        "frontendQuestionId": "2",
+        "isFavor": false,
+        "paidOnly": false,
+        "status": null,
+        "title": "Add Two Numbers",
+        "titleSlug": "add-two-numbers",
+        "topicTags": [
+          {
+            "name": "Linked List",
+            "id": "VG9waWNUYWdOb2RlOjc=",
+            "slug": "linked-list"
+          },
+          {
+            "name": "Math",
+            "id": "VG9waWNUYWdOb2RlOjg=",
+            "slug": "math"
+          },
+          {
+            "name": "Recursion",
+            "id": "VG9waWNUYWdOb2RlOjk=",
+            "slug": "recursion"
+          }
+        ],
+        "hasSolution": true,
+        "hasVideoSolution": true
+      },
+      {
+        "acRate": 34.5,
+        "difficulty": "Medium",
+        "freqBar": null,
+        "frontendQuestionId": "3",
+        "isFavor": false,
+        "paidOnly": false,
+        "status": null,
+        "title": "Longest Substring Without Repeating Characters",
+        "titleSlug": "longest-substring-without-repeating-characters",
+        "topicTags": [
+          {
+            "name": "Hash Table",
+            "id": "VG9waWNUYWdOb2RlOjY=",
+            "slug": "hash-table"
+          },
+          {
+            "name": "String",
+            "id": "VG9waWNUYWdOb2RlOjEw",
+            "slug": "string"
+          },
+          {
+            "name": "Sliding Window",
+            "id": "VG9waWNUYWdOb2RlOjEx",
+            "slug": "sliding-window"
+          }
+        ],
+        "hasSolution": true,
+        "hasVideoSolution": true
+      }
+    ]
+  }
+}

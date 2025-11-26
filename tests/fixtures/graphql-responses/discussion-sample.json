@@ -1,0 +1,65 @@
+{
+  "questionTopicsList": {
+    "edges": [
+      {
+        "node": {
+          "id": "12345",
+          "title": "Simple Python Solution",
+          "commentCount": 10,
+          "viewCount": 1000,
+          "pinned": false,
+          "isFavorite": false,
+          "solutionTags": [
+            {
+              "name": "Python",
+              "slug": "python"
+            }
+          ],
+          "post": {
+            "id": "67890",
+            "voteCount": 50,
+            "creationDate": 1609459200,
+            "author": {
+              "username": "user123",
+              "profile": {
+                "userAvatar": "https://assets.leetcode.com/users/user123/avatar_1609459200.png",
+                "reputation": 100
+              }
+            },
+            "content": "Here is a simple Python solution using a dictionary:\n\n```python\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            complement = target - num\n            if complement in seen:\n                return [seen[complement], i]\n            seen[num] = i\n        return []\n```"
+          }
+        }
+      },
+      {
+        "node": {
+          "id": "12346",
+          "title": "C++ O(n) Solution",
+          "commentCount": 5,
+          "viewCount": 500,
+          "pinned": false,
+          "isFavorite": false,
+          "solutionTags": [
+            {
+              "name": "C++",
+              "slug": "cpp"
+            }
+          ],
+          "post": {
+            "id": "67891",
+            "voteCount": 30,
+            "creationDate": 1609545600,
+            "author": {
+              "username": "cpp_master",
+              "profile": {
+                "userAvatar": "https://assets.leetcode.com/users/cpp_master/avatar_1609545600.png",
+                "reputation": 200
+              }
+            },
+            "content": "Standard map solution in C++:\n\n```cpp\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> m;\n        for (int i = 0; i < nums.length; i++) {\n            if (m.count(target - nums[i])) {\n                return {m[target - nums[i]], i};\n            }\n            m[nums[i]] = i;\n        }\n        return {};\n    }\n};\n```"
+          }
+        }
+      }
+    ],
+    "totalNum": 2
+  }
+}
