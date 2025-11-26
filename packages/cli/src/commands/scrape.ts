@@ -23,14 +23,41 @@ interface ScrapeOptions {
 }
 
 export const scrapeCommand = new Command('scrape')
-  .description('Scrape a LeetCode problem')
-  .argument('<problem>', 'Problem title slug (e.g., "two-sum")')
-  .option('-o, --output <dir>', 'Output directory (overrides config)')
-  .option('-f, --format <format>', 'Output format: markdown, obsidian (overrides config)')
-  .option('-c, --cookies <file>', 'Cookie file path (overrides config)')
-  .option('--cache-dir <dir>', 'Cache directory (overrides config)')
-  .option('--no-cache', 'Disable caching')
+  .description(chalk.white('Scrape a single LeetCode problem to markdown'))
+  .argument('<problem>', chalk.gray('Problem identifier (e.g., "two-sum", "climbing-stairs")'))
+  .option('-o, --output <dir>', 'Output directory (default: from config)')
+  .option('-f, --format <format>', 'Output format: markdown|obsidian (default: from config)')
+  .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
+  .option('--cache-dir <dir>', 'Cache directory (default: from config)')
+  .option('--no-cache', 'Bypass cache and fetch fresh data')
   .option('--no-auth', 'Skip authentication (public problems only)')
+  .addHelpText(
+    'after',
+    `
+${chalk.bold('Examples:')}
+  ${chalk.gray('# Basic usage')}
+  $ lesca scrape two-sum
+
+  ${chalk.gray('# Custom output and format')}
+  $ lesca scrape two-sum ${chalk.cyan('-o ~/notes -f obsidian')}
+
+  ${chalk.gray('# Force fresh data (bypass cache)')}
+  $ lesca scrape climbing-stairs ${chalk.cyan('--no-cache')}
+
+  ${chalk.gray('# Scrape premium problem (requires authentication)')}
+  $ lesca scrape design-twitter
+
+${chalk.bold('Tips:')}
+  ${chalk.gray('•')} Use ${chalk.cyan('lesca list --difficulty easy')} to find beginner problems
+  ${chalk.gray('•')} Enable caching in config for 10-100x faster repeated scrapes
+  ${chalk.gray('•')} Premium problems require valid LeetCode session cookies
+
+${chalk.bold('See also:')}
+  ${chalk.cyan('lesca scrape-list')}     Scrape multiple problems at once
+  ${chalk.cyan('lesca search')}          Search for problems by keyword
+  ${chalk.cyan('lesca auth')}            Manage authentication
+  `
+  )
   .action(async (problem: string, options: ScrapeOptions) => {
     const spinner = ora('Initializing...').start()
 

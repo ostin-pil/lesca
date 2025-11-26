@@ -22,14 +22,42 @@ interface SearchOptions {
 
 export const searchCommand = new Command('search')
   .alias('s')
-  .description('Search LeetCode problems')
-  .argument('<query>', 'Search query (title or keywords)')
+  .description(chalk.white('Search LeetCode problems by keyword or title'))
+  .argument('<query>', chalk.gray('Search query (e.g., "binary tree", "graph", "dynamic")'))
   .option('-d, --difficulty <level>', 'Filter by difficulty (Easy, Medium, Hard)')
-  .option('-t, --tags <tags>', 'Filter by tags (comma-separated)', '')
-  .option('-l, --limit <number>', 'Limit number of results', '10')
-  .option('-c, --cookies <file>', 'Cookie file path (overrides config)')
+  .option('-t, --tags <tags>', 'Filter by tags (comma-separated)')
+  .option('-l, --limit <number>', 'Limit number of results (default: 10)', '10')
+  .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
   .option('--no-auth', 'Skip authentication (public problems only)')
   .option('--json', 'Output as JSON')
+  .addHelpText(
+    'after',
+    `
+${chalk.bold('Examples:')}
+  ${chalk.gray('# Search by keyword')}
+  $ lesca search "binary tree"
+  $ lesca search graph
+
+  ${chalk.gray('# Combine with filters')}
+  $ lesca search tree ${chalk.cyan('-d Easy -l 5')}
+  $ lesca search "dynamic programming" ${chalk.cyan('-d Medium')}
+
+  ${chalk.gray('# Search with tags')}
+  $ lesca search array ${chalk.cyan('-t sorting,two-pointers')}
+
+  ${chalk.gray('# Output as JSON')}
+  $ lesca search recursion ${chalk.cyan('--json')} > recursion-problems.json
+
+${chalk.bold('Tips:')}
+  ${chalk.gray('•')} Use quotes for multi-word queries: ${chalk.cyan('"binary search tree"')}
+  ${chalk.gray('•')} Results show acceptance rate to help gauge difficulty
+  ${chalk.gray('•')} Combine with tags for more specific results
+
+${chalk.bold('See also:')}
+  ${chalk.cyan('lesca list')}            List all problems with filters
+  ${chalk.cyan('lesca scrape')}          Scrape a single problem
+  `
+  )
   .action(async (query: string, options: SearchOptions) => {
     const spinner = ora('Searching...').start()
 

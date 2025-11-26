@@ -22,13 +22,44 @@ interface ListOptions {
 
 export const listCommand = new Command('list')
   .alias('ls')
-  .description('List available LeetCode problems')
+  .description(chalk.white('List available LeetCode problems'))
   .option('-d, --difficulty <level>', 'Filter by difficulty (Easy, Medium, Hard)')
-  .option('-t, --tags <tags>', 'Filter by tags (comma-separated)', '')
-  .option('-l, --limit <number>', 'Limit number of problems', '50')
-  .option('-c, --cookies <file>', 'Cookie file path (overrides config)')
+  .option('-t, --tags <tags>', 'Filter by tags (comma-separated)')
+  .option('-l, --limit <number>', 'Limit number of problems (default: 50)', '50')
+  .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
   .option('--no-auth', 'Skip authentication (public problems only)')
   .option('--json', 'Output as JSON')
+  .addHelpText(
+    'after',
+    `
+${chalk.bold('Examples:')}
+  ${chalk.gray('# List all problems')}
+  $ lesca list
+
+  ${chalk.gray('# Filter by difficulty')}
+  $ lesca list ${chalk.cyan('--difficulty Easy')}
+  $ lesca list ${chalk.cyan('-d Medium')}
+
+  ${chalk.gray('# Filter by tags')}
+  $ lesca list ${chalk.cyan('--tags array,dynamic-programming')}
+  $ lesca list ${chalk.cyan('-t tree,recursion')}
+
+  ${chalk.gray('# Limit results')}
+  $ lesca list ${chalk.cyan('--limit 10 -d Hard')}
+
+  ${chalk.gray('# Output as JSON for scripting')}
+  $ lesca list ${chalk.cyan('--json')} > problems.json
+
+${chalk.bold('Tips:')}
+  ${chalk.gray('•')} Combine filters: ${chalk.cyan('lesca list -d Easy -t array -l 20')}
+  ${chalk.gray('•')} Premium problems show a ${chalk.yellow('Premium')} badge
+  ${chalk.gray('•')} Use ${chalk.cyan('--json')} output to pipe into ${chalk.cyan('lesca scrape-list')}
+
+${chalk.bold('See also:')}
+  ${chalk.cyan('lesca search')}          Search problems by keyword
+  ${chalk.cyan('lesca scrape-list')}     Scrape multiple problems from list
+  `
+  )
   .action(async (options: ListOptions) => {
     const spinner = ora('Initializing...').start()
 
