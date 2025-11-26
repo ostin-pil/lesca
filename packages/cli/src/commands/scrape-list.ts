@@ -19,10 +19,10 @@ import type {
 import { logger, createCache } from '@/shared/utils/src/index'
 import { ScrapingError } from '@lesca/error'
 import chalk from 'chalk'
-import { SingleBar, Presets } from 'cli-progress'
 import { Command } from 'commander'
 import ora from 'ora'
 
+import { ProgressManager } from '../progress-manager'
 import { handleCliError } from '../utils'
 
 interface ScrapeListOptions {
@@ -140,47 +140,31 @@ export const scrapeListCommand = new Command('scrape-list')
       spinner.succeed(`Found ${problems.length} problems`)
       logger.log()
 
-      // 8. Create progress bar
-      const progressBar = new SingleBar(
-        {
-          format:
-            chalk.cyan('{bar}') +
-            ' | {percentage}% | {value}/{total} | ' +
-            chalk.green('✓ {successful}') +
-            ' ' +
-            chalk.red('✗ {failed}') +
-            ' | ETA: {eta_formatted}',
-          barCompleteChar: '\u2588',
-          barIncompleteChar: '\u2591',
-          hideCursor: true,
-        },
-        Presets.shades_classic
-      )
-
-      // 9. Create problem requests
+      // 8. Create problem requests
       const requests: ProblemScrapeRequest[] = problems.map((p) => ({
         type: 'problem',
         titleSlug: p.titleSlug,
       }))
 
-      // 10. Start progress bar
-      progressBar.start(problems.length, 0, {
-        successful: 0,
-        failed: 0,
-        eta_formatted: 'calculating...',
-      })
+      // 9. Create progress manager
+      const progressManager = new ProgressManager(problems.length)
+      progressManager.start()
 
-      // 11. Create batch scraper with callbacks
+      // 10. Create batch scraper with callbacks
       const batchScraperOptions: BatchScrapingOptions = {
         concurrency: concurrency,
         continueOnError: true,
         delayBetweenBatches: config.scraping.delay,
         onProgress: (progress: BatchProgress) => {
-          progressBar.update(progress.completed, {
-            successful: progress.successful,
-            failed: progress.failed,
-            eta_formatted: progress.eta ? BatchScraper.formatETA(progress.eta) : 'calculating...',
-          })
+          // Update progress manager with current item
+          const currentIndex = progress.completed - 1
+          if (currentIndex >= 0 && currentIndex < problems.length) {
+            const currentProblem = problems[currentIndex]
+            progressManager.update({
+              current: `${currentProblem.title} (${currentProblem.titleSlug})`,
+              status: 'done',
+            })
+          }
         },
       }
       if (options.resume !== undefined) {
@@ -188,28 +172,23 @@ export const scrapeListCommand = new Command('scrape-list')
       }
       const batchScraper = new BatchScraper(scraper, batchScraperOptions)
 
-      // 12. Batch scrape
+      // 11. Batch scrape
       const result = await batchScraper.scrapeAll(requests)
 
-      // 13. Stop progress bar
-      progressBar.stop()
+      // Update progress manager with final stats
+      result.results.forEach((r) => {
+        if (r.success) {
+          progressManager.incrementSuccess()
+        } else {
+          progressManager.incrementFailure()
+        }
+      })
 
-      // 14. Summary
-      logger.log()
-      logger.log(chalk.bold('Summary:'))
-      logger.log(`  ${chalk.green('✓')} Successful: ${result.stats.successful}`)
-      logger.log(`  ${chalk.red('✗')} Failed: ${result.stats.failed}`)
-      if (result.stats.skipped > 0) {
-        logger.log(`  ${chalk.yellow('⊙')} Skipped (resumed): ${result.stats.skipped}`)
-      }
-      logger.log(
-        `  ${chalk.blue('⏱')}  Duration: ${BatchScraper.formatDuration(result.stats.duration)}`
-      )
-      logger.log(
-        `  ${chalk.blue('⌀')}  Average: ${BatchScraper.formatDuration(result.stats.averageTime)}`
-      )
-      logger.log(`  ${chalk.blue('→')} Output: ${options.output}`)
+      // 12. Stop progress manager and show summary
+      progressManager.stop()
+      progressManager.getSummary()
 
+      // Show errors if any
       if (result.errors.length > 0 && result.errors.length <= 5) {
         logger.log()
         logger.log(chalk.red('Errors:'))
