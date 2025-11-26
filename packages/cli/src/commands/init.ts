@@ -10,8 +10,39 @@ import type { DistinctQuestion } from 'inquirer'
 import ora from 'ora'
 
 import { handleCliError } from '../utils'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+
+/**
+ * Display welcome banner
+ */
+/* eslint-disable no-console */
+function showWelcomeBanner() {
+  console.log()
+  console.log(chalk.cyan('┌─────────────────────────────────────┐'))
+  console.log(
+    chalk.cyan('│') + chalk.bold.white('  🚀 Welcome to Lesca Setup Wizard  ') + chalk.cyan('│')
+  )
+  console.log(chalk.cyan('└─────────────────────────────────────┘'))
+  console.log()
+  console.log(chalk.gray("Let's configure your LeetCode scraper..."))
+  console.log()
+}
+/* eslint-enable no-console */
+
+/**
+ * Display configuration summary
+ */
+/* eslint-disable no-console */
+function showConfigSummary(config: Required<InitOptions>) {
+  console.log()
+  console.log(chalk.bold('📋 Configuration Summary:'))
+  console.log(chalk.gray('─'.repeat(50)))
+  console.log(chalk.cyan('  Config file:    '), chalk.white(config.configPath))
+  console.log(chalk.cyan('  Output dir:     '), chalk.white(config.outputDir))
+  console.log(chalk.cyan('  Output format:  '), chalk.white(config.format))
+  console.log(chalk.cyan('  Cookie file:    '), chalk.white(config.cookiePath))
+  console.log(chalk.gray('─'.repeat(50)))
+  console.log()
+}
 
 interface InitOptions {
   configPath?: string
@@ -37,7 +68,8 @@ export const initCommand = new Command('init')
   .option('--format <format>', 'Default output format (markdown|obsidian)', 'markdown')
   .option('--force', 'Overwrite existing configuration')
   .action(async (options: InitOptions) => {
-    const spinner = ora('Initializing Lesca configuration...').start()
+    // Show welcome banner
+    showWelcomeBanner()
 
     try {
       const prompts: DistinctQuestion[] = [
@@ -47,6 +79,8 @@ export const initCommand = new Command('init')
           message: 'Configuration file path:',
           default: options.configPath,
           validate: (input: string) => (input.trim() ? true : 'Path cannot be empty'),
+          prefix: chalk.cyan('?'),
+          suffix: chalk.gray(' (Where to save your config)'),
         },
         {
           type: 'input' as const,
@@ -54,13 +88,19 @@ export const initCommand = new Command('init')
           message: 'Output directory:',
           default: options.outputDir,
           validate: (input: string) => (input.trim() ? true : 'Path cannot be empty'),
+          prefix: chalk.cyan('?'),
+          suffix: chalk.gray(' (Where scraped problems will be saved)'),
         },
         {
           type: 'list' as const,
           name: 'format',
           message: 'Default output format:',
-          choices: ['markdown', 'obsidian'],
+          choices: [
+            { name: 'Markdown (Standard markdown files)', value: 'markdown' },
+            { name: 'Obsidian (Optimized for Obsidian vault)', value: 'obsidian' },
+          ],
           default: options.format,
+          prefix: chalk.cyan('?'),
         },
         {
           type: 'input' as const,
@@ -68,6 +108,8 @@ export const initCommand = new Command('init')
           message: 'Cookie file path:',
           default: options.cookiePath,
           validate: (input: string) => (input.trim() ? true : 'Path cannot be empty'),
+          prefix: chalk.cyan('?'),
+          suffix: chalk.gray(' (For authentication)'),
         },
         {
           type: 'confirm' as const,
@@ -98,10 +140,17 @@ export const initCommand = new Command('init')
 
       // Final safety check
       if (existsSync(configPath) && !effectiveOptions.force) {
-        spinner.fail(chalk.red(`Configuration already exists at ${configPath}`))
-        logger.warn(chalk.yellow('Use --force flag or confirm overwrite in prompts'))
+        // eslint-disable-next-line no-console
+        console.log()
+        logger.warn(chalk.red(`✗ Configuration already exists at ${configPath}`))
+        logger.warn(chalk.yellow('  Use --force flag or confirm overwrite in prompts'))
         process.exit(1)
       }
+
+      // Show configuration summary
+      showConfigSummary(effectiveOptions)
+
+      const spinner = ora('Creating configuration...').start()
 
       // Initialize ConfigManager with defaults
       ConfigManager.initialize()
@@ -145,7 +194,7 @@ export const initCommand = new Command('init')
       // Save validated configuration
       configManager.save(configPath)
 
-      spinner.succeed(chalk.green(`Configuration created at ${configPath}`))
+      spinner.succeed(chalk.green('✓ Configuration created'))
 
       // Create example cookies file
       const cookieExamplePath = resolve(paths.lescaDir, 'cookies.example.json')
@@ -180,12 +229,23 @@ export const initCommand = new Command('init')
         logger.log(chalk.gray(`Example cookie file created: ${cookieExamplePath}`))
       }
 
-      logger.log('\n' + chalk.bold('Next steps:'))
-      logger.log(chalk.cyan('1. Copy your LeetCode cookies to:'), finalConfig.auth.cookiePath)
-      logger.log(chalk.cyan('2. Start scraping:'), 'lesca scrape two-sum')
-      logger.log(chalk.cyan('3. Customize config:'), configPath)
+      /* eslint-disable no-console */
+      console.log()
+      console.log(chalk.bold.green('✓ Setup complete!'))
+      console.log()
+      console.log(chalk.bold('📝 Next steps:'))
+      console.log(chalk.cyan('  1.'), 'Export cookies:', chalk.white('lesca auth --setup'))
+      console.log(chalk.cyan('  2.'), 'Test scraping:', chalk.white('lesca scrape two-sum'))
+      console.log(chalk.cyan('  3.'), 'View docs:', chalk.white('lesca help'))
+      console.log()
+      console.log(chalk.gray('  Config saved to:'), chalk.white(configPath))
+      console.log(chalk.gray('  Cookie path:'), chalk.white(finalConfig.auth.cookiePath))
+      console.log()
+      /* eslint-enable no-console */
     } catch (error) {
-      spinner.fail(chalk.red('Failed to initialize configuration'))
+      // eslint-disable-next-line no-console
+      console.log()
+      logger.error(chalk.red('✗ Failed to initialize configuration'))
       handleCliError('Failed to initialize configuration', error)
       process.exit(1)
     }
