@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import cliProgress from 'cli-progress'
+import { SingleBar } from 'cli-progress'
 
 export interface ProgressStats {
   total: number
@@ -21,7 +21,7 @@ export interface ProgressUpdate {
  * Enhanced progress manager for batch scraping operations
  */
 export class ProgressManager {
-  private bar: cliProgress.SingleBar
+  private bar: SingleBar
   private stats: ProgressStats
   private currentItem: string = ''
   private currentStatus: string = ''
@@ -38,7 +38,7 @@ export class ProgressManager {
       startTime: Date.now(),
     }
 
-    this.bar = new cliProgress.SingleBar({
+    this.bar = new SingleBar({
       format: this.getFormat(),
       barCompleteChar: '\u2588',
       barIncompleteChar: '\u2591',

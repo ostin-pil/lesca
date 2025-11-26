@@ -1,4 +1,7 @@
+/* eslint-disable import/order */
 import { SelectorManager } from '@/packages/browser-automation/src/index'
+
+// eslint-disable-next-line import/extensions
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -12,6 +15,7 @@ import type {
 import { LescaError } from '@/shared/types/src/index'
 import { BrowserError } from '@lesca/error'
 
+import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
 
 /**
  * Editorial Scraper Strategy
@@ -43,7 +47,10 @@ export class EditorialScraperStrategy implements ScraperStrategy {
    */
   async execute(request: ScrapeRequest): Promise<RawData> {
     if (!this.canHandle(request)) {
-      throw new LescaError(`EditorialScraperStrategy cannot handle request type: ${request.type}`, 'INVALID_REQUEST_TYPE')
+      throw new LescaError(
+        `EditorialScraperStrategy cannot handle request type: ${request.type}`,
+        'INVALID_REQUEST_TYPE'
+      )
     }
 
     const editorialRequest = request as EditorialScrapeRequest
@@ -54,7 +61,7 @@ export class EditorialScraperStrategy implements ScraperStrategy {
       if (!this.browserDriver.getBrowser()) {
         await this.browserDriver.launch({
           headless: true,
-          timeout: 30000,
+          timeout: request.timeout || DEFAULT_BROWSER_TIMEOUT,
           blockResources: ['image', 'font', 'media'], // Block unnecessary resources
         })
       }
@@ -326,4 +333,3 @@ export class EditorialScraperStrategy implements ScraperStrategy {
     await this.browserDriver.screenshot(path)
   }
 }
-

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { initCommand } from '@lesca/cli/commands/init'
+import { initCommand } from '../../../packages/cli/src/commands/init'
 import inquirer from 'inquirer'
 
 // Mock inquirer

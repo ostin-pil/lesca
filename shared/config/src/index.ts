@@ -10,7 +10,13 @@
  */
 
 // Main exports
-export { ConfigManager, configManager, getConfig, getConfigValue, isEnabled } from './config-manager'
+export {
+  ConfigManager,
+  configManager,
+  getConfig,
+  getConfigValue,
+  isEnabled,
+} from './config-manager'
 
 // Schema and types
 export {
@@ -48,9 +54,8 @@ export {
 } from './loader'
 
 // Default values and paths
-export {
-  getDefaultConfig,
-  getDefaultPaths,
-  getConfigSearchPaths,
-  ENV_MAPPINGS,
-} from './defaults'
+export { getDefaultConfig, getDefaultPaths, getConfigSearchPaths, ENV_MAPPINGS } from './defaults'
+
+// Constants
+// eslint-disable-next-line import/extensions
+export * from './constants'

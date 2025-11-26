@@ -1,9 +1,18 @@
-import { PlaywrightDriver, AuthHelper, CookieManager } from '@/packages/browser-automation/src/index'
-import { ConfigManager , getDefaultPaths } from '@/shared/config/src/index'
+import {
+  PlaywrightDriver,
+  AuthHelper,
+  CookieManager,
+} from '@/packages/browser-automation/src/index'
+import { DEFAULT_LOGIN_TIMEOUT } from '@/shared/config/src/constants'
+import { ConfigManager, getDefaultPaths } from '@/shared/config/src/index'
 import { logger } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
+
+// eslint-disable-next-line import/extensions
+
+// eslint-disable-next-line import/extensions
 
 import { handleCliError } from '../utils'
 
@@ -87,12 +96,20 @@ export const loginCommand = new Command('login')
           spinner.stop()
 
           if (!username) {
-            logger.error(chalk.red('Username required. Use --username option or --manual for manual login'))
+            logger.error(
+              chalk.red('Username required. Use --username option or --manual for manual login')
+            )
             process.exit(1)
           }
           if (!password) {
-            logger.error(chalk.red('Password required. Use --password option or --manual for manual login'))
-            logger.warn(chalk.yellow('Note: For security, consider using --manual mode instead of passing password as argument'))
+            logger.error(
+              chalk.red('Password required. Use --password option or --manual for manual login')
+            )
+            logger.warn(
+              chalk.yellow(
+                'Note: For security, consider using --manual mode instead of passing password as argument'
+              )
+            )
             process.exit(1)
           }
         }
@@ -107,7 +124,7 @@ export const loginCommand = new Command('login')
           {
             saveCookies: true,
             cookiePath: cookiePath,
-            timeout: 60000,
+            timeout: DEFAULT_LOGIN_TIMEOUT,
           }
         )
 

@@ -240,6 +240,8 @@ export interface User {
  */
 export interface BaseScrapeRequest {
   type: 'problem' | 'list' | 'discussion' | 'user' | 'editorial'
+  /** Optional timeout in milliseconds (overrides config/env defaults) */
+  timeout?: number
 }
 
 /**

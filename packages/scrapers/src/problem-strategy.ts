@@ -1,5 +1,8 @@
+/* eslint-disable import/order */
 import type { GraphQLClient } from '@/packages/api-client/src/graphql-client'
 import { SelectorManager } from '@/packages/browser-automation/src/index'
+
+// eslint-disable-next-line import/extensions
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -13,6 +16,7 @@ import { GraphQLError, LescaError } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 import { ScrapingError, BrowserError } from '@lesca/error'
 
+import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
 
 /**
  * Problem scraper strategy
@@ -89,8 +93,11 @@ export class ProblemScraperStrategy implements ScraperStrategy {
         }
       } catch (browserError) {
         // If it's a specific actionable error (e.g. premium content, auth required), rethrow it
-        if (browserError instanceof LescaError &&
-           (browserError.code === 'AUTH_PREMIUM_REQUIRED' || browserError.code === 'AUTH_INVALID_CREDENTIALS')) {
+        if (
+          browserError instanceof LescaError &&
+          (browserError.code === 'AUTH_PREMIUM_REQUIRED' ||
+            browserError.code === 'AUTH_INVALID_CREDENTIALS')
+        ) {
           throw browserError
         }
 
@@ -103,7 +110,8 @@ export class ProblemScraperStrategy implements ScraperStrategy {
             ...(browserError instanceof Error ? { cause: browserError } : {}),
             context: {
               graphqlError: error instanceof Error ? error.message : String(error),
-              browserError: browserError instanceof Error ? browserError.message : String(browserError),
+              browserError:
+                browserError instanceof Error ? browserError.message : String(browserError),
             },
           }
         )
@@ -120,13 +128,13 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     if (!this.browserDriver.getBrowser()) {
       await this.browserDriver.launch({
         headless: true,
-        timeout: 30000,
+        timeout: request.timeout || DEFAULT_BROWSER_TIMEOUT,
         blockResources: ['image', 'font', 'media'],
       })
     }
 
     // 2. Navigate to problem page
-    const url = `https://leetcode.com/problems/${request.titleSlug}/`
+    const url = `https://leetcode.com/problems/${request.titleSlug}/description/`
     await this.browserDriver.navigate(url)
 
     // 3. Wait for content to load
@@ -161,13 +169,14 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     // Wait for title or description
     try {
       // Use primary selector for waiting
-      await this.browserDriver.waitForSelector(this.selectors.getPrimary(problemSelectors.title), 10000)
-    } catch (error) {
-      throw new BrowserError(
-        'BROWSER_TIMEOUT',
-        'Timeout waiting for problem content to load',
-        { ...(error instanceof Error ? { cause: error } : {}) }
+      await this.browserDriver.waitForSelector(
+        this.selectors.getPrimary(problemSelectors.title),
+        10000
       )
+    } catch (error) {
+      throw new BrowserError('BROWSER_TIMEOUT', 'Timeout waiting for problem content to load', {
+        ...(error instanceof Error ? { cause: error } : {}),
+      })
     }
   }
 
@@ -177,11 +186,7 @@ export class ProblemScraperStrategy implements ScraperStrategy {
   private async checkPremiumContent(): Promise<boolean> {
     // Check for premium lock icon or subscription prompt
     // This is a heuristic, might need adjustment based on actual UI
-    const premiumSelectors = [
-      '[data-icon="lock"]',
-      'text="Subscribe to unlock"',
-      '.premium-locked'
-    ]
+    const premiumSelectors = ['[data-icon="lock"]', 'text="Subscribe to unlock"', '.premium-locked']
 
     for (const selector of premiumSelectors) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -199,20 +204,22 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     const problemSelectors = this.selectors.getProblemSelectors()
 
     // Extract title
-    const title = await this.browserDriver.extractWithFallback(
-      this.selectors.getAll(problemSelectors.title)
-    ) || ''
+    const title =
+      (await this.browserDriver.extractWithFallback(
+        this.selectors.getAll(problemSelectors.title)
+      )) || ''
 
     // Extract ID (often in the title like "1. Two Sum")
     const titleMatch = title.match(/^(\d+)\.\s*(.+)$/)
-    const questionFrontendId = titleMatch ? (titleMatch[1] || '0') : '0'
-    const cleanTitle = titleMatch ? (titleMatch[2] || title) : title
+    const questionFrontendId = titleMatch ? titleMatch[1] || '0' : '0'
+    const cleanTitle = titleMatch ? titleMatch[2] || title : title
 
     // Extract content/description
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const content = await this.browserDriver.extractWithFallback(
-      this.selectors.getAll(problemSelectors.description)
-    ) || ''
+    const content =
+      (await this.browserDriver.extractWithFallback(
+        this.selectors.getAll(problemSelectors.description)
+      )) || ''
 
     // Extract difficulty
     const difficultyStr = await this.browserDriver.extractWithFallback(
@@ -257,7 +264,7 @@ export class ProblemScraperStrategy implements ScraperStrategy {
       const tagElements = await this.browserDriver.extractAll(
         this.selectors.getPrimary(problemSelectors.tags)
       )
-      return tagElements.map(tag => ({
+      return tagElements.map((tag) => ({
         name: tag,
         slug: tag.toLowerCase().replace(/\s+/g, '-'),
       }))

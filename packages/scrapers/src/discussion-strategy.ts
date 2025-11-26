@@ -1,4 +1,7 @@
+/* eslint-disable import/order */
 import { SelectorManager } from '@/packages/browser-automation/src/index'
+
+// eslint-disable-next-line import/extensions
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -10,6 +13,8 @@ import type {
 import { LescaError } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
+
+import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
 
 /**
  * Discussion Scraper Strategy
@@ -37,7 +42,10 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
    */
   async execute(request: ScrapeRequest): Promise<RawData> {
     if (!this.canHandle(request)) {
-      throw new LescaError(`DiscussionScraperStrategy cannot handle request type: ${request.type}`, 'INVALID_REQUEST_TYPE')
+      throw new LescaError(
+        `DiscussionScraperStrategy cannot handle request type: ${request.type}`,
+        'INVALID_REQUEST_TYPE'
+      )
     }
 
     const discussionRequest = request as DiscussionScrapeRequest
@@ -48,7 +56,7 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       if (!this.browserDriver.getBrowser()) {
         await this.browserDriver.launch({
           headless: true,
-          timeout: 30000,
+          timeout: request.timeout || DEFAULT_BROWSER_TIMEOUT,
           blockResources: ['image', 'font', 'media'],
         })
       }
@@ -138,11 +146,9 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
     try {
       const firstSelector = selectors[0]
       if (!firstSelector) {
-        throw new BrowserError(
-          'BROWSER_SELECTOR_NOT_FOUND',
-          'No selector found for discussions',
-          { context: { selectors } }
-        )
+        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'No selector found for discussions', {
+          context: { selectors },
+        })
       }
       await this.browserDriver.waitForSelector(firstSelector, 5000)
     } catch {
@@ -189,7 +195,10 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
               discussions.push(discussion)
             }
           } catch (error) {
-            logger.error(`Failed to extract discussion ${i}:`, error instanceof Error ? error : undefined)
+            logger.error(
+              `Failed to extract discussion ${i}:`,
+              error instanceof Error ? error : undefined
+            )
             continue
           }
         }
@@ -333,7 +342,10 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
         commentCount: comments.length,
       }
     } catch (error) {
-      logger.error(`Error extracting discussion at index ${index}:`, error instanceof Error ? error : undefined)
+      logger.error(
+        `Error extracting discussion at index ${index}:`,
+        error instanceof Error ? error : undefined
+      )
       return null
     }
   }
@@ -402,4 +414,3 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
     await this.browserDriver.screenshot(path)
   }
 }
-

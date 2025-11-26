@@ -160,10 +160,12 @@ export const scrapeListCommand = new Command('scrape-list')
           const currentIndex = progress.completed - 1
           if (currentIndex >= 0 && currentIndex < problems.length) {
             const currentProblem = problems[currentIndex]
-            progressManager.update({
-              current: `${currentProblem.title} (${currentProblem.titleSlug})`,
-              status: 'done',
-            })
+            if (currentProblem) {
+              progressManager.update({
+                current: `${currentProblem.title} (${currentProblem.titleSlug})`,
+                status: 'done',
+              })
+            }
           }
         },
       }
