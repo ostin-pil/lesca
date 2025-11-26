@@ -9,6 +9,7 @@ import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
 
+import { InteractiveSelector } from '../interactive-select'
 import { handleCliError } from '../utils'
 
 interface ListOptions {
@@ -18,6 +19,7 @@ interface ListOptions {
   cookies: string
   auth: boolean
   json: boolean
+  interactive: boolean
 }
 
 export const listCommand = new Command('list')
@@ -29,6 +31,7 @@ export const listCommand = new Command('list')
   .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
   .option('--no-auth', 'Skip authentication (public problems only)')
   .option('--json', 'Output as JSON')
+  .option('-i, --interactive', 'Interactive problem selection')
   .addHelpText(
     'after',
     `
@@ -137,6 +140,39 @@ ${chalk.bold('See also:')}
 
       if (options.json) {
         logger.log(JSON.stringify(problems, null, 2))
+        return
+      }
+
+      // Interactive mode: allow user to select problems
+      if (options.interactive) {
+        const selectedSlugs = await InteractiveSelector.selectProblems(problems, {
+          message: `Found ${problems.length} problems. Select which to scrape:`,
+          multiSelect: true,
+        })
+
+        if (selectedSlugs.length === 0) {
+          logger.log(chalk.yellow('  No problems selected.'))
+          return
+        }
+
+        logger.log()
+        logger.log(chalk.green(`  ✓ Selected ${selectedSlugs.length} problems:`))
+        selectedSlugs.forEach((slug) => {
+          logger.log(chalk.gray(`    • ${slug}`))
+        })
+
+        const shouldScrape = await InteractiveSelector.confirm(
+          'Scrape selected problems now?',
+          true
+        )
+
+        if (shouldScrape) {
+          logger.log()
+          logger.log(chalk.cyan('  Run:'), chalk.white(`lesca scrape ${selectedSlugs.join(' ')}`))
+          logger.log(
+            chalk.gray(`  Or save to file: echo "${selectedSlugs.join('\\n')}" > problems.txt`)
+          )
+        }
         return
       }
 
