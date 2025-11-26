@@ -25,31 +25,9 @@ describe('E2E: Single Problem Scraping', () => {
   let scraper: LeetCodeScraper
   let storage: FileSystemStorage
 
-  const mockProblem = {
-    questionId: '1',
-    questionFrontendId: '1',
-    title: 'Two Sum',
-    titleSlug: 'two-sum',
-    content: '<p>Example problem content</p>',
-    difficulty: 'Easy',
-    exampleTestcases: '[]',
-    topicTags: [{ name: 'array', slug: 'array' }],
-    codeSnippets: [
-      {
-        lang: 'Python3',
-        langSlug: 'python3',
-        code: 'class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        '
-      }
-    ],
-    hints: ['Try using a hash map'],
-    mysqlSchemas: [],
-    dataSchemas: [],
-    similarQuestions: '[]',
-    companyTagStats: JSON.stringify({ google: 1 }),
-    stats: '{}',
-    solution: null,
-    isPaidOnly: false,
-  } as unknown as Problem
+  const FIXTURES_DIR = join(__dirname, '../fixtures/graphql-responses')
+  const mockProblem = JSON.parse(readFileSync(join(FIXTURES_DIR, 'problem-two-sum.json'), 'utf-8'))
+    .question as Problem
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'lesca-test-'))
@@ -115,7 +93,7 @@ describe('E2E: Single Problem Scraping', () => {
     expect(content).toContain('# Two Sum')
     expect(content).toMatch(/difficulty:/i)
     expect(content).toMatch(/tags:/i)
-    expect(content).toContain('Example problem content')
+    expect(content).toContain('Given an array of integers')
   }, 30000)
 
   it('should handle non-existent problem gracefully', async () => {
@@ -225,25 +203,21 @@ describe('E2E: Single Problem Scraping', () => {
       },
     } as unknown as GraphQLClient
 
-    const mockExtractWithFallback = vi.fn()
+    const mockExtractWithFallback = vi
+      .fn()
       .mockResolvedValueOnce('123. Fallback Test Problem') // title
       .mockResolvedValueOnce('<div>Fallback content from browser</div>') // content
       .mockResolvedValueOnce('Medium') // difficulty
 
-    const mockExtractAll = vi.fn()
-      .mockResolvedValueOnce(['Array', 'Hash Table']) // tags
+    const mockExtractAll = vi.fn().mockResolvedValueOnce(['Array', 'Hash Table']) // tags
 
-    const mockElementExists = vi.fn()
-      .mockResolvedValue(false)
+    const mockElementExists = vi.fn().mockResolvedValue(false)
 
-    const mockWaitForSelector = vi.fn()
-      .mockResolvedValue(undefined)
+    const mockWaitForSelector = vi.fn().mockResolvedValue(undefined)
 
-    const mockNavigate = vi.fn()
-      .mockResolvedValue(undefined)
+    const mockNavigate = vi.fn().mockResolvedValue(undefined)
 
-    const mockLaunch = vi.fn()
-      .mockResolvedValue(undefined)
+    const mockLaunch = vi.fn().mockResolvedValue(undefined)
 
     const browserDriver = {
       launch: mockLaunch,

@@ -9,6 +9,13 @@ import { ProblemScraperStrategy } from '@lesca/scrapers'
 import { GraphQLClient } from '@lesca/api-client'
 import type { ProblemScrapeRequest, Problem, BrowserDriver } from '@lesca/shared/types'
 import type { BatchProgress } from '@lesca/core'
+import { readFileSync } from 'fs'
+
+const FIXTURES_DIR = join(__dirname, '../fixtures/graphql-responses')
+
+function loadFixture(name: string) {
+  return JSON.parse(readFileSync(join(FIXTURES_DIR, name), 'utf-8'))
+}
 
 /**
  * End-to-End Integration Test: Batch Scraping
@@ -28,62 +35,20 @@ describe('E2E: Batch Scraping', () => {
   let storage: FileSystemStorage
 
   const mockProblemMap: Record<string, Problem> = {
-    'two-sum': {
-      questionId: '1',
-      questionFrontendId: '1',
-      title: 'Two Sum',
-      titleSlug: 'two-sum',
-      content: '<p>Example problem content</p>',
-      difficulty: 'Easy',
-      exampleTestcases: '[]',
-      topicTags: [],
-      codeSnippets: [],
-      hints: [],
-      mysqlSchemas: [],
-      dataSchemas: [],
-      similarQuestions: '[]',
-      companyTagStats: '{}',
-      stats: '{}',
-      solution: null,
-      isPaidOnly: false,
-    },
+    'two-sum': loadFixture('problem-two-sum.json').question,
     'add-two-numbers': {
+      ...loadFixture('problem-two-sum.json').question,
       questionId: '2',
       questionFrontendId: '2',
       title: 'Add Two Numbers',
       titleSlug: 'add-two-numbers',
-      content: '<p>Add two numbers content</p>',
-      difficulty: 'Medium',
-      exampleTestcases: '[]',
-      topicTags: [],
-      codeSnippets: [],
-      hints: [],
-      mysqlSchemas: [],
-      dataSchemas: [],
-      similarQuestions: '[]',
-      companyTagStats: '{}',
-      stats: '{}',
-      solution: null,
-      isPaidOnly: false,
     },
     'longest-substring-without-repeating-characters': {
+      ...loadFixture('problem-two-sum.json').question,
       questionId: '3',
       questionFrontendId: '3',
       title: 'Longest Substring Without Repeating Characters',
       titleSlug: 'longest-substring-without-repeating-characters',
-      content: '<p>Longest substring content</p>',
-      difficulty: 'Medium',
-      exampleTestcases: '[]',
-      topicTags: [],
-      codeSnippets: [],
-      hints: [],
-      mysqlSchemas: [],
-      dataSchemas: [],
-      similarQuestions: '[]',
-      companyTagStats: '{}',
-      stats: '{}',
-      solution: null,
-      isPaidOnly: false,
     },
   }
 
