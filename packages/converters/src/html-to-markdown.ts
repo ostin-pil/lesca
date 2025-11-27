@@ -4,15 +4,17 @@ import TurndownService from 'turndown'
 import type { Converter, ConverterOptions } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 
+/**
+ * Interface for HTML to Markdown conversion
+ */
+export interface HtmlToMarkdownAdapter {
+  convert(html: string): string
+}
 
 /**
- * HTML to Markdown converter
- * Uses Turndown library with LeetCode-specific customizations
+ * Turndown implementation of the adapter
  */
-export class HtmlToMarkdownConverter implements Converter {
-  readonly from = 'html' as const
-  readonly to = 'markdown' as const
-
+class TurndownAdapter implements HtmlToMarkdownAdapter {
   private turndown: TurndownService
 
   constructor() {
@@ -25,10 +27,136 @@ export class HtmlToMarkdownConverter implements Converter {
       linkStyle: 'inlined', // Use [text](url) for links
       linkReferenceStyle: 'full', // Full references when needed
       br: '  \n', // Line breaks as double space + newline
-      preformattedCode: true, // Preserve preformatted code
+      // NOTE: preformattedCode option is NOT used because it would prevent
+      // our custom PRE/CODE rule from being triggered
     })
 
     this.addCustomRules()
+  }
+
+  convert(html: string): string {
+    return this.turndown.turndown(html)
+  }
+
+  /**
+   * Add custom Turndown rules for LeetCode content
+   */
+  private addCustomRules() {
+    // Turndown library uses 'any' for node parameters in callbacks
+    // These are external library constraints we cannot control
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
+
+    // Rule for handling <sup> (superscript) tags
+    this.turndown.addRule('superscript', {
+      filter: ['sup'],
+      replacement: (content) => `^${content}^`,
+    })
+
+    // Rule for handling <sub> (subscript) tags
+    this.turndown.addRule('subscript', {
+      filter: ['sub'],
+      replacement: (content) => `~${content}~`,
+    })
+
+    // Rule for code blocks with language hints
+    this.turndown.addRule('codeWithLanguage', {
+      filter: (node: Node) => {
+        const element = node as Element
+        return (
+          element.nodeName === 'CODE' &&
+          element.hasAttribute('data-lang') &&
+          element.parentNode?.nodeName !== 'PRE'
+        )
+      },
+      replacement: (content: string) => {
+        // Language hint is not used in inline code, just wrap in backticks
+        return `\`${content}\``
+      },
+    })
+
+    // Rule for pre-formatted code blocks
+    this.turndown.addRule('preformattedCode', {
+      filter: (node: Node) => {
+        const element = node as Element
+        if (element.nodeName !== 'PRE') return false
+
+        // Check if it contains a code element
+        return element.querySelector('code') !== null
+      },
+      replacement: (_content: string, node: Node) => {
+        const element = node as Element
+        const codeNode = element.querySelector('code')
+
+        // Extract language from class attribute (e.g., "language-java" -> "java")
+        const classAttr = codeNode?.getAttribute('class') || ''
+        const lang = classAttr.replace(/^language-/, '').trim()
+
+        // Use textContent to get raw code, avoiding double escaping or nested backticks
+        const codeText = codeNode?.textContent || ''
+
+        // Clean up content
+        const cleaned = codeText
+          .replace(/^\n+/, '') // Remove leading newlines
+          .replace(/\n+$/, '') // Remove trailing newlines
+
+        return `\n\`\`\`${lang}\n${cleaned}\n\`\`\`\n\n`
+      },
+    })
+
+    // Rule for handling LeetCode's constraint lists
+    this.turndown.addRule('constraints', {
+      filter: (node: Node) => {
+        const element = node as Element
+        return (
+          element.nodeName === 'UL' &&
+          (element.previousSibling?.textContent?.includes('Constraints') ?? false)
+        )
+      },
+      replacement: (content: string) => {
+        return `\n${content}\n`
+      },
+    })
+
+    // Rule for handling images (download if option enabled)
+    this.turndown.addRule('images', {
+      filter: 'img',
+      replacement: (_content: string, node: Node) => {
+        const element = node as Element
+        const alt = element.getAttribute('alt') || ''
+        const src = element.getAttribute('src') || ''
+        const title = element.getAttribute('title') || ''
+
+        if (title) {
+          return `![${alt}](${src} "${title}")`
+        }
+        return `![${alt}](${src})`
+      },
+    })
+
+    // Rule for handling tables
+    this.turndown.addRule('tables', {
+      filter: 'table',
+      replacement: (content: string) => {
+        // Keep tables as HTML for now (Turndown handles basic tables)
+        return content
+      },
+    })
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
+  }
+}
+
+/**
+ * HTML to Markdown converter
+ * Uses Adapter pattern to abstract the underlying library
+ */
+export class HtmlToMarkdownConverter implements Converter {
+  readonly from = 'html' as const
+  readonly to = 'markdown' as const
+
+  private adapter: HtmlToMarkdownAdapter
+
+  constructor() {
+    this.adapter = new TurndownAdapter()
   }
 
   /**
@@ -43,11 +171,9 @@ export class HtmlToMarkdownConverter implements Converter {
    */
   convert(input: unknown, _options?: ConverterOptions): Promise<string> {
     if (!this.canConvert(input)) {
-      throw new ParsingError(
-        'PARSE_HTML_FAILED',
-        'Input must be an HTML string',
-        { context: { inputType: typeof input } }
-      )
+      throw new ParsingError('PARSE_HTML_FAILED', 'Input must be an HTML string', {
+        context: { inputType: typeof input },
+      })
     }
 
     const html = input as string
@@ -55,8 +181,8 @@ export class HtmlToMarkdownConverter implements Converter {
     // Pre-process HTML
     const cleaned = this.preProcess(html)
 
-    // Convert to markdown
-    let markdown = this.turndown.turndown(cleaned)
+    // Convert to markdown using adapter
+    let markdown = this.adapter.convert(cleaned)
 
     // Post-process markdown
     markdown = this.postProcess(markdown)
@@ -80,20 +206,8 @@ export class HtmlToMarkdownConverter implements Converter {
     // Remove comments
     processed = processed.replace(/<!--[\s\S]*?-->/g, '')
 
-    // Normalize whitespace
-    processed = processed.replace(/\s+/g, ' ')
-
-    // Fix LeetCode's example blocks (strong tags)
-    processed = processed.replace(
-      /<strong class="example">Example (\d+):<\/strong>/g,
-      '**Example $1:**'
-    )
-
-    // Handle code tags with class attributes (language detection)
-    processed = processed.replace(
-      /<code class="language-(\w+)">(.*?)<\/code>/g,
-      '<code data-lang="$1">$2</code>'
-    )
+    // NOTE: We do NOT normalize whitespace here because it would destroy
+    // formatting in <pre> and <code> blocks. Turndown handles whitespace properly.
 
     return processed
   }
@@ -144,104 +258,6 @@ export class HtmlToMarkdownConverter implements Converter {
   }
 
   /**
-   * Add custom Turndown rules for LeetCode content
-   */
-  private addCustomRules() {
-    // Turndown library uses 'any' for node parameters in callbacks
-    // These are external library constraints we cannot control
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
-
-    // Rule for handling <sup> (superscript) tags
-    this.turndown.addRule('superscript', {
-      filter: ['sup'],
-      replacement: (content) => `^${content}^`,
-    })
-
-    // Rule for handling <sub> (subscript) tags
-    this.turndown.addRule('subscript', {
-      filter: ['sub'],
-      replacement: (content) => `~${content}~`,
-    })
-
-    // Rule for code blocks with language hints
-    this.turndown.addRule('codeWithLanguage', {
-      filter: (node: Node) => {
-        const element = node as Element
-        return (
-          element.nodeName === 'CODE' &&
-          element.hasAttribute('data-lang') &&
-          element.parentNode?.nodeName !== 'PRE'
-        )
-      },
-      replacement: (content: string) => {
-        // Language hint is not used in inline code, just wrap in backticks
-        return `\`${content}\``
-      },
-    })
-
-    // Rule for pre-formatted code blocks
-    this.turndown.addRule('preformattedCode', {
-      filter: (node: Node) => {
-        const element = node as Element
-        return element.nodeName === 'PRE' && element.firstChild?.nodeName === 'CODE'
-      },
-      replacement: (content: string, node: Node) => {
-        const element = node as Element
-        const codeNode = element.firstChild as Element | null
-        const lang =
-          codeNode?.getAttribute('data-lang') || codeNode?.className?.replace('language-', '') || ''
-
-        // Clean up content
-        const cleaned = content
-          .replace(/^\n+/, '') // Remove leading newlines
-          .replace(/\n+$/, '') // Remove trailing newlines
-
-        return `\n\`\`\`${lang}\n${cleaned}\n\`\`\`\n\n`
-      },
-    })
-
-    // Rule for handling LeetCode's constraint lists
-    this.turndown.addRule('constraints', {
-      filter: (node: Node) => {
-        const element = node as Element
-        return (
-          element.nodeName === 'UL' &&
-          (element.previousSibling?.textContent?.includes('Constraints') ?? false)
-        )
-      },
-      replacement: (content: string) => {
-        return `\n${content}\n`
-      },
-    })
-
-    // Rule for handling images (download if option enabled)
-    this.turndown.addRule('images', {
-      filter: 'img',
-      replacement: (_content: string, node: Node) => {
-        const element = node as Element
-        const alt = element.getAttribute('alt') || ''
-        const src = element.getAttribute('src') || ''
-        const title = element.getAttribute('title') || ''
-
-        if (title) {
-          return `![${alt}](${src} "${title}")`
-        }
-        return `![${alt}](${src})`
-      },
-    })
-
-    // Rule for handling tables
-    this.turndown.addRule('tables', {
-      filter: 'table',
-      replacement: (content: string) => {
-        // Keep tables as HTML for now (Turndown handles basic tables)
-        return content
-      },
-    })
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-redundant-type-constituents */
-  }
-
-  /**
    * Convert with image downloading
    */
   async convertWithImages(
@@ -263,7 +279,9 @@ export class HtmlToMarkdownConverter implements Converter {
             const localPath = await imageDownloader(url)
             markdown = markdown.replace(fullMatch, `![${alt}](${localPath})`)
           } catch (error) {
-            logger.warn(`Failed to download image ${url}: ${error instanceof Error ? error.message : String(error)}`)
+            logger.warn(
+              `Failed to download image ${url}: ${error instanceof Error ? error.message : String(error)}`
+            )
           }
         }
       }

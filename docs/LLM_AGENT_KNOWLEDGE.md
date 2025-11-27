@@ -2,9 +2,10 @@
 
 > **Purpose**: Comprehensive reference for AI agents working on the Lesca project. This document consolidates critical information from across the codebase, documentation, and development workflows.
 
-**Last Updated**: 2025-11-24
+**Last Updated**: 2025-11-27
 **Project Version**: v0.1.0
 **Tests**: 631 passing • Coverage: 68.43%
+**Recent Improvements**: Logger enhancements, Adapter pattern, eslint-disable audit (17 comments removed)
 
 ---
 
@@ -690,19 +691,49 @@ try {
 import { logger } from '@/shared/utils'
 
 // ❌ NEVER use console
-console.log('message') // ESLint error
+console.log('message') // ESLint error (no-console)
 
-// ✅ ALWAYS use logger
+// ✅ ALWAYS use logger - Standard methods
 logger.log('Starting process...')
 logger.warn('Deprecated feature')
 logger.error(error)
 logger.debug('Detailed info')
+
+// ✅ Rich formatting methods (console-inspired API)
+logger.box('Important Message', {
+  title: 'Success',
+  color: 'green',
+  padding: 1,
+})
+
+logger.steps([
+  { text: 'Authenticate', status: 'done' },
+  { text: 'Fetch data', status: 'current' },
+  { text: 'Process', status: 'pending' },
+])
+
+logger.banner('LESCA CLI', { color: 'cyan' })
+logger.success('Operation completed!')
 ```
 
-**Exception**: Console allowed in:
+**Logger Methods**:
+
+| Method      | Purpose         | Example Use Case        |
+| ----------- | --------------- | ----------------------- |
+| `log()`     | Standard output | General messages        |
+| `warn()`    | Warnings        | Deprecation notices     |
+| `error()`   | Errors          | Exception handling      |
+| `debug()`   | Debug info      | Development only        |
+| `box()`     | Boxed message   | Important notifications |
+| `steps()`   | Progress steps  | Multi-step workflows    |
+| `banner()`  | ASCII banner    | CLI startup             |
+| `success()` | Success message | Operation completion    |
+
+**Exception**: Console allowed ONLY in:
 
 - Scripts in `/scripts` directory
 - Build scripts
+- Inside logger implementation itself
 
 ### Configuration Access
 
@@ -838,6 +869,122 @@ interface Converter {
   canConvert(data: unknown): boolean
   convert(input: unknown, options?: ConverterOptions): Promise<unknown>
 }
+```
+
+#### 4. **Adapter Pattern** - HTML-to-Markdown Conversion
+
+**New in 2025-11-27**: The `HtmlToMarkdownConverter` now uses the Adapter pattern to abstract the underlying conversion library (Turndown).
+
+```typescript
+// packages/converters/src/html-to-markdown.ts
+
+// Adapter interface - defines the conversion contract
+export interface HtmlToMarkdownAdapter {
+  convert(html: string): string
+}
+
+// Turndown implementation - encapsulates Turndown-specific logic
+class TurndownAdapter implements HtmlToMarkdownAdapter {
+  private turndown: TurndownService
+
+  constructor() {
+    this.turndown = new TurndownService({
+      headingStyle: 'atx',
+      codeBlockStyle: 'fenced',
+      // ... configuration
+    })
+    this.addCustomRules() // LeetCode-specific rules
+  }
+
+  convert(html: string): string {
+    return this.turndown.turndown(html)
+  }
+
+  private addCustomRules() {
+    // All Turndown-specific logic and eslint-disable comments
+    // are isolated here
+  }
+}
+
+// Public converter - uses adapter internally
+export class HtmlToMarkdownConverter implements Converter {
+  private adapter: HtmlToMarkdownAdapter
+
+  constructor() {
+    this.adapter = new TurndownAdapter()
+  }
+
+  async convert(input: unknown): Promise<string> {
+    // Pre-processing
+    const cleaned = this.preProcess(input as string)
+
+    // Conversion via adapter
+    let markdown = this.adapter.convert(cleaned)
+
+    // Post-processing
+    markdown = this.postProcess(markdown)
+
+    return markdown
+  }
+}
+```
+
+**Benefits**:
+
+- **Type Safety**: Isolated `any` types from Turndown to adapter layer
+- **Testability**: Can mock adapter for testing
+- **Flexibility**: Easy to swap Turndown for another library
+- **Maintainability**: All library-specific code in one place
+
+### Code Quality Standards
+
+#### ESLint Disable Comments - Best Practices
+
+**Zero Tolerance Policy**: Avoid `eslint-disable` comments unless absolutely necessary.
+
+**Justified Cases** (60 total in codebase):
+
+1. **Logger Implementation** (~25 instances)
+   - `no-console` - Direct console calls in logger methods
+   - `no-unsafe-*` - `require('chalk')` for lazy loading
+   - **Location**: `shared/utils/src/logger.ts`
+   - **Justification**: Logger is the designated place for console usage
+
+2. **Browser Automation** (~15 instances)
+   - `no-unsafe-*` - Playwright APIs return `any`/`unknown`
+   - **Location**: `packages/browser-automation`, `packages/scrapers`
+   - **Justification**: External API constraints, cast results safely
+
+3. **HTML-to-Markdown Adapter** (1 block)
+   - `no-unsafe-*` - Turndown's node types use `any`
+   - **Location**: `packages/converters/src/html-to-markdown.ts`
+   - **Justification**: TurndownService API limitation, isolated to adapter
+
+4. **Tests & Scripts** (~15 instances)
+   - `no-console` - Direct console in test/build scripts
+   - `no-unsafe-*` - Mock objects, quick prototypes
+   - **Location**: `tests/`, `scripts/`
+   - **Justification**: Non-production code
+
+**Process for Adding New Disables**:
+
+1. ❌ **Never** disable without justification comment
+2. ✅ **Always** use block disables with specific rules
+3. ✅ **Always** add explanatory comment above
+4. ✅ **Always** keep scope as narrow as possible
+
+```typescript
+// ❌ NEVER - Too broad, no explanation
+/* eslint-disable */
+function riskyCode() { ... }
+/* eslint-enable */
+
+// ✅ ALWAYS - Specific rules, clear justification
+// Playwright's page.evaluate() returns 'any' because it executes in browser context
+// We safely cast the result based on our known selector
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+const data = await page.evaluate(() => document.querySelector('.data')?.textContent)
+/* eslint-enable @typescript-eslint/no-unsafe-assignment */
 ```
 
 ---
