@@ -57,5 +57,4 @@ export {
 export { getDefaultConfig, getDefaultPaths, getConfigSearchPaths, ENV_MAPPINGS } from './defaults'
 
 // Constants
-// eslint-disable-next-line import/extensions
 export * from './constants'

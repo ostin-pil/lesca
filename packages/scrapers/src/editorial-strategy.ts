@@ -1,7 +1,7 @@
-/* eslint-disable import/order */
-import { SelectorManager } from '@/packages/browser-automation/src/index'
+import { BrowserError } from '@lesca/error'
 
-// eslint-disable-next-line import/extensions
+import { SelectorManager } from '@/browser-automation/src/index'
+import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -13,9 +13,6 @@ import type {
   CodeSnippet,
 } from '@/shared/types/src/index'
 import { LescaError } from '@/shared/types/src/index'
-import { BrowserError } from '@lesca/error'
-
-import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
 
 /**
  * Editorial Scraper Strategy
