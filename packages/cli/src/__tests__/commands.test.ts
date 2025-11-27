@@ -104,6 +104,11 @@ vi.mock('@/shared/utils/src/index', () => ({
     warn: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
+    // New formatting methods added in recent Logger enhancement
+    banner: vi.fn(),
+    box: vi.fn(),
+    steps: vi.fn(),
+    success: vi.fn(),
   },
   createCache: vi.fn(() => undefined), // Return undefined to disable caching in tests
 }))
