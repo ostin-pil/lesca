@@ -1,8 +1,9 @@
 import { mkdir, writeFile, readFile, unlink, access, readdir } from 'fs/promises'
 import { join, dirname, basename } from 'path'
 
-import type { StorageAdapter } from '@/shared/types/src/index'
 import { StorageError } from '@lesca/error'
+
+import type { StorageAdapter } from '@/shared/types/src/index'
 
 /**
  * File system storage adapter

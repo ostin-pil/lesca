@@ -2,9 +2,10 @@ import { mkdir, readFile, writeFile, readdir, rm, access } from 'fs/promises'
 import { homedir } from 'os'
 import { resolve, join } from 'path'
 
-import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
 import type { BrowserContext, Cookie } from 'playwright'
+
+import { logger } from '@/shared/utils/src/index'
 
 /**
  * Session storage data structure

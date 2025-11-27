@@ -1,15 +1,16 @@
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 
-import { CookieFileAuth } from '@/packages/auth/src/index'
-import { ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 import { Command } from 'commander'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import inquirer from 'inquirer'
 import ora from 'ora'
+
+import { CookieFileAuth } from '@/auth/src/index'
+import { ConfigManager } from '@/shared/config/src/index'
+import { logger } from '@/shared/utils/src/index'
 
 import { handleCliError } from '../utils'
 

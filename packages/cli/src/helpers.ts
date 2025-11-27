@@ -5,10 +5,11 @@
  */
 
 
-import type { ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 import { ValidationError } from '@lesca/error'
 import chalk from 'chalk'
+
+import type { ConfigManager } from '@/shared/config/src/index'
+import { logger } from '@/shared/utils/src/index'
 
 /**
  * Initialize configuration with fallback to defaults

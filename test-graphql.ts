@@ -15,8 +15,8 @@
 
 import { writeFile } from 'fs/promises'
 
-import { logger } from '@/shared/utils/src/index'
 import type { Problem, TopicTag } from '@lesca/shared/types'
+import { logger } from '@/shared/utils/src/index'
 
 interface GraphQLResponse<T> {
   data?: T

@@ -3,9 +3,10 @@ import { writeFile, readFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 
 
+import { SystemError } from '@lesca/error'
+
 import type { ScrapeRequest, ScrapeResult } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
-import { SystemError } from '@lesca/error'
 
 import type { LeetCodeScraper } from './scraper'
 

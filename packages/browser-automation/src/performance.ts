@@ -1,5 +1,6 @@
-import { logger } from '@/shared/utils/src/index'
 import type { Page } from 'playwright'
+
+import { logger } from '@/shared/utils/src/index'
 
 export interface PerformanceMetrics {
   /** Page load time (ms) */

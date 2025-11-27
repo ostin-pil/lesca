@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ProblemScraperStrategy } from '../problem-strategy'
 import type { ProblemScrapeRequest, Problem, BrowserDriver, AuthCredentials, ScrapeRequest } from '@/shared/types/src/index'
-import { GraphQLClient } from '@/packages/api-client/src/index'
+import { GraphQLClient } from '@/api-client/src/index'
 import { ScrapingError } from '@lesca/error'
 
 describe('ProblemScraperStrategy', () => {

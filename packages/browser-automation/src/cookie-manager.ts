@@ -1,9 +1,10 @@
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
-import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
 import type { Cookie } from 'playwright'
+
+import { logger } from '@/shared/utils/src/index'
 
 import type { PlaywrightDriver } from './playwright-driver'
 

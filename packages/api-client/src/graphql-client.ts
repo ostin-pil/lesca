@@ -1,5 +1,8 @@
 import { createHash } from 'crypto'
 
+import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
+import { getDefaultConfig } from '@lesca/shared/config'
+
 import type {
   Problem,
   ProblemList,
@@ -7,8 +10,6 @@ import type {
   AuthCredentials,
 } from '@/shared/types/src/index'
 import type { TieredCache } from '@/shared/utils/src/index'
-import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
-import { getDefaultConfig } from '@lesca/shared/config'
 
 interface GraphQLResponse<T> {
   data?: T

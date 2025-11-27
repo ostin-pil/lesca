@@ -1,6 +1,7 @@
-import { logger } from '@/shared/utils/src/index'
 import { BrowserError } from '@lesca/error'
 import type { Cookie } from 'playwright'
+
+import { logger } from '@/shared/utils/src/index'
 
 import type { CookieManager } from './cookie-manager'
 import {

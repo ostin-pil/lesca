@@ -1,6 +1,8 @@
 import chalk from 'chalk'
 import { SingleBar } from 'cli-progress'
 
+import { logger } from '@/shared/utils/src/index'
+
 export interface ProgressStats {
   total: number
   completed: number
@@ -195,27 +197,25 @@ export class ProgressManager {
     const seconds = Math.ceil(elapsed % 60)
     const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
 
-    /* eslint-disable no-console */
-    console.log()
-    console.log(chalk.bold('Summary:'))
-    console.log(chalk.gray('─'.repeat(50)))
-    console.log(chalk.green('  Success:  '), `${this.stats.successful} problems`)
+    logger.log()
+    logger.log(chalk.bold('Summary:'))
+    logger.log(chalk.gray('─'.repeat(50)))
+    logger.log(chalk.green('  Success:  '), `${this.stats.successful} problems`)
     if (this.stats.failed > 0) {
-      console.log(chalk.red('  Failed:   '), `${this.stats.failed} problems`)
+      logger.log(chalk.red('  Failed:   '), `${this.stats.failed} problems`)
     }
     if (this.stats.skipped > 0) {
-      console.log(chalk.yellow('  Skipped:  '), `${this.stats.skipped} problems`)
+      logger.log(chalk.yellow('  Skipped:  '), `${this.stats.skipped} problems`)
     }
-    console.log(chalk.gray('  Time:     '), timeStr)
+    logger.log(chalk.gray('  Time:     '), timeStr)
     if (this.stats.cacheHits > 0 || this.stats.cacheMisses > 0) {
-      console.log(
+      logger.log(
         chalk.gray('  Cache:    '),
         `${this.stats.cacheHits} hits, ${this.stats.cacheMisses} misses`
       )
     }
-    console.log(chalk.gray('─'.repeat(50)))
-    console.log()
-    /* eslint-enable no-console */
+    logger.log(chalk.gray('─'.repeat(50)))
+    logger.log()
 
     return `Completed ${this.stats.successful}/${this.stats.total} problems in ${timeStr}`
   }

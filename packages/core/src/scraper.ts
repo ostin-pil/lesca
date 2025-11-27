@@ -5,7 +5,7 @@ import {
   DiscussionConverter,
   EnhancementManager,
   type EnhancementConfig,
-} from '@/packages/converters/src/index'
+} from '@/converters/src/index'
 import type {
   ScrapeRequest,
   ScrapeResult,

@@ -24,31 +24,70 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'error', // Changed from 'warn'
     '@typescript-eslint/no-floating-promises': 'error', // Added
     '@typescript-eslint/require-await': 'error', // Added
-    '@typescript-eslint/consistent-type-imports': [
-      'error',
-      { prefer: 'type-imports' },
-    ],
+    '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
 
     // Import organization
+    // Enforces consistent import ordering across the codebase:
+    // 1. Built-in Node.js modules (node:fs, node:path)
+    // 2. External packages (npm dependencies)
+    // 3. Internal monorepo packages (@/api-client, @/core, etc.)
+    // 4. Shared modules (@/shared/*)
+    // 5. Relative imports (./, ../)
     'import/order': [
       'error',
       {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-        ],
+        groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
         'newlines-between': 'always',
         alphabetize: { order: 'asc', caseInsensitive: true },
         pathGroups: [
           {
-            pattern: '@/**',
+            pattern: '@/api-client/**',
             group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/auth/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/browser-automation/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/cli/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/converters/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/core/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/scrapers/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/storage/**',
+            group: 'internal',
+            position: 'before',
+          },
+          {
+            pattern: '@/shared/**',
+            group: 'internal',
+            position: 'after',
           },
         ],
+        pathGroupsExcludedImportTypes: ['builtin'],
+        distinctGroup: false, // Allow imports from same group without blank lines
       },
     ],
     'import/no-unresolved': 'off', // TypeScript handles this

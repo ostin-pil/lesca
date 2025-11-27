@@ -1,5 +1,6 @@
-import { logger } from '@/shared/utils/src/index'
 import type { Page, Request, Route } from 'playwright'
+
+import { logger } from '@/shared/utils/src/index'
 
 export interface InterceptorOptions {
   /** Resource types to block (e.g., 'image', 'font') */

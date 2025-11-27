@@ -1,47 +1,39 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 
-import { getDefaultPaths, ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import inquirer from 'inquirer'
 import type { DistinctQuestion } from 'inquirer'
 import ora from 'ora'
 
+import { getDefaultPaths, ConfigManager } from '@/shared/config/src/index'
+import { logger } from '@/shared/utils/src/index'
+
 import { handleCliError } from '../utils'
 
 /**
  * Display welcome banner
  */
-/* eslint-disable no-console */
 function showWelcomeBanner() {
-  console.log()
-  console.log(chalk.cyan('┌─────────────────────────────────────┐'))
-  console.log(
-    chalk.cyan('│') + chalk.bold.white('  🚀 Welcome to Lesca Setup Wizard  ') + chalk.cyan('│')
-  )
-  console.log(chalk.cyan('└─────────────────────────────────────┘'))
-  console.log()
-  console.log(chalk.gray("Let's configure your LeetCode scraper..."))
-  console.log()
+  logger.banner('🚀 Welcome to Lesca Setup Wizard', 'box')
+  logger.log(chalk.gray("Let's configure your LeetCode scraper..."))
+  logger.log()
 }
-/* eslint-enable no-console */
 
 /**
  * Display configuration summary
  */
-/* eslint-disable no-console */
 function showConfigSummary(config: Required<InitOptions>) {
-  console.log()
-  console.log(chalk.bold('📋 Configuration Summary:'))
-  console.log(chalk.gray('─'.repeat(50)))
-  console.log(chalk.cyan('  Config file:    '), chalk.white(config.configPath))
-  console.log(chalk.cyan('  Output dir:     '), chalk.white(config.outputDir))
-  console.log(chalk.cyan('  Output format:  '), chalk.white(config.format))
-  console.log(chalk.cyan('  Cookie file:    '), chalk.white(config.cookiePath))
-  console.log(chalk.gray('─'.repeat(50)))
-  console.log()
+  logger.log()
+  logger.log(chalk.bold('📋 Configuration Summary:'))
+  logger.log(chalk.gray('─'.repeat(50)))
+  logger.log(chalk.cyan('  Config file:    '), chalk.white(config.configPath))
+  logger.log(chalk.cyan('  Output dir:     '), chalk.white(config.outputDir))
+  logger.log(chalk.cyan('  Output format:  '), chalk.white(config.format))
+  logger.log(chalk.cyan('  Cookie file:    '), chalk.white(config.cookiePath))
+  logger.log(chalk.gray('─'.repeat(50)))
+  logger.log()
 }
 
 interface InitOptions {
@@ -140,8 +132,7 @@ export const initCommand = new Command('init')
 
       // Final safety check
       if (existsSync(configPath) && !effectiveOptions.force) {
-        // eslint-disable-next-line no-console
-        console.log()
+        logger.log()
         logger.warn(chalk.red(`✗ Configuration already exists at ${configPath}`))
         logger.warn(chalk.yellow('  Use --force flag or confirm overwrite in prompts'))
         process.exit(1)
@@ -229,22 +220,17 @@ export const initCommand = new Command('init')
         logger.log(chalk.gray(`Example cookie file created: ${cookieExamplePath}`))
       }
 
-      /* eslint-disable no-console */
-      console.log()
-      console.log(chalk.bold.green('✓ Setup complete!'))
-      console.log()
-      console.log(chalk.bold('📝 Next steps:'))
-      console.log(chalk.cyan('  1.'), 'Export cookies:', chalk.white('lesca auth --setup'))
-      console.log(chalk.cyan('  2.'), 'Test scraping:', chalk.white('lesca scrape two-sum'))
-      console.log(chalk.cyan('  3.'), 'View docs:', chalk.white('lesca help'))
-      console.log()
-      console.log(chalk.gray('  Config saved to:'), chalk.white(configPath))
-      console.log(chalk.gray('  Cookie path:'), chalk.white(finalConfig.auth.cookiePath))
-      console.log()
-      /* eslint-enable no-console */
+      logger.success('Setup complete!')
+      logger.steps('📝 Next steps:', [
+        'Export cookies: lesca auth --setup',
+        'Test scraping: lesca scrape two-sum',
+        'View docs: lesca help',
+      ])
+      logger.log(chalk.gray('  Config saved to:'), chalk.white(configPath))
+      logger.log(chalk.gray('  Cookie path:'), chalk.white(finalConfig.auth.cookiePath))
+      logger.log()
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log()
+      logger.log()
       logger.error(chalk.red('✗ Failed to initialize configuration'))
       handleCliError('Failed to initialize configuration', error)
       process.exit(1)

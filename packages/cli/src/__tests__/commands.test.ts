@@ -29,7 +29,7 @@ vi.mock('inquirer', () => {
   }
 })
 
-vi.mock('@/packages/api-client/src/index', () => ({
+vi.mock('@/api-client/src/index', () => ({
   GraphQLClient: vi.fn().mockImplementation(() => ({
     getProblemList: vi.fn().mockResolvedValue({
       total: 2,
@@ -58,7 +58,7 @@ vi.mock('@/packages/api-client/src/index', () => ({
   RateLimiter: vi.fn(),
 }))
 
-vi.mock('@/packages/scrapers/src/index', () => {
+vi.mock('@/scrapers/src/index', () => {
   return {
     ListScraperStrategy: vi.fn().mockImplementation(() => ({
       execute: vi.fn().mockResolvedValue({
@@ -90,7 +90,7 @@ vi.mock('@/packages/scrapers/src/index', () => {
   }
 })
 
-vi.mock('@/packages/auth/src/index', () => ({
+vi.mock('@/auth/src/index', () => ({
   CookieFileAuth: vi.fn().mockImplementation(() => ({
     authenticate: vi.fn().mockResolvedValue(undefined),
     getCredentials: vi.fn().mockReturnValue({ cookies: [], csrfToken: '' }),
@@ -162,7 +162,7 @@ describe('CLI Commands', () => {
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
 
     // Reset ListScraperStrategy mock to default happy path
-    const { ListScraperStrategy } = await import('@/packages/scrapers/src/index')
+    const { ListScraperStrategy } = await import('@/scrapers/src/index')
     vi.mocked(ListScraperStrategy).mockImplementation(
       () =>
         ({
@@ -250,7 +250,7 @@ describe('CLI Commands', () => {
 
       await program.parseAsync(['node', 'lesca', 'auth', '--cookies', 'cookies.json'])
 
-      const { CookieFileAuth } = await import('@/packages/auth/src/index')
+      const { CookieFileAuth } = await import('@/auth/src/index')
       expect(CookieFileAuth).toHaveBeenCalledWith(expect.stringContaining('cookies.json'))
     })
 
@@ -268,7 +268,7 @@ describe('CLI Commands', () => {
       await program.parseAsync(['node', 'lesca', 'auth'])
 
       expect(inquirer.prompt).toHaveBeenCalled()
-      const { CookieFileAuth } = await import('@/packages/auth/src/index')
+      const { CookieFileAuth } = await import('@/auth/src/index')
       expect(CookieFileAuth).toHaveBeenCalledWith(
         expect.stringContaining('interactive-cookies.json')
       )
@@ -313,7 +313,7 @@ describe('CLI Commands', () => {
       program.addCommand(searchCommand)
 
       // Mock empty result
-      const { ListScraperStrategy } = await import('@/packages/scrapers/src/index')
+      const { ListScraperStrategy } = await import('@/scrapers/src/index')
       vi.mocked(ListScraperStrategy).mockImplementation(
         () =>
           ({

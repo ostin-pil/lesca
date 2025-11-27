@@ -2,6 +2,87 @@
 
 This document outlines the coding standards and best practices for the Lesca project. All contributors and AI assistants should follow these guidelines to maintain code quality and consistency.
 
+## Import Conventions
+
+### Path Alias Rules
+
+**Cross-package imports**: Always use `@/` aliases for imports across different packages
+
+```typescript
+// ✅ CORRECT: Use @/ alias for cross-package imports
+import { GraphQLClient } from '@/api-client/src/index'
+import { ConfigManager } from '@/shared/config/src/index'
+
+// ❌ WRONG: Never use deep relative paths across packages
+import { GraphQLClient } from '../../../api-client/src/index'
+```
+
+**Same-package imports**: Use relative paths (`./` or `../`) for imports within the same package
+
+```typescript
+// ✅ CORRECT: Use relative paths within the same package
+import { handleCliError } from '../utils'
+import { helper } from './helper'
+
+// ✅ ALSO CORRECT: Can go up multiple levels within same package
+import { types } from '../../types'
+```
+
+**Never**: Use deep relative imports (3+ levels) to access other packages
+
+```typescript
+// ❌ FORBIDDEN: Deep relative path to another package
+import { something } from '../../../other-package'
+
+// ✅ CORRECT: Use @/ alias instead
+import { something } from '@/other-package/src'
+```
+
+### Import Ordering
+
+Imports are automatically organized by ESLint into these groups (in order):
+
+1.  **Built-in modules** - Node.js core modules
+
+    ```typescript
+    import { readFileSync } from 'fs'
+    import { join } from 'path'
+    ```
+
+2.  **External packages** - npm dependencies
+
+    ```typescript
+    import { describe, it, expect } from 'vitest'
+    import chalk from 'chalk'
+    ```
+
+3.  **Internal monorepo packages** - `@/api-client`, `@/core`, etc.
+
+    ```typescript
+    import { GraphQLClient } from '@/api-client/src/index'
+    import { BrowserDriver } from '@/browser-automation/src/index'
+    ```
+
+4.  **Shared modules** - `@/shared/**` imports
+
+    ```typescript
+    import { ConfigManager } from '@/shared/config/src/index'
+    import type { Problem } from '@/shared/types/src/index'
+    ```
+
+5.  **Relative imports** - `./` and `../` paths
+    ```typescript
+    import { helper } from './helpers'
+    import { utils } from '../utils'
+    ```
+
+**Rules**:
+
+- Blank lines separate each group
+- Imports within each group are alphabetized
+- No blank lines within a group
+- `type` imports are grouped with regular imports from the same module
+
 ## Table of Contents
 
 1. [TypeScript Standards](#typescript-standards)
@@ -102,7 +183,7 @@ interface Options {
 }
 
 const opts: Options = {
-  path: configPath || undefined  // ❌
+  path: configPath || undefined, // ❌
 }
 ```
 
@@ -117,7 +198,7 @@ if (configPath) {
 
 // OR use object spread with conditionals
 const opts: Options = {
-  ...(configPath && { path: configPath })
+  ...(configPath && { path: configPath }),
 }
 ```
 
@@ -148,6 +229,7 @@ logger.error(error)
 ```
 
 **Exception**: Console statements are acceptable in:
+
 - Build scripts
 - Development-only code
 - Scripts in `/scripts` directory
@@ -222,12 +304,14 @@ package/
 ### Import Order
 
 **Rules:**
+
 - ❌ Never include file extensions (.js, .ts, .tsx) in import statements
 - ✅ Use `@/` alias for shared packages
 - ✅ Use `@lesca/...` aliases for cross-package imports
 - ✅ Use relative imports (without extensions) for same-package imports
 
 **Order:**
+
 1. Node built-ins
 2. External packages
 3. Shared packages (via @ alias)
@@ -280,15 +364,15 @@ export const DEFAULT_TIMEOUT = 30000
 ```typescript
 // camelCase for variables and functions
 const userName = 'John'
-function getUserName(): string { }
+function getUserName(): string {}
 
 // UPPER_SNAKE_CASE for constants
 const MAX_RETRIES = 3
 const API_ENDPOINT = 'https://api.example.com'
 
 // PascalCase for classes, interfaces, types
-class ConfigManager { }
-interface UserOptions { }
+class ConfigManager {}
+interface UserOptions {}
 type RequestType = 'problem' | 'list'
 ```
 
@@ -359,13 +443,14 @@ throw new Error('Error occurred')
 
 Lesca uses a multi-tiered testing approach:
 
-| Type | Purpose | Speed | Location | Run Frequency |
-|------|---------|-------|----------|---------------|
-| **Unit** | Test individual functions/classes | Fast (< 30s) | `packages/*/__tests__/` | Every commit/PR |
-| **Integration** | Test cross-package workflows | Slow (30s+) | `tests/integration/` | Release only |
-| **Benchmarks** | Track performance | Varies | `tests/benchmarks/` | On-demand |
+| Type            | Purpose                           | Speed        | Location                | Run Frequency   |
+| --------------- | --------------------------------- | ------------ | ----------------------- | --------------- |
+| **Unit**        | Test individual functions/classes | Fast (< 30s) | `packages/*/__tests__/` | Every commit/PR |
+| **Integration** | Test cross-package workflows      | Slow (30s+)  | `tests/integration/`    | Release only    |
+| **Benchmarks**  | Track performance                 | Varies       | `tests/benchmarks/`     | On-demand       |
 
 **Commands:**
+
 ```bash
 npm run test:unit         # Fast unit tests
 npm run test:integration  # Slow integration tests
@@ -453,7 +538,7 @@ it('should recognize Two Sum problem', () => {
 
 // DO use fixtures for consistent test scenarios
 it('should format hard problems correctly', () => {
-  hardProblems.forEach(problem => {
+  hardProblems.forEach((problem) => {
     expect(problem.difficulty).toBe('Hard')
   })
 })
@@ -504,13 +589,11 @@ describe('CacheManager', () => {
 ```typescript
 // DO mock external dependencies
 const mockGraphQLClient = {
-  query: vi.fn().mockResolvedValue({ data: {} })
+  query: vi.fn().mockResolvedValue({ data: {} }),
 }
 
 // DO use type assertions for mocks
-const strategy = new ProblemScraperStrategy(
-  mockGraphQLClient as unknown as GraphQLClient
-)
+const strategy = new ProblemScraperStrategy(mockGraphQLClient as unknown as GraphQLClient)
 
 // DO clear mocks between tests
 beforeEach(() => {
@@ -578,7 +661,8 @@ describe('Counter', () => {
     expect(counter.value).toBe(0)
   })
 
-  it('should increment', () => { // ❌ Depends on previous test
+  it('should increment', () => {
+    // ❌ Depends on previous test
     counter.increment()
     expect(counter.value).toBe(1)
   })
@@ -596,6 +680,7 @@ npm run check-coverage
 ```
 
 **Minimum thresholds per package:**
+
 - Critical packages (api-client, auth, scrapers): 90%+ statements
 - Core packages (core, converters, storage): 80%+ statements
 - Shared modules: 80%+ statements
@@ -608,7 +693,7 @@ See [TESTING.md](./TESTING.md) for detailed coverage requirements.
 
 ### JSDoc Comments
 
-```typescript
+````typescript
 /**
  * Load configuration from multiple sources
  *
@@ -631,7 +716,7 @@ See [TESTING.md](./TESTING.md) for detailed coverage requirements.
 export function loadConfig(options: LoaderOptions = {}): Config {
   // Implementation
 }
-```
+````
 
 ### Inline Comments
 
@@ -670,7 +755,7 @@ const value = cliOption || envVariable || configFile || defaultValue
 const options = {
   ...defaults,
   ...(configFile && configFile.options),
-  ...(cliOptions && cliOptions)
+  ...(cliOptions && cliOptions),
 }
 ```
 
@@ -694,7 +779,7 @@ try {
 export class ConfigManager {
   private static instance: ConfigManager | null = null
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): ConfigManager {
     if (!ConfigManager.instance) {

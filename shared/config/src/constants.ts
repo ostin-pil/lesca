@@ -1,7 +1,8 @@
 /**
- * Environment-based configuration constants
- * These can be overridden via environment variables
+ * Constants and configuration defaults for Lesca
  */
+
+import { logger } from '@/shared/utils/src/index'
 
 /**
  * Default timeout for browser page loads (30 seconds)
@@ -59,8 +60,7 @@ export function validateTimeout(value: number, name: string): void {
   }
   if (value > 300000) {
     // 5 minutes
-    // eslint-disable-next-line no-console
-    console.warn(
+    logger.warn(
       `Warning: ${name} is very high (${value}ms). ` + `This may cause timeouts or hangs.`
     )
   }
