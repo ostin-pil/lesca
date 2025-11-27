@@ -228,6 +228,139 @@ export class Logger {
   }
 
   /**
+   * Display formatted box (error, warning, info, success)
+   * Console-inspired format method for rich CLI output
+   */
+  box(
+    title: string,
+    options?: {
+      variant?: 'error' | 'warning' | 'info' | 'success'
+      message?: string
+      filePath?: string
+      steps?: string[]
+      tip?: string
+      docLink?: string
+    }
+  ): void {
+    if (!this.config.console) return
+
+    const variant = options?.variant ?? 'info'
+    const icons = { error: '✗', warning: '⚠', info: 'ℹ', success: '✓' }
+    const colors = { error: 'red', warning: 'yellow', info: 'blue', success: 'green' }
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+    const chalk = require('chalk')
+
+    /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    console.log()
+    console.log(chalk[colors[variant]].bold(`${icons[variant]} ${title}`))
+    // eslint-disable-next-line no-console
+    console.log()
+
+    if (options?.message) {
+      // eslint-disable-next-line no-console
+      console.log(chalk.gray(`  ${options.message}`))
+      // eslint-disable-next-line no-console
+      console.log()
+    }
+
+    if (options?.filePath) {
+      // eslint-disable-next-line no-console
+      console.log(chalk.white(`  ${options.filePath}`))
+      // eslint-disable-next-line no-console
+      console.log()
+    }
+
+    if (options?.steps) {
+      // eslint-disable-next-line no-console
+      console.log(chalk.cyan.bold('  💡 To fix this:'))
+      options.steps.forEach((step) => {
+        // eslint-disable-next-line no-console
+        console.log(chalk.white(`  ${step}`))
+      })
+      // eslint-disable-next-line no-console
+      console.log()
+    }
+
+    if (options?.tip) {
+      // eslint-disable-next-line no-console
+      console.log(chalk.gray(`  ${options.tip}`))
+      // eslint-disable-next-line no-console
+      console.log()
+    }
+
+    if (options?.docLink) {
+      console.log(chalk.gray('  📚 Need help?'), chalk.blue(options.docLink))
+      console.log()
+    }
+    /* eslint-enable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  }
+
+  /**
+   * Display numbered steps
+   * Console-inspired format method for step-by-step instructions
+   */
+  steps(title: string, items: string[]): void {
+    if (!this.config.console) return
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+    const chalk = require('chalk')
+
+    /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    console.log()
+    console.log(chalk.cyan.bold(title))
+    items.forEach((item, i) => {
+      console.log(chalk.white(`  ${i + 1}. ${item}`))
+    })
+    console.log()
+    /* eslint-enable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  }
+
+  /**
+   * Display banner
+   * Console-inspired format method for headers/welcome messages
+   */
+  banner(text: string, style?: 'box' | 'simple'): void {
+    if (!this.config.console) return
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+    const chalk = require('chalk')
+
+    /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    if (style === 'box') {
+      const width = text.length + 4
+      console.log()
+      console.log(chalk.cyan('┌' + '─'.repeat(width) + '┐'))
+      console.log(chalk.cyan('│') + chalk.bold.white(`  ${text}  `) + chalk.cyan('│'))
+      console.log(chalk.cyan('└' + '─'.repeat(width) + '┘'))
+      console.log()
+    } else {
+      console.log()
+      console.log(chalk.bold.cyan(text))
+      console.log()
+    }
+    /* eslint-enable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  }
+
+  /**
+   * Display success message
+   * Console-inspired format method for success feedback
+   */
+  success(message: string, details?: string): void {
+    if (!this.config.console) return
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+    const chalk = require('chalk')
+
+    /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    console.log(chalk.green(`✓ ${message}`))
+    if (details) {
+      console.log(chalk.cyan(`  ${details}`))
+    }
+    /* eslint-enable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  }
+
+  /**
    * Core logging method
    */
   private writeLog(
@@ -298,10 +431,7 @@ export class Logger {
 
     // Timestamp
     if (this.config.timestamps) {
-      const timestamp = this.colorize(
-        new Date(entry.timestamp).toLocaleTimeString(),
-        'gray'
-      )
+      const timestamp = this.colorize(new Date(entry.timestamp).toLocaleTimeString(), 'gray')
       parts.push(timestamp)
     }
 
@@ -354,9 +484,7 @@ export class Logger {
     this.rotateIfNeeded()
 
     // Format entry
-    const line = this.config.json
-      ? JSON.stringify(entry) + '\n'
-      : this.formatTextLine(entry)
+    const line = this.config.json ? JSON.stringify(entry) + '\n' : this.formatTextLine(entry)
 
     // Append to file
     try {
