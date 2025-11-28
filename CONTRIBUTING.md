@@ -61,7 +61,7 @@ npm run lint
 # ✓ Should pass with no errors
 
 # 3. Unit tests
-npm test
+npm run test:unit
 # ✓ All unit tests should pass (< 30s)
 
 # 4. Coverage check (optional but recommended)
@@ -79,6 +79,7 @@ This project uses **strict TypeScript** configuration. Please review:
 ### Key Rules
 
 1. **Array Access** - Always check for `undefined`:
+
    ```typescript
    const item = array[0]
    if (!item) throw new Error('Empty array')
@@ -86,6 +87,7 @@ This project uses **strict TypeScript** configuration. Please review:
    ```
 
 2. **Optional Properties** - Use conditional assignment:
+
    ```typescript
    const config = {
      name: 'app',
@@ -94,9 +96,10 @@ This project uses **strict TypeScript** configuration. Please review:
    ```
 
 3. **Union Types** - Use type guards:
+
    ```typescript
    if (request.type === 'problem') {
-     console.log(request.titleSlug)  // Safe access
+     console.log(request.titleSlug) // Safe access
    }
    ```
 
@@ -144,11 +147,11 @@ shared/
 
 Lesca uses a multi-tiered testing approach for speed and reliability:
 
-| Type | Purpose | Speed | When to Run |
-|------|---------|-------|-------------|
-| **Unit** | Test individual functions/classes | Fast (< 30s) | Every commit/PR |
-| **Integration** | Test cross-package workflows | Slow (30s+) | Before release |
-| **Benchmarks** | Track performance | Varies | On-demand |
+| Type            | Purpose                           | Speed        | When to Run     |
+| --------------- | --------------------------------- | ------------ | --------------- |
+| **Unit**        | Test individual functions/classes | Fast (< 30s) | Every commit/PR |
+| **Integration** | Test cross-package workflows      | Slow (30s+)  | Before release  |
+| **Benchmarks**  | Track performance                 | Varies       | On-demand       |
 
 See [Testing Guide](./docs/TESTING.md) for comprehensive documentation.
 
@@ -173,6 +176,7 @@ describe('FeatureName', () => {
 ```
 
 **Guidelines:**
+
 - Use **factories** (`tests/factories/`) for dynamic test data
 - Use **fixtures** (`tests/fixtures/`) for static reference data
 - Follow Arrange-Act-Assert pattern
@@ -218,6 +222,7 @@ New code should maintain or improve coverage:
 - **Shared modules**: 80%+
 
 Check coverage:
+
 ```bash
 npm run test:coverage
 npm run check-coverage
@@ -244,6 +249,7 @@ Fixes #123
 **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 **Examples**:
+
 ```
 feat(scrapers): add support for discussion scraping
 fix(cli): handle undefined options in batch mode
@@ -332,8 +338,8 @@ Use `LescaError` for domain errors:
 throw new LescaError(
   'User-friendly message',
   'ERROR_CODE',
-  statusCode,      // optional
-  originalError    // optional
+  statusCode, // optional
+  originalError // optional
 )
 ```
 

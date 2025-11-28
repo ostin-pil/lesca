@@ -17,6 +17,7 @@ interface ListOptions {
   difficulty?: string
   tags: string
   limit: string
+  sort: string
   cookies: string
   auth: boolean
   json: boolean
@@ -29,6 +30,7 @@ export const listCommand = new Command('list')
   .option('-d, --difficulty <level>', 'Filter by difficulty (Easy, Medium, Hard)')
   .option('-t, --tags <tags>', 'Filter by tags (comma-separated)')
   .option('-l, --limit <number>', 'Limit number of problems (default: 50)', '50')
+  .option('--sort <field>', 'Sort by field (quality, acRate, difficulty)', 'id')
   .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
   .option('--no-auth', 'Skip authentication (public problems only)')
   .option('--json', 'Output as JSON')
@@ -115,6 +117,18 @@ ${chalk.bold('See also:')}
         limit: limit,
       }
 
+      if (options.sort && options.sort !== 'id') {
+        const validSortFields = ['quality', 'acRate', 'difficulty']
+        if (validSortFields.includes(options.sort)) {
+          listRequest.sort = {
+            field: options.sort as 'quality' | 'acRate' | 'difficulty',
+            order: 'desc', // Default to descending for quality/acRate/difficulty
+          }
+        } else {
+          logger.warn(`Invalid sort field: ${options.sort}. Ignoring.`)
+        }
+      }
+
       const listResult = await new ListScraperStrategy(graphqlClient).execute(listRequest)
 
       if (listResult.type !== 'list') {
@@ -133,6 +147,7 @@ ${chalk.bold('See also:')}
             difficulty: string
             questionFrontendId: string
             isPaidOnly: boolean
+            quality: number
           }[]
         }
       ).questions
@@ -186,6 +201,7 @@ ${chalk.bold('See also:')}
         chalk.gray('ID'.padEnd(6)) +
           chalk.bold('Title'.padEnd(50)) +
           chalk.gray('Difficulty'.padEnd(12)) +
+          chalk.gray('Quality'.padEnd(10)) +
           chalk.gray('Status')
       )
       logger.log(chalk.gray('─'.repeat(80)))
@@ -200,8 +216,9 @@ ${chalk.bold('See also:')}
         else if (p.difficulty === 'Hard') difficulty = chalk.red(difficulty)
 
         const status = p.isPaidOnly ? chalk.yellow('Premium') : chalk.green('Free')
+        const quality = (p.quality?.toFixed(1) || '0.0').padEnd(10)
 
-        logger.log(`${id}${title}${difficulty}${status}`)
+        logger.log(`${id}${title}${difficulty}${quality}${status}`)
       }
       logger.log()
     } catch (error) {

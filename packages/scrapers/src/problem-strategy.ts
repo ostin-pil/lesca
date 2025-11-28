@@ -238,6 +238,9 @@ export class ProblemScraperStrategy implements ScraperStrategy {
       titleSlug,
       content,
       difficulty,
+      likes: 0,
+      dislikes: 0,
+      quality: 0,
       topicTags: tags,
       codeSnippets,
       stats: '{}', // Placeholder JSON

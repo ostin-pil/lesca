@@ -10,6 +10,9 @@ export const twoSumProblem: Problem = {
   questionFrontendId: '1',
   title: 'Two Sum',
   titleSlug: 'two-sum',
+  likes: 15234,
+  dislikes: 532,
+  quality: 87.3,
   content: `<p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
 
 <p>You may assume that each input would have <strong><em>exactly</em> one solution</strong>, and you may not use the <em>same</em> element twice.</p>
@@ -106,6 +109,9 @@ export const addTwoNumbersProblem: Problem = {
   questionFrontendId: '2',
   title: 'Add Two Numbers',
   titleSlug: 'add-two-numbers',
+  likes: 9876,
+  dislikes: 321,
+  quality: 82.1,
   content: `<p>You are given two <strong>non-empty</strong> linked lists representing two non-negative integers. The digits are stored in <strong>reverse order</strong>, and each of their nodes contains a single digit. Add the two numbers and return the sum&nbsp;as a linked list.</p>
 
 <p>You may assume the two numbers do not contain any leading zero, except the number 0 itself.</p>

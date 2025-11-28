@@ -100,6 +100,9 @@ npm run dev -- scrape two-sum
 # Scrape multiple problems
 npm run dev -- scrape-list --difficulty Medium --limit 10
 
+# Interactive selection
+npm run dev -- list --interactive
+
 # Scrape with Obsidian format
 npm run dev -- scrape two-sum --format obsidian
 ```
@@ -143,6 +146,10 @@ npm run dev -- scrape-list --limit 500 --resume
 
 # Organized by difficulty
 npm run dev -- scrape-list --difficulty Hard --output ./hard-problems
+
+# Sort by quality
+npm run dev -- list --sort quality --limit 20
+
 ```
 
 ### Advanced Usage

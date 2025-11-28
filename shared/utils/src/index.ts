@@ -17,3 +17,4 @@ export {
   findSensitiveKeys,
 } from './sanitizer'
 export type { SanitizerOptions } from './sanitizer'
+export * from './quality-scorer'

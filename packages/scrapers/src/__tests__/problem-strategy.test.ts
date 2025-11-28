@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ProblemScraperStrategy } from '../problem-strategy'
-import type { ProblemScrapeRequest, Problem, BrowserDriver, AuthCredentials, ScrapeRequest } from '@/shared/types/src/index'
-import { GraphQLClient } from '@/api-client/src/index'
+import type {
+  ProblemScrapeRequest,
+  Problem,
+  BrowserDriver,
+  AuthCredentials,
+  ScrapeRequest,
+} from '@lesca/shared/types'
+import { GraphQLClient } from '@lesca/api-client'
 import { ScrapingError } from '@lesca/error'
 
 describe('ProblemScraperStrategy', () => {
@@ -102,7 +108,9 @@ describe('ProblemScraperStrategy', () => {
       expect(result.type).toBe('problem')
       expect(result.metadata.source).toBe('browser')
       expect(mockBrowserDriver.launch).toHaveBeenCalled()
-      expect(mockBrowserDriver.navigate).toHaveBeenCalledWith('https://leetcode.com/problems/two-sum/')
+      expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
+        'https://leetcode.com/problems/two-sum/'
+      )
 
       const data = result.data as Problem
       expect(data.title).toBe('Two Sum')
@@ -134,7 +142,7 @@ describe('ProblemScraperStrategy', () => {
       const request: ProblemScrapeRequest = {
         type: 'problem',
         titleSlug: 'premium-problem',
-        includePremium: false
+        includePremium: false,
       }
 
       await expect(strategy.execute(request)).rejects.toThrow('is premium content')
@@ -154,7 +162,7 @@ describe('ProblemScraperStrategy', () => {
       const request: ProblemScrapeRequest = {
         type: 'problem',
         titleSlug: 'premium-problem',
-        includePremium: true
+        includePremium: true,
       }
 
       await expect(strategy.execute(request)).rejects.toThrow('requires authentication')

@@ -59,5 +59,13 @@
       "@lesca/shared/*": ["./shared/*/src"]
     }
   },
-  "exclude": ["node_modules", "dist", "**/dist", "scripts/**/*.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/dist",
+    "scripts/**/*.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "tests/**"
+  ]
 }

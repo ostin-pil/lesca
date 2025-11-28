@@ -9,7 +9,6 @@ import type {
 } from '@/shared/types/src/index'
 import { GraphQLError } from '@/shared/types/src/index'
 
-
 /**
  * List scraper strategy
  * Handles scraping of problem lists with filtering
@@ -52,6 +51,25 @@ export class ListScraperStrategy implements ScraperStrategy {
         limit,
         offset
       )
+
+      // Apply sorting if requested
+      if (listRequest.sort) {
+        const { field, order } = listRequest.sort
+        // Clone array to ensure we don't mutate read-only arrays and sort works as expected
+        problemList.questions = [...problemList.questions].sort((a, b) => {
+          let comparison = 0
+          if (field === 'quality') {
+            comparison = (a.quality || 0) - (b.quality || 0)
+          } else if (field === 'acRate') {
+            comparison = (a.acRate || 0) - (b.acRate || 0)
+          } else if (field === 'difficulty') {
+            const difficultyMap: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3 }
+            comparison = (difficultyMap[a.difficulty] || 0) - (difficultyMap[b.difficulty] || 0)
+          }
+
+          return order === 'asc' ? comparison : -comparison
+        })
+      }
 
       // Return raw data
       return {

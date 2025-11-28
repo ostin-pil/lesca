@@ -80,6 +80,11 @@ export interface Problem {
   title: string
   titleSlug: string
 
+  // Quality metrics
+  likes: number
+  dislikes: number
+  quality: number
+
   // Content
   content: string // HTML formatted
   difficulty: Difficulty
@@ -130,6 +135,9 @@ export interface ProblemListItem {
   difficulty: Difficulty
   acRate: number
   paidOnly: boolean
+  likes: number
+  dislikes: number
+  quality: number
   topicTags: TopicTag[]
 }
 
@@ -263,6 +271,10 @@ export interface ListScrapeRequest extends BaseScrapeRequest {
   filters?: ProblemListFilters
   limit?: number
   offset?: number
+  sort?: {
+    field: 'quality' | 'acRate' | 'difficulty'
+    order: 'asc' | 'desc'
+  }
 }
 
 /**

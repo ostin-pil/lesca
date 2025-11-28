@@ -2,6 +2,7 @@ import { createHash } from 'crypto'
 
 import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
 import { getDefaultConfig } from '@lesca/shared/config'
+import { calculateQuality } from '@lesca/shared/utils'
 
 import type {
   Problem,
@@ -141,6 +142,8 @@ export class GraphQLClient {
           questionFrontendId
           title
           titleSlug
+          likes
+          dislikes
           content
           difficulty
           exampleTestcases
@@ -182,6 +185,9 @@ export class GraphQLClient {
       })
     }
 
+    // Calculate quality score
+    data.question.quality = calculateQuality(data.question.likes, data.question.dislikes)
+
     return data.question
   }
 
@@ -208,6 +214,8 @@ export class GraphQLClient {
             questionFrontendId
             title
             titleSlug
+            likes
+            dislikes
             difficulty
             acRate
             paidOnly: isPaidOnly
@@ -253,6 +261,11 @@ export class GraphQLClient {
     }
 
     const data = await this.query<{ problemsetQuestionList: ProblemList }>(query, variables)
+
+    // Calculate quality score for each problem
+    data.problemsetQuestionList.questions.forEach((q) => {
+      q.quality = calculateQuality(q.likes, q.dislikes)
+    })
 
     return data.problemsetQuestionList
   }

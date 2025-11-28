@@ -126,6 +126,8 @@ module.exports = {
     'graphql-test-*.json',
     '**/*.test.ts',
     '**/*.spec.ts',
+    '**/*.bench.ts',
     'scripts/',
+    'tests/',
   ],
 }

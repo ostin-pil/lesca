@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { LeetCodeScraper } from '../scraper'
-import type { ScraperStrategy, StorageAdapter, ScrapeRequest, RawData, Problem } from '@lesca/shared/types'
+import type {
+  ScraperStrategy,
+  StorageAdapter,
+  ScrapeRequest,
+  RawData,
+  Problem,
+} from '@lesca/shared/types'
 
 describe('LeetCodeScraper Integration', () => {
   let scraper: LeetCodeScraper
@@ -12,6 +18,9 @@ describe('LeetCodeScraper Integration', () => {
     questionFrontendId: '1',
     title: 'Two Sum',
     titleSlug: 'two-sum',
+    likes: 1000,
+    dislikes: 50,
+    quality: 75.5,
     content: '<p>Problem content</p>',
     difficulty: 'Easy',
     topicTags: [],
@@ -24,7 +33,7 @@ describe('LeetCodeScraper Integration', () => {
     similarQuestions: null,
     mysqlSchemas: [],
     dataSchemas: [],
-    isPaidOnly: false
+    isPaidOnly: false,
   }
 
   beforeEach(() => {
@@ -38,9 +47,9 @@ describe('LeetCodeScraper Integration', () => {
         metadata: {
           scrapedAt: new Date(),
           source: 'graphql',
-          url: 'https://leetcode.com/problems/two-sum/'
-        }
-      } as RawData)
+          url: 'https://leetcode.com/problems/two-sum/',
+        },
+      } as RawData),
     }
 
     mockStorage = {
@@ -48,7 +57,7 @@ describe('LeetCodeScraper Integration', () => {
       exists: vi.fn().mockResolvedValue(false),
       load: vi.fn().mockResolvedValue(''),
       delete: vi.fn().mockResolvedValue(undefined),
-      list: vi.fn().mockResolvedValue([])
+      list: vi.fn().mockResolvedValue([]),
     }
 
     scraper = new LeetCodeScraper([mockStrategy], mockStorage)
@@ -96,7 +105,7 @@ describe('LeetCodeScraper Integration', () => {
       ...mockStrategy,
       name: 'low',
       priority: 10,
-      execute: vi.fn()
+      execute: vi.fn(),
     }
     const highPriorityStrategy = {
       ...mockStrategy,
@@ -105,8 +114,8 @@ describe('LeetCodeScraper Integration', () => {
       execute: vi.fn().mockResolvedValue({
         type: 'problem',
         data: mockProblemData,
-        metadata: { scrapedAt: new Date(), source: 'high', url: '' }
-      })
+        metadata: { scrapedAt: new Date(), source: 'high', url: '' },
+      }),
     }
 
     scraper = new LeetCodeScraper([lowPriorityStrategy, highPriorityStrategy], mockStorage)

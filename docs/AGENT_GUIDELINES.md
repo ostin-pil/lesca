@@ -5,6 +5,7 @@ This document provides specific guidance for AI assistants (like Claude Code) co
 ## Quick Reference
 
 **Before writing any code, review:**
+
 1. [Coding Standards](./CODING_STANDARDS.md) - Mandatory coding rules
 2. [Architecture Review](../ARCHITECTURE_REVIEW.md) - System design
 3. [TypeScript Guide](./TYPESCRIPT_GUIDE.md) - Type safety patterns
@@ -37,13 +38,13 @@ This document provides specific guidance for AI assistants (like Claude Code) co
 
 ```typescript
 // ✅ Correct way
-import { ConfigManager } from '../../../shared/config'
+import { ConfigManager } from '@/shared/config'
 
 const config = ConfigManager.getInstance().getConfig()
 const value = config.auth.cookiePath
 
 // ❌ Wrong way
-const value = config.auth.cookiePath!  // No non-null assertion
+const value = config.auth.cookiePath! // No non-null assertion
 ```
 
 ### Optional Property Handling
@@ -56,8 +57,8 @@ if (searchPaths) opts.searchPaths = searchPaths
 
 // ❌ Wrong way
 const opts: LoaderOptions = {
-  configPath: configPath || undefined,  // Don't assign undefined
-  searchPaths
+  configPath: configPath || undefined, // Don't assign undefined
+  searchPaths,
 }
 ```
 
@@ -65,17 +66,13 @@ const opts: LoaderOptions = {
 
 ```typescript
 // ✅ Correct way
-import { LescaError } from '../../../shared/types'
+import { handleError } from '@/shared/utils' // Unified handler
 
 try {
   const result = await operation()
   return result
 } catch (error) {
-  if (error instanceof LescaError) {
-    logger.error(`Operation failed: ${error.message}`)
-  } else {
-    logger.error(`Unexpected error: ${error}`)
-  }
+  handleError(error)
   throw error
 }
 
@@ -84,7 +81,7 @@ try {
   const result = await operation()
   return result
 } catch (error) {
-  console.error(error)  // Don't use console
+  console.error(error) // Don't use console
   throw error
 }
 ```
@@ -105,7 +102,7 @@ async function fetchData(url: string): Promise<Data> {
 
 // ❌ Wrong way - unnecessary async
 async function getName(): Promise<string> {
-  return 'John'  // No await, shouldn't be async
+  return 'John' // No await, shouldn't be async
 }
 ```
 
@@ -128,17 +125,19 @@ Read tool: ARCHITECTURE_REVIEW.md
 ### 2. Implementation Phase
 
 **Import Rules:**
+
 - ❌ Never include file extensions (.js, .ts, .tsx)
 - ✅ Use `@/` alias for shared packages
+- **Path Aliases**: Configured via tsconfig.json (e.g., `@lesca/core`, `@/packages/*`)
 - ✅ Use relative imports (without extensions) for same-package imports
 
 ```typescript
 // Import order
-import { resolve } from 'path'               // Node built-ins
-import chalk from 'chalk'                     // External packages
+import { resolve } from 'path' // Node built-ins
+import chalk from 'chalk' // External packages
 import type { Config } from '@/shared/types' // Shared types (@ alias)
-import { logger } from '@/shared/utils'       // Shared utils (@ alias)
-import { ConfigManager } from './config'      // Local imports (no extension)
+import { logger } from '@/shared/utils' // Shared utils (@ alias)
+import { ConfigManager } from './config' // Local imports (no extension)
 ```
 
 ### 3. Validation Phase
@@ -151,10 +150,10 @@ npx tsc --noEmit
 npx eslint path/to/file.ts
 
 # 3. Run tests
-npm test path/to/test.ts
+npm run test:unit path/to/test.ts
 
 # 4. Check coverage
-npm test -- --coverage
+npm run test:coverage
 ```
 
 ## Type Safety Guidelines
@@ -246,7 +245,7 @@ describe('FeatureName', () => {
 ```typescript
 // ✅ Proper mocking
 const mockClient = {
-  query: vi.fn().mockResolvedValue({ data: { success: true } })
+  query: vi.fn().mockResolvedValue({ data: { success: true } }),
 }
 
 const strategy = new Strategy(mockClient as unknown as GraphQLClient)
@@ -376,7 +375,8 @@ When adding a new feature:
 - [ ] Update relevant documentation
 - [ ] Run `npx tsc --noEmit` - must pass
 - [ ] Run `npx eslint` - must have 0 errors
-- [ ] Run `npm test` - all tests must pass
+- [ ] Run `npm run test:unit` - all unit tests must pass
+- [ ] Run `npm run test:integration` - if applicable
 - [ ] Update CHANGELOG.md if significant change
 
 ## Resources
@@ -414,5 +414,5 @@ Grep: "interface.*Options" glob:"shared/types/src/*.ts"
 
 ---
 
-*Last updated: 2025-01-14*
-*For questions or clarifications, see [CONTRIBUTING.md](../CONTRIBUTING.md)*
+_Last updated: 2025-01-14_
+_For questions or clarifications, see [CONTRIBUTING.md](../CONTRIBUTING.md)_
