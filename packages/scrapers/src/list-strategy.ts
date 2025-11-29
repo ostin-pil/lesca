@@ -1,4 +1,4 @@
-import { ScrapingError } from '@lesca/error'
+import { ScrapingError, GraphQLError } from '@lesca/error'
 
 import type { GraphQLClient } from '@/api-client/src/graphql-client'
 import type {
@@ -7,7 +7,6 @@ import type {
   ListScrapeRequest,
   RawData,
 } from '@/shared/types/src/index'
-import { GraphQLError } from '@/shared/types/src/index'
 
 /**
  * List scraper strategy
@@ -87,9 +86,9 @@ export class ListScraperStrategy implements ScraperStrategy {
       }
 
       throw new GraphQLError(
+        'GQL_QUERY_FAILED',
         `Failed to scrape problem list: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -116,9 +115,9 @@ export class ListScraperStrategy implements ScraperStrategy {
       }
 
       throw new GraphQLError(
+        'GQL_QUERY_FAILED',
         `Failed to scrape all problems: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }

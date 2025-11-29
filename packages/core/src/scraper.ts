@@ -1,3 +1,5 @@
+import { LescaError } from '@lesca/error'
+
 import {
   HtmlToMarkdownConverter,
   ObsidianConverter,
@@ -16,7 +18,6 @@ import type {
   DiscussionList,
   EditorialContent,
 } from '@/shared/types/src/index'
-import { LescaError } from '@/shared/types/src/index'
 
 /**
  * Main LeetCode scraper facade
@@ -115,7 +116,11 @@ export class LeetCodeScraper {
       }
     }
 
-    throw new LescaError(`No strategy can handle request type: ${request.type}`, 'NO_STRATEGY', 400)
+    throw new LescaError(
+      'SCRAPE_NO_STRATEGY',
+      `No strategy can handle request type: ${request.type}`,
+      { statusCode: 400 }
+    )
   }
 
   /**
@@ -183,6 +188,8 @@ export class LeetCodeScraper {
       return { markdown: finalMarkdown, filename }
     }
 
-    throw new LescaError(`Cannot process data type: ${rawData.type}`, 'UNSUPPORTED_TYPE', 400)
+    throw new LescaError('SCRAPE_NO_STRATEGY', `Cannot process data type: ${rawData.type}`, {
+      statusCode: 400,
+    })
   }
 }

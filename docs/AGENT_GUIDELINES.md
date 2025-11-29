@@ -106,6 +106,39 @@ async function getName(): Promise<string> {
 }
 ```
 
+### Comments
+
+```typescript
+// ✅ Good comments - explain WHY
+function calculateScore(problem: Problem): number {
+  // Multiply by 2 because the scoring system changed in v2.0
+  // and we need to maintain backwards compatibility
+  return problem.quality * 2
+}
+
+// Use TODO/FIXME for future work
+function processData(data: unknown): void {
+  // TODO: Add validation once schema is finalized
+  // FIXME: Handle edge case where data.items is empty
+}
+
+// ❌ Bad comments - state the obvious
+function getUserName(): string {
+  // Get the user name
+  return user.name
+}
+
+// Configure logger based on loaded config
+logger.setConfig({ level: config.logging.level })
+```
+
+**Comment Guidelines:**
+
+- ❌ Don't write comments that just repeat what the code does
+- ✅ Do explain non-obvious design decisions or business logic
+- ✅ Do use markers: `TODO`, `FIXME`, `HACK`, `NOTE` for future work
+- ✅ Do document public APIs with JSDoc
+
 ## Workflow for Code Changes
 
 ### 1. Understanding Phase

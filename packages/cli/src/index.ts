@@ -44,6 +44,17 @@ program
   .hook('preAction', (thisCommand) => {
     const opts = thisCommand.optsWithGlobals<{ config?: string; debug?: boolean }>()
 
+    initializeConfig(opts.config)
+    const config = ConfigManager.getInstance().getConfig()
+
+    logger.setConfig({
+      level: config.logging.level,
+      console: config.logging.output === 'console' || config.logging.output === 'both',
+      file: config.logging.output === 'file' || config.logging.output === 'both',
+      ...(config.logging.file ? { filePath: config.logging.file } : {}),
+      json: config.logging.format === 'json',
+    })
+
     if (opts.debug) {
       logger.setConfig({
         level: 'debug',
@@ -52,8 +63,6 @@ program
       })
       logger.debug('Debug mode enabled')
     }
-
-    initializeConfig(opts.config)
   })
 
 program.addCommand(initCommand)

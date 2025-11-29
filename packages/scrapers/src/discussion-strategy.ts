@@ -1,4 +1,4 @@
-import { BrowserError } from '@lesca/error'
+import { BrowserError, LescaError } from '@lesca/error'
 
 import { SelectorManager } from '@/browser-automation/src/index'
 import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
@@ -10,7 +10,6 @@ import type {
   DiscussionScrapeRequest,
   Discussion,
 } from '@/shared/types/src/index'
-import { LescaError } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 
 /**
@@ -40,8 +39,8 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
   async execute(request: ScrapeRequest): Promise<RawData> {
     if (!this.canHandle(request)) {
       throw new LescaError(
-        `DiscussionScraperStrategy cannot handle request type: ${request.type}`,
-        'INVALID_REQUEST_TYPE'
+        'SCRAPE_NO_STRATEGY',
+        `DiscussionScraperStrategy cannot handle request type: ${request.type}`
       )
     }
 
@@ -96,12 +95,11 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       }
 
       throw new LescaError(
+        'SCRAPE_CONTENT_EXTRACTION_FAILED',
         `Failed to scrape discussions for "${discussionRequest.titleSlug}": ${
           error instanceof Error ? error.message : String(error)
         }`,
-        'SCRAPING_FAILED',
-        undefined,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -158,7 +156,10 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
           break
         } catch {
           if (i === Math.min(selectors.length, 5) - 1) {
-            throw new LescaError('Discussion content failed to load', 'CONTENT_LOAD_FAILED')
+            throw new LescaError(
+              'SCRAPE_CONTENT_EXTRACTION_FAILED',
+              'Discussion content failed to load'
+            )
           }
         }
       }

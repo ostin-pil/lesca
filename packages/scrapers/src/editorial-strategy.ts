@@ -1,4 +1,4 @@
-import { BrowserError } from '@lesca/error'
+import { BrowserError, LescaError } from '@lesca/error'
 
 import { SelectorManager } from '@/browser-automation/src/index'
 import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
@@ -12,7 +12,6 @@ import type {
   EditorialContent,
   CodeSnippet,
 } from '@/shared/types/src/index'
-import { LescaError } from '@/shared/types/src/index'
 
 /**
  * Editorial Scraper Strategy
@@ -45,8 +44,8 @@ export class EditorialScraperStrategy implements ScraperStrategy {
   async execute(request: ScrapeRequest): Promise<RawData> {
     if (!this.canHandle(request)) {
       throw new LescaError(
-        `EditorialScraperStrategy cannot handle request type: ${request.type}`,
-        'INVALID_REQUEST_TYPE'
+        'SCRAPE_NO_STRATEGY',
+        `EditorialScraperStrategy cannot handle request type: ${request.type}`
       )
     }
 
@@ -76,18 +75,18 @@ export class EditorialScraperStrategy implements ScraperStrategy {
       // 5. If premium and not allowed, throw error
       if (isPremium && !editorialRequest.includePremium) {
         throw new LescaError(
+          'AUTH_PREMIUM_REQUIRED',
           `Editorial for "${editorialRequest.titleSlug}" is premium content. ` +
-            'Use includePremium: true to attempt scraping with authentication.',
-          'PREMIUM_CONTENT'
+            'Use includePremium: true to attempt scraping with authentication.'
         )
       }
 
       // 6. If premium and no auth, throw error
       if (isPremium && !this.auth) {
         throw new LescaError(
+          'AUTH_INVALID_CREDENTIALS',
           `Editorial for "${editorialRequest.titleSlug}" requires authentication. ` +
-            'Please provide authentication credentials.',
-          'AUTH_REQUIRED'
+            'Please provide authentication credentials.'
         )
       }
 
@@ -110,12 +109,11 @@ export class EditorialScraperStrategy implements ScraperStrategy {
       }
 
       throw new LescaError(
+        'SCRAPE_CONTENT_EXTRACTION_FAILED',
         `Failed to scrape editorial for "${editorialRequest.titleSlug}": ${
           error instanceof Error ? error.message : String(error)
         }`,
-        'SCRAPING_FAILED',
-        undefined,
-        error instanceof Error ? error : undefined
+        { ...(error instanceof Error ? { cause: error } : {}) }
       )
     }
   }
@@ -160,7 +158,10 @@ export class EditorialScraperStrategy implements ScraperStrategy {
           break
         } catch {
           if (i === containerSelectors.length - 1) {
-            throw new LescaError('Editorial content failed to load', 'CONTENT_LOAD_FAILED')
+            throw new LescaError(
+              'SCRAPE_CONTENT_EXTRACTION_FAILED',
+              'Editorial content failed to load'
+            )
           }
         }
       }

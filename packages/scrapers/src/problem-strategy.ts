@@ -1,4 +1,4 @@
-import { ScrapingError, BrowserError } from '@lesca/error'
+import { GraphQLError, LescaError, ScrapingError, BrowserError } from '@lesca/error'
 
 import type { GraphQLClient } from '@/api-client/src/graphql-client'
 import { SelectorManager } from '@/browser-automation/src/index'
@@ -12,7 +12,6 @@ import type {
   BrowserDriver,
   AuthCredentials,
 } from '@/shared/types/src/index'
-import { GraphQLError, LescaError } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 
 /**
@@ -141,15 +140,15 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     const isPremium = await this.checkPremiumContent()
     if (isPremium && !request.includePremium) {
       throw new LescaError(
-        `Problem "${request.titleSlug}" is premium content. Use includePremium: true to attempt scraping.`,
-        'AUTH_PREMIUM_REQUIRED'
+        'AUTH_PREMIUM_REQUIRED',
+        `Problem "${request.titleSlug}" is premium content. Use includePremium: true to attempt scraping.`
       )
     }
 
     if (isPremium && !this.auth) {
       throw new LescaError(
-        `Problem "${request.titleSlug}" requires authentication. Please provide credentials.`,
-        'AUTH_INVALID_CREDENTIALS'
+        'AUTH_INVALID_CREDENTIALS',
+        `Problem "${request.titleSlug}" requires authentication. Please provide credentials.`
       )
     }
 
@@ -291,15 +290,15 @@ export class ProblemScraperStrategy implements ScraperStrategy {
    */
   private validateProblem(problem: Problem): void {
     if (!problem.questionId) {
-      throw new GraphQLError('Invalid problem: missing questionId')
+      throw new GraphQLError('GQL_INVALID_RESPONSE', 'Invalid problem: missing questionId')
     }
 
     if (!problem.title) {
-      throw new GraphQLError('Invalid problem: missing title')
+      throw new GraphQLError('GQL_INVALID_RESPONSE', 'Invalid problem: missing title')
     }
 
     if (!problem.content) {
-      throw new GraphQLError('Invalid problem: missing content')
+      throw new GraphQLError('GQL_INVALID_RESPONSE', 'Invalid problem: missing content')
     }
   }
 }

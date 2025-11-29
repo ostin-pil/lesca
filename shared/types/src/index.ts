@@ -779,67 +779,6 @@ export interface Config {
 // Error Types
 // ============================================================================
 
-/**
- * Base error class for Lesca
- */
-export class LescaError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public statusCode?: number,
-    public override cause?: Error
-  ) {
-    super(message)
-    this.name = 'LescaError'
-    Error.captureStackTrace(this, this.constructor)
-  }
-}
-
-/**
- * GraphQL API error
- */
-export class GraphQLError extends LescaError {
-  constructor(message: string, statusCode?: number, cause?: Error) {
-    super(message, 'GRAPHQL_ERROR', statusCode, cause)
-    this.name = 'GraphQLError'
-  }
-}
-
-/**
- * Authentication error
- */
-export class AuthError extends LescaError {
-  constructor(message: string, cause?: Error) {
-    super(message, 'AUTH_ERROR', 401, cause)
-    this.name = 'AuthError'
-  }
-}
-
-/**
- * Rate limit error
- */
-export class RateLimitError extends LescaError {
-  retryAfter?: number
-
-  constructor(message: string, retryAfter?: number) {
-    super(message, 'RATE_LIMIT_ERROR', 429)
-    this.name = 'RateLimitError'
-    if (retryAfter !== undefined) {
-      this.retryAfter = retryAfter
-    }
-  }
-}
-
-/**
- * Storage error
- */
-export class StorageError extends LescaError {
-  constructor(message: string, cause?: Error) {
-    super(message, 'STORAGE_ERROR', undefined, cause)
-    this.name = 'StorageError'
-  }
-}
-
 // ============================================================================
 // Utility Types
 // ============================================================================
