@@ -53,9 +53,7 @@ describe('E2E: Browser Pool Integration', () => {
     expect(results).toHaveLength(5)
 
     const stats = pool.getStats()
-    // Should have created at most maxSize browsers
     expect(stats.created).toBeLessThanOrEqual(2)
-    // Should have reused browsers multiple times
     expect(stats.reused).toBeGreaterThan(0)
   })
 

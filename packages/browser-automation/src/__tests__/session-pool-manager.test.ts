@@ -166,7 +166,6 @@ describe('SessionPoolManager', () => {
       }
       vi.mocked(BrowserPool).mockImplementationOnce(() => mockPool as any)
 
-      // Override timeout for this test to be short
       const shortTimeoutManager = new SessionPoolManager({
         ...defaultConfig,
         acquireTimeout: 10,
@@ -190,16 +189,13 @@ describe('SessionPoolManager', () => {
       }
       vi.mocked(BrowserPool).mockImplementationOnce(() => mockPool as any)
 
-      // Ensure pool is created/cached
       await manager.acquireBrowser(sessionName)
-
       await manager.releaseBrowser(mockBrowser, sessionName)
 
       expect(mockPool.release).toHaveBeenCalledWith(mockBrowser)
     })
 
     it('should warn if releasing to non-existent pool', async () => {
-      // This is just to ensure it doesn't throw
       await expect(manager.releaseBrowser(mockBrowser, 'non-existent')).resolves.not.toThrow()
     })
   })
@@ -262,11 +258,10 @@ describe('SessionPoolManager', () => {
       }
       vi.mocked(BrowserPool).mockImplementationOnce(() => mockPool as any)
 
-      await manager.getPool(sessionName) // Create it
+      await manager.getPool(sessionName)
       await manager.drainSessionPool(sessionName)
-
       expect(mockPool.drain).toHaveBeenCalled()
-      // Should create new pool next time
+
       await manager.getPool(sessionName)
       expect(BrowserPool).toHaveBeenCalledTimes(2)
     })
@@ -289,8 +284,8 @@ describe('SessionPoolManager', () => {
         .mockImplementationOnce(() => mockPool1 as any)
         .mockImplementationOnce(() => mockPool2 as any)
 
-      await manager.getPool('session-1')
-      await manager.getPool('session-2')
+      manager.getPool('session-1')
+      manager.getPool('session-2')
 
       await manager.drainAll()
 

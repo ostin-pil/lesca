@@ -410,7 +410,6 @@ describe('CookieFileAuth', () => {
     })
 
     it('should throw error when no environment variables found', () => {
-      // Ensure no relevant env vars are set
       delete process.env.LEETCODE_SESSION
       delete process.env.CSRFTOKEN
       delete process.env.CF_CLEARANCE

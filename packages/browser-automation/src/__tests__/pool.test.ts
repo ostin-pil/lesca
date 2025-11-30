@@ -133,7 +133,6 @@ describe('BrowserPool', () => {
 
       const browser2 = await pool.acquire()
 
-      // Should create a new browser since the old one was disconnected
       expect(browser2).not.toBe(browser1)
       expect(mockBrowsers).toHaveLength(2)
     })
@@ -147,7 +146,6 @@ describe('BrowserPool', () => {
       expect(b1).not.toBe(b2)
       expect(mockBrowsers).toHaveLength(2)
 
-      // Browsers should not be in pool
       const stats = pool.getStats()
       expect(stats.total).toBe(0)
     })
@@ -168,7 +166,6 @@ describe('BrowserPool', () => {
 
       const browser3 = await acquirePromise
 
-      // Should reuse the released browser
       expect(browser3).toBe(browser1)
       expect(mockBrowsers).toHaveLength(2)
     }, 10000)
@@ -239,7 +236,6 @@ describe('BrowserPool', () => {
 
       await pool.release(outsideBrowser)
 
-      // Should close the browser since it's not in pool
       expect(outsideBrowser.close).toHaveBeenCalled()
     })
   })
@@ -368,10 +364,8 @@ describe('BrowserPool', () => {
       // Simulate disconnection
       ;(browser.isConnected as ReturnType<typeof vi.fn>).mockReturnValue(false)
 
-      // Try to acquire again - should detect disconnection and create new browser
       const browser2 = await pool.acquire()
 
-      // Should have created a new browser since the old one was disconnected
       expect(browser2).not.toBe(browser)
 
       // Pool should still have 1 browser (the new one, old one removed)
@@ -403,11 +397,7 @@ describe('BrowserPool', () => {
     it('should handle concurrent releases', async () => {
       pool = new BrowserPool({ maxSize: 5 })
 
-      const browsers = await Promise.all([
-        pool.acquire(),
-        pool.acquire(),
-        pool.acquire(),
-      ])
+      const browsers = await Promise.all([pool.acquire(), pool.acquire(), pool.acquire()])
 
       await Promise.all(browsers.map((b) => pool.release(b)))
 
@@ -439,7 +429,6 @@ describe('BrowserPool', () => {
 
       await Promise.all(mixedOps)
 
-      // Should have 6 browsers total (5 - 2 released + 3 new, but 2 reused)
       const stats = pool.getStats()
       expect(stats.total).toBeLessThanOrEqual(6)
     })
@@ -463,11 +452,7 @@ describe('BrowserPool', () => {
       pool = new BrowserPool()
 
       // Create multiple browsers
-      const browsers = await Promise.all([
-        pool.acquire(),
-        pool.acquire(),
-        pool.acquire(),
-      ])
+      const browsers = await Promise.all([pool.acquire(), pool.acquire(), pool.acquire()])
 
       await pool.drain()
 

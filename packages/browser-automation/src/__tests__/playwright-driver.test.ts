@@ -408,10 +408,8 @@ describe('PlaywrightDriver', () => {
 
     it('should handle close when only page exists', async () => {
       await driver.launch()
-      // Simulate browser already closed
       await driver.close()
 
-      // Should not throw on second close
       await expect(driver.close()).resolves.not.toThrow()
     })
 
@@ -419,7 +417,6 @@ describe('PlaywrightDriver', () => {
       await driver.launch()
       await driver.close()
 
-      // Should throw after close
       await expect(driver.navigate('https://example.com')).rejects.toThrow('Browser not launched')
     })
   })
@@ -522,10 +519,7 @@ describe('PlaywrightDriver', () => {
         textContent: vi.fn().mockResolvedValue('Found content'),
       } as unknown as ElementHandle
 
-      mockPage.$ = vi
-        .fn()
-        .mockResolvedValueOnce(mockElement1)
-        .mockResolvedValueOnce(mockElement2)
+      mockPage.$ = vi.fn().mockResolvedValueOnce(mockElement1).mockResolvedValueOnce(mockElement2)
 
       await driver.launch()
       const content = await driver.extractWithFallback(['.selector1', '.selector2'])
@@ -552,9 +546,9 @@ describe('PlaywrightDriver', () => {
 
       await driver.launch()
 
-      await expect(
-        driver.extractWithFallback(['.selector1', '.selector2'])
-      ).rejects.toThrow(/No content found with any of the selectors/)
+      await expect(driver.extractWithFallback(['.selector1', '.selector2'])).rejects.toThrow(
+        /No content found with any of the selectors/
+      )
     })
 
     it('should handle errors and continue to next selector', async () => {

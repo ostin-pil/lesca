@@ -338,7 +338,6 @@ describe('EditorialConverter', () => {
     it('should handle editorial with all sections', async () => {
       const result = await converter.convert(mockEditorial)
 
-      // Should have all sections
       expect(result).toContain('# Editorial:')
       expect(result).toContain('## Solution')
       expect(result).toContain('## Approaches')

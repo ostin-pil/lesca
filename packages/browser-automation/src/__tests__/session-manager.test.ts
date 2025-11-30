@@ -108,7 +108,6 @@ describe('SessionManager', () => {
     it('should sanitize session name to prevent directory traversal', async () => {
       await sessionManager.createSession('../../../malicious', mockContext)
 
-      // Should be sanitized to underscores
       const sessionPath = join(testSessionsDir, '_________malicious.json')
       const exists = await readFile(sessionPath).then(
         () => true,
@@ -243,7 +242,6 @@ describe('SessionManager', () => {
       await sessionManager.createSession('test-session', contextWithPage)
       await sessionManager.restoreSession('test-session', contextWithPage)
 
-      // Should call evaluate to restore storage (at least twice - once for each storage type)
       expect(mockPage.evaluate).toHaveBeenCalled()
     })
   })

@@ -24,7 +24,7 @@ describe('CookieManager', () => {
       value: 'test-session-value',
       domain: '.leetcode.com',
       path: '/',
-      expires: (Date.now() / 1000) + 3600,
+      expires: Date.now() / 1000 + 3600,
       httpOnly: true,
       secure: true,
       sameSite: 'Lax',
@@ -34,7 +34,7 @@ describe('CookieManager', () => {
       value: 'test-csrf-token',
       domain: '.leetcode.com',
       path: '/',
-      expires: (Date.now() / 1000) + 3600,
+      expires: Date.now() / 1000 + 3600,
       httpOnly: false,
       secure: true,
       sameSite: 'Lax',
@@ -83,9 +83,9 @@ describe('CookieManager', () => {
         getPage: vi.fn(() => null),
       } as unknown as PlaywrightDriver
 
-      await expect(
-        cookieManager.saveCookies(nopageDriver, 'test.json')
-      ).rejects.toThrow('Cannot save cookies: browser not initialized')
+      await expect(cookieManager.saveCookies(nopageDriver, 'test.json')).rejects.toThrow(
+        'Cannot save cookies: browser not initialized'
+      )
     })
   })
 
@@ -110,17 +110,17 @@ describe('CookieManager', () => {
       error.code = 'ENOENT'
       vi.mocked(readFile).mockRejectedValue(error)
 
-      await expect(
-        cookieManager.loadCookies('nonexistent.json')
-      ).rejects.toThrow('Cookie file not found')
+      await expect(cookieManager.loadCookies('nonexistent.json')).rejects.toThrow(
+        'Cookie file not found'
+      )
     })
 
     it('should throw error if cookie file format is invalid', async () => {
       vi.mocked(readFile).mockResolvedValue(JSON.stringify({ invalid: 'format' }))
 
-      await expect(
-        cookieManager.loadCookies('invalid.json')
-      ).rejects.toThrow(/Invalid cookie file format|Failed to load cookies/)
+      await expect(cookieManager.loadCookies('invalid.json')).rejects.toThrow(
+        /Invalid cookie file format|Failed to load cookies/
+      )
     })
   })
 
@@ -140,7 +140,7 @@ describe('CookieManager', () => {
           value: 'test-value',
           domain: '.leetcode.com',
           path: '/',
-          expires: (Date.now() / 1000) - 3600, // Expired 1 hour ago
+          expires: Date.now() / 1000 - 3600, // Expired 1 hour ago
           httpOnly: true,
           secure: true,
           sameSite: 'Lax',
@@ -189,9 +189,9 @@ describe('CookieManager', () => {
         getPage: vi.fn(() => null),
       } as unknown as PlaywrightDriver
 
-      await expect(
-        cookieManager.refreshCookies(nopageDriver)
-      ).rejects.toThrow('Cannot refresh cookies: browser not initialized')
+      await expect(cookieManager.refreshCookies(nopageDriver)).rejects.toThrow(
+        'Cannot refresh cookies: browser not initialized'
+      )
     })
   })
 
@@ -304,9 +304,9 @@ describe('CookieManager', () => {
         getPage: vi.fn(() => null),
       } as unknown as PlaywrightDriver
 
-      await expect(
-        cookieManager.injectCookies(nopageDriver, mockCookies)
-      ).rejects.toThrow('Cannot inject cookies: browser not initialized')
+      await expect(cookieManager.injectCookies(nopageDriver, mockCookies)).rejects.toThrow(
+        'Cannot inject cookies: browser not initialized'
+      )
     })
   })
 
@@ -322,9 +322,9 @@ describe('CookieManager', () => {
         getPage: vi.fn(() => null),
       } as unknown as PlaywrightDriver
 
-      await expect(
-        cookieManager.clearCookies(nopageDriver)
-      ).rejects.toThrow('Cannot clear cookies: browser not initialized')
+      await expect(cookieManager.clearCookies(nopageDriver)).rejects.toThrow(
+        'Cannot clear cookies: browser not initialized'
+      )
     })
   })
 
@@ -387,9 +387,9 @@ describe('CookieManager', () => {
         sameSite: 'Lax',
       }
 
-      await expect(
-        cookieManager.setCookie(nopageDriver, cookie)
-      ).rejects.toThrow('Cannot set cookie: browser not initialized')
+      await expect(cookieManager.setCookie(nopageDriver, cookie)).rejects.toThrow(
+        'Cannot set cookie: browser not initialized'
+      )
     })
   })
 
@@ -417,7 +417,7 @@ describe('CookieManager', () => {
             value: 'test-value',
             domain: '.example.com',
             path: '/',
-            expires: (Date.now() / 1000) - 3600, // Expired
+            expires: Date.now() / 1000 - 3600, // Expired
             httpOnly: false,
             secure: false,
             sameSite: 'Lax',
@@ -431,7 +431,6 @@ describe('CookieManager', () => {
 
       await cookieManager.loadAndInject(mockDriver, 'test.json')
 
-      // Should still succeed by filtering out expired cookies
       expect(mockDriver.getPage).toHaveBeenCalled()
     })
 
@@ -443,7 +442,7 @@ describe('CookieManager', () => {
             value: 'test-value',
             domain: '.example.com',
             path: '/',
-            expires: (Date.now() / 1000) - 3600,
+            expires: Date.now() / 1000 - 3600,
             httpOnly: false,
             secure: false,
             sameSite: 'Lax',
@@ -454,9 +453,9 @@ describe('CookieManager', () => {
 
       vi.mocked(readFile).mockResolvedValue(JSON.stringify(allExpiredData))
 
-      await expect(
-        cookieManager.loadAndInject(mockDriver, 'test.json')
-      ).rejects.toThrow('All cookies are expired or invalid')
+      await expect(cookieManager.loadAndInject(mockDriver, 'test.json')).rejects.toThrow(
+        'All cookies are expired or invalid'
+      )
     })
   })
 })

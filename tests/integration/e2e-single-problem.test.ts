@@ -87,7 +87,6 @@ describe('E2E: Single Problem Scraping', () => {
 
     const content = readFileSync(absolutePath, 'utf-8')
 
-    // Should have frontmatter (frontmatter may come after title in current converter)
     expect(content).toMatch(/---\n/)
 
     expect(content).toContain('# Two Sum')

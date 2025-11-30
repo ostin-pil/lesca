@@ -182,7 +182,6 @@ describe('ObsidianConverter', () => {
       const markdown = '# Test'
       const result = converter.convert(brokenProblem, markdown)
 
-      // Should still generate valid markdown without throwing
       expect(result).toContain('---')
       expect(result).toContain('title: Two Sum')
     })
@@ -315,7 +314,6 @@ describe('ObsidianConverter', () => {
         wikiLinks: true,
       })
 
-      // Should have all features
       expect(result).toContain('---') // Frontmatter
       expect(result).toContain('leetcode_id:') // Frontmatter fields
       expect(result).toContain('**Difficulty:**') // Metadata
@@ -329,7 +327,6 @@ describe('ObsidianConverter', () => {
       const markdown = ''
       const result = converter.convert(mockProblem, markdown)
 
-      // Should still generate valid document with frontmatter and metadata
       expect(result).toContain('---')
       expect(result).toContain('leetcode_id:')
       expect(result).toContain('**Difficulty:**')

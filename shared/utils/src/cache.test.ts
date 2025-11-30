@@ -288,7 +288,6 @@ describe('TieredCache', () => {
     it('should save to both caches', async () => {
       await cache.set('key1', 'value1')
 
-      // Should exist in both memory and file cache
       const memoryValue = await cache.get<string>('key1')
       expect(memoryValue).toBe('value1')
     })

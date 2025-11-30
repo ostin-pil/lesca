@@ -110,10 +110,8 @@ describe('CLI: init', () => {
 
     await initCommand.parseAsync(['node', 'lesca', 'init', '--config-path', configPath])
 
-    // Should exit with error
     expect(mockExit).toHaveBeenCalledWith(1)
 
-    // Content should be unchanged
     const content = readFileSync(configPath, 'utf-8')
     expect(content).toBe('dummy: true')
   })

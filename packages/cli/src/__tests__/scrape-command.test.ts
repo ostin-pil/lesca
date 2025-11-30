@@ -154,7 +154,6 @@ describe('Scrape Command', () => {
     await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum'])
 
     expect(mockAuthInstance.authenticate).toHaveBeenCalled()
-    // Should still proceed to scrape (without auth)
     expect(mockScraperInstance.scrape).toHaveBeenCalled()
   })
 
