@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, readdir, rm, access } from 'fs/promises'
+import { mkdir, readFile, writeFile, readdir, rm, access, rename, copyFile } from 'fs/promises'
 import { homedir } from 'os'
 import { resolve, join } from 'path'
 
@@ -96,15 +96,15 @@ export class SessionManager {
         // Extract localStorage
         try {
           const localStorageData = await page.evaluate(() => {
-          const data: Record<string, string> = {}
-          for (let i = 0; i < window.localStorage.length; i++) {
-            const key = window.localStorage.key(i)
-            if (key) {
-              data[key] = window.localStorage.getItem(key) || ''
+            const data: Record<string, string> = {}
+            for (let i = 0; i < window.localStorage.length; i++) {
+              const key = window.localStorage.key(i)
+              if (key) {
+                data[key] = window.localStorage.getItem(key) || ''
+              }
             }
-          }
-          return data
-        })
+            return data
+          })
           Object.assign(localStorage, localStorageData)
         } catch (error) {
           logger.warn('Failed to extract localStorage', { error })
@@ -113,15 +113,15 @@ export class SessionManager {
         // Extract sessionStorage
         try {
           const sessionStorageData = await page.evaluate(() => {
-          const data: Record<string, string> = {}
-          for (let i = 0; i < window.sessionStorage.length; i++) {
-            const key = window.sessionStorage.key(i)
-            if (key) {
-              data[key] = window.sessionStorage.getItem(key) || ''
+            const data: Record<string, string> = {}
+            for (let i = 0; i < window.sessionStorage.length; i++) {
+              const key = window.sessionStorage.key(i)
+              if (key) {
+                data[key] = window.sessionStorage.getItem(key) || ''
+              }
             }
-          }
-          return data
-        })
+            return data
+          })
           Object.assign(sessionStorage, sessionStorageData)
         } catch (error) {
           logger.warn('Failed to extract sessionStorage', { error })
@@ -154,10 +154,25 @@ export class SessionManager {
    * Get an existing session
    */
   async getSession(name: string): Promise<SessionData | null> {
+    return await this.loadSession(name)
+  }
+
+  /**
+   * Load session with corruption handling
+   */
+  private async loadSession(name: string): Promise<SessionData | null> {
+    const sessionPath = this.getSessionPath(name)
+
     try {
-      const sessionPath = this.getSessionPath(name)
       const data = await readFile(sessionPath, 'utf-8')
       const sessionData = JSON.parse(data) as SessionData
+
+      // Validate schema
+      if (!sessionData.name || !Array.isArray(sessionData.cookies)) {
+        logger.warn(`Session "${name}" has invalid format, backing up and ignoring`)
+        await this.backupCorruptedSession(name)
+        return null
+      }
 
       // Check if session has expired
       if (sessionData.metadata.expires && Date.now() > sessionData.metadata.expires) {
@@ -177,11 +192,26 @@ export class SessionManager {
         logger.debug(`Session not found: ${name}`)
         return null
       }
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        `Failed to get session: ${name}`,
-        { cause: error as Error, context: { name } }
-      )
+
+      // Corrupted file (JSON parse error)
+      logger.error(`Session "${name}" is corrupted`, error as Error)
+      await this.backupCorruptedSession(name)
+      return null
+    }
+  }
+
+  /**
+   * Backup corrupted session file
+   */
+  private async backupCorruptedSession(name: string): Promise<void> {
+    const sessionPath = this.getSessionPath(name)
+    const backupPath = `${sessionPath}.bak.${Date.now()}`
+
+    try {
+      await copyFile(sessionPath, backupPath)
+      logger.info(`Backed up corrupted session to ${backupPath}`)
+    } catch (error) {
+      logger.error('Failed to backup corrupted session', error as Error)
     }
   }
 
@@ -198,11 +228,10 @@ export class SessionManager {
       await writeFile(sessionPath, data, 'utf-8')
       logger.debug(`Saved session: ${name} to ${sessionPath}`)
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        `Failed to save session: ${name}`,
-        { cause: error as Error, context: { name, path: sessionPath } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', `Failed to save session: ${name}`, {
+        cause: error as Error,
+        context: { name, path: sessionPath },
+      })
     }
   }
 
@@ -229,9 +258,9 @@ export class SessionManager {
         if (Object.keys(sessionData.localStorage).length > 0) {
           try {
             await page.evaluate((data) => {
-            for (const [key, value] of Object.entries(data)) {
-              window.localStorage.setItem(key, value)
-            }
+              for (const [key, value] of Object.entries(data)) {
+                window.localStorage.setItem(key, value)
+              }
             }, sessionData.localStorage)
           } catch (error) {
             logger.warn('Failed to restore localStorage', { error })
@@ -242,9 +271,9 @@ export class SessionManager {
         if (Object.keys(sessionData.sessionStorage).length > 0) {
           try {
             await page.evaluate((data) => {
-            for (const [key, value] of Object.entries(data)) {
-              window.sessionStorage.setItem(key, value)
-            }
+              for (const [key, value] of Object.entries(data)) {
+                window.sessionStorage.setItem(key, value)
+              }
             }, sessionData.sessionStorage)
           } catch (error) {
             logger.warn('Failed to restore sessionStorage', { error })
@@ -288,11 +317,9 @@ export class SessionManager {
 
       return sessions
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to list sessions',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to list sessions', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -311,11 +338,10 @@ export class SessionManager {
         logger.debug(`Session not found for deletion: ${name}`)
         return false
       }
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        `Failed to delete session: ${name}`,
-        { cause: error as Error, context: { name } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', `Failed to delete session: ${name}`, {
+        cause: error as Error,
+        context: { name },
+      })
     }
   }
 
@@ -330,6 +356,86 @@ export class SessionManager {
     } catch {
       return false
     }
+  }
+
+  /**
+   * Rename session file
+   */
+  async renameSession(oldName: string, newName: string): Promise<void> {
+    const oldPath = this.getSessionPath(oldName)
+    const newPath = this.getSessionPath(newName)
+
+    // Check if old session exists
+    if (!(await this.sessionExists(oldName))) {
+      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Session "${oldName}" not found`)
+    }
+
+    // Check if new name already exists
+    if (await this.sessionExists(newName)) {
+      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Session "${newName}" already exists`)
+    }
+
+    try {
+      // Load the session data
+      const sessionData = await this.loadSession(oldName)
+      if (!sessionData) {
+        throw new Error('Session data not found')
+      }
+
+      // Update the name field
+      sessionData.name = newName
+
+      // Rename the file
+      await rename(oldPath, newPath)
+
+      // Save with updated name
+      await this.saveSession(newName, sessionData)
+
+      logger.info(`Session renamed: "${oldName}" -> "${newName}"`)
+    } catch (error) {
+      throw new BrowserError(
+        'BROWSER_LAUNCH_FAILED',
+        `Failed to rename session: ${oldName} to ${newName}`,
+        { cause: error as Error, context: { oldName, newName } }
+      )
+    }
+  }
+
+  /**
+   * List all active (non-expired) sessions
+   */
+  async listActiveSessions(): Promise<SessionData[]> {
+    const sessions: SessionData[] = []
+
+    await this.ensureSessionsDir()
+
+    try {
+      const files = await readdir(this.sessionsDir)
+
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue
+
+        const name = file.replace('.json', '')
+        const session = await this.loadSession(name)
+
+        if (session && !this.isExpired(session)) {
+          sessions.push(session)
+        }
+      }
+
+      return sessions.sort((a, b) => b.metadata.lastUsed - a.metadata.lastUsed)
+    } catch (error) {
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to list active sessions', {
+        cause: error as Error,
+      })
+    }
+  }
+
+  /**
+   * Check if session is expired
+   */
+  private isExpired(session: SessionData): boolean {
+    return !!(session.metadata.expires && Date.now() > session.metadata.expires)
   }
 
   /**
@@ -365,11 +471,9 @@ export class SessionManager {
 
       return cleanedCount
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to cleanup expired sessions',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to cleanup expired sessions', {
+        cause: error as Error,
+      })
     }
   }
 }

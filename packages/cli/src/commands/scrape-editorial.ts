@@ -72,7 +72,7 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
       }
 
       // 2. Set up browser driver
-      const browserDriver = new PlaywrightDriver(auth)
+      const browserDriver = new PlaywrightDriver(undefined, auth)
       spinner.start('Launching browser...')
 
       await browserDriver.launch({

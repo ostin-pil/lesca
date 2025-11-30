@@ -18,7 +18,7 @@ lesca/
 │   ├── core/         # Facade and orchestration layer
 │   ├── auth/         # Cookie-based authentication
 │   ├── api-client/   # GraphQL client with rate limiting
-│   ├── browser-automation/ # Playwright driver
+│   ├── browser-automation/ # Playwright driver + session/pool management
 │   ├── scrapers/     # Strategy pattern scrapers (Problem, List, Editorial, Discussion)
 │   ├── converters/   # HTML to Markdown/Obsidian converters
 │   └── storage/      # Filesystem and SQLite storage adapters
@@ -77,10 +77,6 @@ npm run lint:fix       # Auto-fix lint issues
 npm run format         # Code formatting with Prettier
 ```
 
-## Docker
-
-**Dockerfile**: `/home/pil/lesca/Dockerfile` (Note: Uses Python 3.11 - appears to be legacy; primary app is TypeScript)
-
 ## Main Entry Points
 
 - **CLI**: `packages/cli/src/index.ts` - Main command-line application entry point
@@ -90,6 +86,40 @@ npm run format         # Code formatting with Prettier
 - **Scrapers**: `packages/scrapers/src/index.ts` - Scraping strategies
 - **Converters**: `packages/converters/src/index.ts` - Format converters
 - **Storage**: `packages/storage/src/index.ts` - Storage adapters
+- **Browser Automation**: `packages/browser-automation/src/index.ts` - Playwright driver, session & pool management
+
+## Session Management
+
+**Location**: `~/.lesca/sessions/` (configurable via `LESCA_SESSIONS_DIR` env var)
+
+**Features**:
+
+- Named, switchable sessions (e.g., `--session premium`, `--session free`)
+- Persistent cookies, localStorage, sessionStorage
+- Session metadata (created, lastUsed, expires, userAgent, description)
+- Automatic expiration checking & cleanup
+- Per-command session persistence via `--session-persist` flag
+
+**Key Classes**:
+
+- `SessionManager` - Create, retrieve, save, restore sessions
+- `SessionPoolManager` - Hybrid per-session/global browser pool management
+
+## Browser Pooling
+
+**Configuration** (`browser.pool`):
+
+- `enabled`: true (enable pooling)
+- `strategy`: 'hybrid' (per-session by default, global fallback)
+- `minSize`: 0 (minimum browsers to maintain)
+- `maxSize`: 3 (max concurrent browsers per session)
+- `maxIdleTime`: 300000 (5 minutes)
+- `reusePages`: true (reuse contexts within browser)
+
+**Pool Classes**:
+
+- `BrowserPool` - Core pool management with acquire/release
+- `SessionPoolManager` - Manages multiple pools + global fallback
 
 ## Testing
 
@@ -125,11 +155,91 @@ npm run benchmark          # Run performance benchmarks
 
 ## Code Quality
 
-**Linting**: ESLint with TypeScript and import plugins, Prettier code formatting  
-**Type Checking**: Strict TypeScript mode enabled (noUnusedLocals, noUnusedParameters, exactOptionalPropertyTypes)  
-**Pre-commit Hooks**: Husky lint-staged (auto-fix TypeScript and format JSON/Markdown files)  
+**Linting**: ESLint with TypeScript and import plugins  
+**Formatting**: Prettier code formatting  
+**Type Checking**: Strict TypeScript mode (noUnusedLocals, noUnusedParameters, exactOptionalPropertyTypes)  
+**Pre-commit Hooks**: Husky lint-staged (auto-fix TypeScript and format JSON/Markdown)  
 **Path Aliases**: Configured via tsconfig.json (e.g., `@lesca/core`, `@/packages/*`)
 
 ## Configuration
 
-Environment variables and YAML configuration in `lesca.config.yaml`. Example environment file at `.env` with LeetCode session cookies and output directory settings.
+**Primary Config File**: `lesca.config.yaml` (or `~/.lesca/config.yaml`)
+
+**Configuration Sections**:
+
+- `auth` - Cookie-based authentication, session timeout, auto-refresh
+- `api` - GraphQL endpoint, timeouts, rate limiting
+- `storage` - Filesystem/SQLite storage, output paths
+- `output` - Format (markdown/obsidian/json), file patterns, image handling
+- `scraping` - Strategies, concurrency, batch size, timeouts
+- `processing` - Converters, enhancements (hints, code snippets, companies)
+- `browser` - Headless/headed, viewport, session/pool configuration, retry logic
+- `cache` - TTL per content type, memory size, compression
+- `logging` - Level (debug/info/warn/error), console/file output
+- `plugins` - Plugin system configuration
+
+**Environment Variables** (all prefixed with `LESCA_`):
+
+- `LESCA_AUTH_METHOD`, `LESCA_COOKIE_PATH`, `LESCA_SESSION_TIMEOUT`
+- `LESCA_API_ENDPOINT`, `LESCA_API_TIMEOUT`, `LESCA_RATE_LIMIT_RPM`
+- `LESCA_STORAGE_TYPE`, `LESCA_OUTPUT_PATH`, `LESCA_OUTPUT_FORMAT`
+- `LESCA_BROWSER_HEADLESS`, `LESCA_SESSIONS_DIR`, etc.
+
+**Default Paths**:
+
+- Config: `./lesca.config.yaml`, `~/.lesca/config.yaml`
+- Cookies: `~/.lesca/cookies.json` (legacy)
+- Sessions: `~/.lesca/sessions/` (new)
+- Cache: `~/.lesca/cache/`
+- Logs: `~/.lesca/logs/`
+
+## Architecture Patterns
+
+**Facade Pattern** (Core): `LeetCodeScraper` orchestrates strategies, converters, and storage  
+**Strategy Pattern** (Scrapers): Each strategy (Problem, List, Editorial, Discussion) implements `ScraperStrategy`  
+**Singleton Pattern** (Config): `ConfigManager` provides single source of truth  
+**Dependency Injection**: Strategies receive `GraphQLClient`, `BrowserDriver`, auth credentials  
+**Pool Pattern** (Browser): `BrowserPool` manages reusable browser instances; `SessionPoolManager` manages per-session pools
+
+## CLI Commands
+
+**Main Commands**:
+
+- `lesca scrape <problem>` - Scrape a single problem
+- `lesca scrape-list <file>` - Scrape multiple problems from file
+- `lesca scrape-editorial` - Scrape editorial content
+- `lesca scrape-discussions` - Scrape discussions
+- `lesca login [--session <name>]` - Authenticate with LeetCode
+- `lesca search <keyword>` - Search for problems
+- `lesca list [--difficulty]` - List problems with filters
+- `lesca config` - Manage configuration
+- `lesca auth` - Manage authentication
+- `lesca session` - Manage browser sessions (list, delete, rename, info)
+
+**Global Options**:
+
+- `--config <path>` - Config file path
+- `--verbose` - Verbose logging
+
+---
+
+## Project Documentation
+
+- **AGENT_GUIDELINES.md** - Guidelines for AI agents contributing to the project
+- **ARCHITECTURE_REVIEW.md** - System design and architecture decisions
+- **CODING_STANDARDS.md** - Code style and conventions
+- **TYPESCRIPT_GUIDE.md** - Type safety patterns
+
+## Session & Browser Implementation
+
+**Planning Document**: `.zencoder/rules/session_browser_implementation.md`
+
+Covers:
+
+- Named, switchable sessions with persistence
+- Hybrid browser pooling strategy (per-session + global fallback)
+- Dependency injection pattern for pool management
+- Configuration integration
+- CLI command updates
+- Strategy-specific page lifecycle preferences
+- Implementation checklist

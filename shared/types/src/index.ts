@@ -667,6 +667,42 @@ export interface BrowserLaunchOptions {
   }
 }
 
+/**
+ * Browser driver options (constructor params)
+ */
+export interface BrowserDriverOptions {
+  browser?: unknown // Pre-initialized browser from pool
+  auth?: AuthCredentials
+  sessionName?: string
+}
+
+/**
+ * Session pool configuration
+ */
+export interface SessionPoolConfig {
+  strategy: 'per-session' // Phase 2: add 'global' | 'hybrid'
+  perSessionMaxSize: number
+  perSessionIdleTime: number
+  acquireTimeout: number
+  retryOnFailure: boolean
+  maxRetries: number
+}
+
+/**
+ * Pool statistics for monitoring
+ */
+export interface PoolStatistics {
+  sessionName: string
+  totalBrowsers: number
+  activeBrowsers: number
+  idleBrowsers: number
+  acquisitionCount: number
+  releaseCount: number
+  failureCount: number
+  lastAcquireTime?: number
+  lastReleaseTime?: number
+}
+
 // ============================================================================
 // Configuration Types
 // ============================================================================

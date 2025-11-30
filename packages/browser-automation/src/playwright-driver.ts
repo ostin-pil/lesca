@@ -5,11 +5,7 @@
 import { BrowserError, BrowserTimeoutError } from '@lesca/error'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
-import type {
-  BrowserDriver,
-  BrowserLaunchOptions,
-  AuthCredentials,
-} from '@/shared/types/src/index'
+import type { BrowserDriver, BrowserLaunchOptions, AuthCredentials } from '@/shared/types/src/index'
 import { logger } from '@/shared/utils/src/index'
 
 import type { CookieManager } from './cookie-manager'
@@ -24,11 +20,20 @@ export class PlaywrightDriver implements BrowserDriver {
   private browser?: Browser
   private page?: Page
   private isLaunched = false
+  private isPooledBrowser = false // Track if browser is from pool
   private cookieManager?: CookieManager
   private interceptor?: RequestInterceptor
   private performanceMonitor?: PerformanceMonitor
 
-  constructor(private auth?: AuthCredentials) {}
+  constructor(
+    browser?: Browser, // Accept pre-initialized browser from pool
+    private auth?: AuthCredentials
+  ) {
+    if (browser) {
+      this.browser = browser
+      this.isPooledBrowser = true
+    }
+  }
 
   /**
    * Launch the browser
@@ -48,10 +53,15 @@ export class PlaywrightDriver implements BrowserDriver {
     } = options
 
     try {
-      this.browser = await chromium.launch({
-        headless,
-        timeout,
-      })
+      // If browser already provided (from pool), skip launch
+      if (!this.browser) {
+        this.browser = await chromium.launch({
+          headless,
+          timeout,
+        })
+      } else {
+        logger.debug('Using pooled browser')
+      }
 
       this.page = await this.browser.newPage({
         viewport,
@@ -66,8 +76,12 @@ export class PlaywrightDriver implements BrowserDriver {
       if (interception?.enabled || blockResources.length > 0) {
         this.interceptor = new RequestInterceptor({
           blockResources: [...blockResources, ...(interception?.blockResources || [])],
-          ...(interception?.capturePattern ? { capturePattern: new RegExp(interception.capturePattern) } : {}),
-          ...(interception?.captureResponses !== undefined ? { captureResponses: interception.captureResponses } : {}),
+          ...(interception?.capturePattern
+            ? { capturePattern: new RegExp(interception.capturePattern) }
+            : {}),
+          ...(interception?.captureResponses !== undefined
+            ? { captureResponses: interception.captureResponses }
+            : {}),
         })
         await this.interceptor.attach(this.page)
       }
@@ -85,11 +99,9 @@ export class PlaywrightDriver implements BrowserDriver {
 
       this.isLaunched = true
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to launch browser',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to launch browser', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -110,7 +122,7 @@ export class PlaywrightDriver implements BrowserDriver {
         lastError = error as Error
         logger.warn(`Navigation failed (attempt ${attempt}/${retries}): ${url}`, { error })
         if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
         }
       }
     }
@@ -134,10 +146,10 @@ export class PlaywrightDriver implements BrowserDriver {
         state: 'visible',
       })
     } catch (error) {
-      throw new BrowserTimeoutError(
-        `Timeout waiting for selector: ${selector}`,
-        { ...(error instanceof Error ? { cause: error } : {}), context: { selector, timeout } }
-      )
+      throw new BrowserTimeoutError(`Timeout waiting for selector: ${selector}`, {
+        ...(error instanceof Error ? { cause: error } : {}),
+        context: { selector, timeout },
+      })
     }
   }
 
@@ -150,16 +162,17 @@ export class PlaywrightDriver implements BrowserDriver {
     try {
       const element = await this.page!.waitForSelector(selector)
       if (!element) {
-        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', { context: { selector } })
+        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', {
+          context: { selector },
+        })
       }
       const content = await element.textContent()
       return content || ''
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_SELECTOR_NOT_FOUND',
-        `Element not found: ${selector}`,
-        { cause: error as Error, context: { selector } }
-      )
+      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Element not found: ${selector}`, {
+        cause: error as Error,
+        context: { selector },
+      })
     }
   }
 
@@ -204,15 +217,16 @@ export class PlaywrightDriver implements BrowserDriver {
     try {
       const element = await this.page!.waitForSelector(selector)
       if (!element) {
-        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', { context: { selector } })
+        throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', 'Element not found', {
+          context: { selector },
+        })
       }
       return await element.innerHTML()
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_SELECTOR_NOT_FOUND',
-        `Element not found: ${selector}`,
-        { cause: error as Error, context: { selector } }
-      )
+      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Element not found: ${selector}`, {
+        cause: error as Error,
+        context: { selector },
+      })
     }
   }
 
@@ -280,7 +294,8 @@ export class PlaywrightDriver implements BrowserDriver {
       delete this.page
     }
 
-    if (this.browser) {
+    // Don't close pooled browsers - they're managed by the pool
+    if (this.browser && !this.isPooledBrowser) {
       await this.browser.close()
       delete this.browser
     }
@@ -294,10 +309,7 @@ export class PlaywrightDriver implements BrowserDriver {
    */
   private ensureLaunched(): void {
     if (!this.isLaunched || !this.page || !this.browser) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Browser not launched. Call launch() first.'
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Browser not launched. Call launch() first.')
     }
   }
 

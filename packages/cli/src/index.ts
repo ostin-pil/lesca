@@ -15,6 +15,7 @@ import { scrapeDiscussionsCommand } from './commands/scrape-discussions'
 import { scrapeEditorialCommand } from './commands/scrape-editorial'
 import { scrapeListCommand } from './commands/scrape-list'
 import { searchCommand } from './commands/search'
+import { sessionCommand } from './commands/session'
 
 /**
  * CLI Application for Lesca
@@ -75,5 +76,6 @@ program.addCommand(scrapeListCommand)
 program.addCommand(scrapeEditorialCommand)
 program.addCommand(scrapeDiscussionsCommand)
 program.addCommand(configCommand)
+program.addCommand(sessionCommand)
 
 program.parse()

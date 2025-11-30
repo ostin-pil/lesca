@@ -5,19 +5,28 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import type { BrowserContext, Cookie } from 'playwright'
 
+vi.mock('@/shared/utils/src/index', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
+const anHour = 3600000
+
 describe('SessionManager', () => {
   let sessionManager: SessionManager
   let testSessionsDir: string
   let mockContext: BrowserContext
 
   beforeEach(async () => {
-    // Create a temporary directory for test sessions
     testSessionsDir = join(tmpdir(), `lesca-test-sessions-${Date.now()}`)
     await mkdir(testSessionsDir, { recursive: true })
 
     sessionManager = new SessionManager(testSessionsDir)
 
-    // Create a mock browser context
     mockContext = {
       cookies: vi.fn().mockResolvedValue([
         {
@@ -43,7 +52,8 @@ describe('SessionManager', () => {
       ] as Cookie[]),
       pages: vi.fn().mockReturnValue([
         {
-          evaluate: vi.fn()
+          evaluate: vi
+            .fn()
             .mockResolvedValueOnce({ 'user-preference': 'dark-mode' }) // localStorage
             .mockResolvedValueOnce({ 'session-id': 'abc123' }), // sessionStorage
         },
@@ -53,7 +63,6 @@ describe('SessionManager', () => {
   })
 
   afterEach(async () => {
-    // Clean up test directory
     try {
       await rm(testSessionsDir, { recursive: true, force: true })
     } catch (error) {
@@ -97,10 +106,7 @@ describe('SessionManager', () => {
     })
 
     it('should sanitize session name to prevent directory traversal', async () => {
-      await sessionManager.createSession(
-        '../../../malicious',
-        mockContext
-      )
+      await sessionManager.createSession('../../../malicious', mockContext)
 
       // Should be sanitized to underscores
       const sessionPath = join(testSessionsDir, '_________malicious.json')
@@ -149,7 +155,7 @@ describe('SessionManager', () => {
     })
 
     it('should delete expired sessions', async () => {
-      const pastTime = Date.now() - 3600000 // 1 hour ago
+      const pastTime = Date.now() - anHour
 
       await sessionManager.createSession('expired-session', mockContext, {
         expires: pastTime,
@@ -222,7 +228,8 @@ describe('SessionManager', () => {
 
     it('should restore localStorage and sessionStorage', async () => {
       const mockPage = {
-        evaluate: vi.fn()
+        evaluate: vi
+          .fn()
           .mockResolvedValueOnce({ 'user-preference': 'dark-mode' })
           .mockResolvedValueOnce({ 'session-id': 'abc123' })
           .mockResolvedValue(undefined), // For restore operations
@@ -256,8 +263,8 @@ describe('SessionManager', () => {
     })
 
     it('should filter out expired sessions', async () => {
-      const pastTime = Date.now() - 3600000 // 1 hour ago
-      const futureTime = Date.now() + 3600000 // 1 hour from now
+      const pastTime = Date.now() - anHour
+      const futureTime = Date.now() + anHour
 
       await sessionManager.createSession('expired-session', mockContext, {
         expires: pastTime,
@@ -316,8 +323,8 @@ describe('SessionManager', () => {
 
   describe('cleanupExpiredSessions', () => {
     it('should remove all expired sessions', async () => {
-      const pastTime = Date.now() - 3600000 // 1 hour ago
-      const futureTime = Date.now() + 3600000 // 1 hour from now
+      const pastTime = Date.now() - anHour
+      const futureTime = Date.now() + anHour
 
       await sessionManager.createSession('expired-1', mockContext, {
         expires: pastTime,
@@ -339,7 +346,7 @@ describe('SessionManager', () => {
     })
 
     it('should return 0 when no sessions are expired', async () => {
-      const futureTime = Date.now() + 3600000
+      const futureTime = Date.now() + anHour
 
       await sessionManager.createSession('valid-session', mockContext, {
         expires: futureTime,
@@ -375,6 +382,77 @@ describe('SessionManager', () => {
       ]
 
       await expect(Promise.all(operations)).resolves.toBeDefined()
+    })
+  })
+
+  describe('renameSession', () => {
+    it('should rename an existing session', async () => {
+      await sessionManager.createSession('old-name', mockContext)
+
+      await sessionManager.renameSession('old-name', 'new-name')
+
+      const oldSession = await sessionManager.getSession('old-name')
+      const newSession = await sessionManager.getSession('new-name')
+
+      expect(oldSession).toBeNull()
+      expect(newSession).toBeDefined()
+      expect(newSession?.name).toBe('new-name')
+    })
+
+    it('should throw if old session does not exist', async () => {
+      try {
+        await sessionManager.renameSession('non-existent', 'new-name')
+        expect.fail('Should have thrown')
+      } catch (error: any) {
+        console.log('Actual error:', error)
+        expect(error.message).toContain('not found')
+      }
+    })
+
+    it('should throw if new session name already exists', async () => {
+      await sessionManager.createSession('session-1', mockContext)
+      await sessionManager.createSession('session-2', mockContext)
+
+      try {
+        await sessionManager.renameSession('session-1', 'session-2')
+        expect.fail('Should have thrown')
+      } catch (error: any) {
+        console.log('Actual error:', error)
+        expect(error.message).toContain('already exists')
+      }
+    })
+  })
+
+  describe('listActiveSessions', () => {
+    it('should list only non-expired sessions', async () => {
+      const pastTime = Date.now() - anHour
+      const futureTime = Date.now() + anHour
+
+      await sessionManager.createSession('expired', mockContext, { expires: pastTime })
+      await sessionManager.createSession('active', mockContext, { expires: futureTime })
+
+      const active = await sessionManager.listActiveSessions()
+
+      expect(active).toHaveLength(1)
+      expect(active[0].name).toBe('active')
+    })
+  })
+
+  describe('corruption handling', () => {
+    it('should backup and return null for corrupted session file', async () => {
+      // Create a corrupted session file manually
+      const sessionPath = join(testSessionsDir, 'corrupted.json')
+      // Write invalid JSON
+      await import('fs/promises').then((fs) => fs.writeFile(sessionPath, '{ invalid json'))
+
+      const session = await sessionManager.getSession('corrupted')
+
+      expect(session).toBeNull()
+
+      // Check if backup file exists
+      const files = await import('fs/promises').then((fs) => fs.readdir(testSessionsDir))
+      const backupFile = files.find((f) => f.startsWith('corrupted.json.bak'))
+      expect(backupFile).toBeDefined()
     })
   })
 })

@@ -107,13 +107,18 @@ export function getDefaultConfig(): Config {
         name: 'default',
         autoSave: true,
         autoRestore: true,
+        saveOnExit: false,
       },
       pool: {
         enabled: true,
+        strategy: 'per-session',
         minSize: 0,
-        maxSize: 3,
-        maxIdleTime: 300000,
+        maxSize: 2, // Conservative default for MVP
+        maxIdleTime: 180000, // 3 minutes
         reusePages: true,
+        acquireTimeout: 30000,
+        retryOnFailure: true,
+        maxRetries: 3,
       },
     },
     cache: {
@@ -167,52 +172,52 @@ export function getDefaultPaths() {
  */
 export const ENV_MAPPINGS = {
   // Auth
-  'LESCA_AUTH_METHOD': 'auth.method',
-  'LESCA_COOKIE_PATH': 'auth.cookiePath',
-  'LESCA_SESSION_TIMEOUT': 'auth.sessionTimeout',
+  LESCA_AUTH_METHOD: 'auth.method',
+  LESCA_COOKIE_PATH: 'auth.cookiePath',
+  LESCA_SESSION_TIMEOUT: 'auth.sessionTimeout',
 
   // API
-  'LESCA_API_ENDPOINT': 'api.endpoint',
-  'LESCA_API_TIMEOUT': 'api.timeout',
-  'LESCA_API_RETRIES': 'api.retries',
-  'LESCA_RATE_LIMIT': 'api.rateLimit.enabled',
-  'LESCA_RATE_LIMIT_RPM': 'api.rateLimit.requestsPerMinute',
+  LESCA_API_ENDPOINT: 'api.endpoint',
+  LESCA_API_TIMEOUT: 'api.timeout',
+  LESCA_API_RETRIES: 'api.retries',
+  LESCA_RATE_LIMIT: 'api.rateLimit.enabled',
+  LESCA_RATE_LIMIT_RPM: 'api.rateLimit.requestsPerMinute',
 
   // Storage
-  'LESCA_STORAGE_TYPE': 'storage.type',
-  'LESCA_OUTPUT_PATH': 'storage.path',
-  'LESCA_DATABASE': 'storage.database',
+  LESCA_STORAGE_TYPE: 'storage.type',
+  LESCA_OUTPUT_PATH: 'storage.path',
+  LESCA_DATABASE: 'storage.database',
 
   // Output
-  'LESCA_OUTPUT_FORMAT': 'output.format',
-  'LESCA_OUTPUT_PATTERN': 'output.pattern',
-  'LESCA_FRONTMATTER': 'output.frontmatter',
-  'LESCA_DOWNLOAD_IMAGES': 'output.images.download',
+  LESCA_OUTPUT_FORMAT: 'output.format',
+  LESCA_OUTPUT_PATTERN: 'output.pattern',
+  LESCA_FRONTMATTER: 'output.frontmatter',
+  LESCA_DOWNLOAD_IMAGES: 'output.images.download',
 
   // Scraping
-  'LESCA_CONCURRENCY': 'scraping.concurrency',
-  'LESCA_BATCH_SIZE': 'scraping.batchSize',
-  'LESCA_DELAY': 'scraping.delay',
-  'LESCA_TIMEOUT': 'scraping.timeout',
+  LESCA_CONCURRENCY: 'scraping.concurrency',
+  LESCA_BATCH_SIZE: 'scraping.batchSize',
+  LESCA_DELAY: 'scraping.delay',
+  LESCA_TIMEOUT: 'scraping.timeout',
 
   // Browser
-  'LESCA_BROWSER_ENABLED': 'browser.enabled',
-  'LESCA_BROWSER_HEADLESS': 'browser.headless',
-  'LESCA_BROWSER_EXECUTABLE': 'browser.executable',
+  LESCA_BROWSER_ENABLED: 'browser.enabled',
+  LESCA_BROWSER_HEADLESS: 'browser.headless',
+  LESCA_BROWSER_EXECUTABLE: 'browser.executable',
 
   // Cache
-  'LESCA_CACHE_ENABLED': 'cache.enabled',
-  'LESCA_CACHE_DIR': 'cache.directory',
-  'LESCA_CACHE_COMPRESSION': 'cache.compression',
+  LESCA_CACHE_ENABLED: 'cache.enabled',
+  LESCA_CACHE_DIR: 'cache.directory',
+  LESCA_CACHE_COMPRESSION: 'cache.compression',
 
   // Logging
-  'LESCA_LOG_LEVEL': 'logging.level',
-  'LESCA_LOG_OUTPUT': 'logging.output',
-  'LESCA_LOG_FILE': 'logging.file',
+  LESCA_LOG_LEVEL: 'logging.level',
+  LESCA_LOG_OUTPUT: 'logging.output',
+  LESCA_LOG_FILE: 'logging.file',
 
   // Plugins
-  'LESCA_PLUGINS_ENABLED': 'plugins.enabled',
-  'LESCA_PLUGINS_DIR': 'plugins.directory',
+  LESCA_PLUGINS_ENABLED: 'plugins.enabled',
+  LESCA_PLUGINS_DIR: 'plugins.directory',
 } as const
 
 /**
