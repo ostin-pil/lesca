@@ -31,7 +31,7 @@ The issue is in **`tsconfig.json` line 53**:
 {
   "compilerOptions": {
     "paths": {
-      "@/*": ["./*"],  // This defines the alias
+      "@/*": ["./*"], // This defines the alias
       "@lesca/shared/*": ["./shared/*/src"]
     }
   },
@@ -39,8 +39,8 @@ The issue is in **`tsconfig.json` line 53**:
     "node_modules",
     "dist",
     "**/dist",
-    "**/*.test.ts",      // ⚠️ TEST FILES EXCLUDED
-    "**/*.spec.ts",      // ⚠️ TEST FILES EXCLUDED
+    "**/*.test.ts", // ⚠️ TEST FILES EXCLUDED
+    "**/*.spec.ts", // ⚠️ TEST FILES EXCLUDED
     "scripts/**/*.ts"
   ]
 }
@@ -73,6 +73,7 @@ packages/api-client/src/__tests__/graphql-client.test.ts(320,13): error TS2741
 ```
 
 These are minor type issues in tests (missing mock properties, type mismatches in test helpers) that:
+
 - Don't affect functionality
 - Don't cause tests to fail
 - Are annoying to fix for every test file
@@ -91,7 +92,7 @@ Test files run through **Vitest**, which has its own config: `vitest.unit.config
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, './'),              // ✅ Vitest knows about @/
+      '@': resolve(__dirname, './'), // ✅ Vitest knows about @/
       '@lesca/shared/types': resolve(__dirname, './shared/types/src'),
       '@lesca/shared/utils': resolve(__dirname, './shared/utils/src'),
       // ... etc
@@ -101,6 +102,7 @@ export default defineConfig({
 ```
 
 So at runtime:
+
 - ✅ Vitest resolves `@/` imports correctly
 - ✅ Tests pass
 - ❌ But IDE doesn't know this (it only checks tsconfig.json)
@@ -117,11 +119,13 @@ import { AuthError } from '../../../../shared/types/src/index.js'
 ```
 
 **Pros:**
+
 - ✅ IDE happy (no errors)
 - ✅ Works at runtime
 - ✅ No config changes needed
 
 **Cons:**
+
 - ⚠️ Ugly, hard to read
 - ⚠️ Breaks if you move test files
 
@@ -136,12 +140,14 @@ import { ScrapingError } from '@lesca/error'
 ```
 
 **Pros:**
+
 - ✅ IDE happy (tsconfig has wildcard: `"@lesca/shared/*": ["./shared/*/src"]`)
 - ✅ Works in test files even though they're excluded (vitest config matches)
 - ✅ Clean, semantic imports
 - ✅ Consistent with error package style
 
 **Cons:**
+
 - None! This is the best approach
 
 ### Option 3: Fix Test Type Errors & Include Tests
@@ -149,10 +155,12 @@ import { ScrapingError } from '@lesca/error'
 Remove test files from `exclude` and fix all type errors.
 
 **Pros:**
+
 - ✅ Full TypeScript checking in tests
 - ✅ IDE knows about `@/` in tests
 
 **Cons:**
+
 - ❌ Need to fix ~10 type errors across test files
 - ❌ Ongoing maintenance (new test type errors fail builds)
 - ❌ Slower IDE (more files to check)
@@ -162,10 +170,12 @@ Remove test files from `exclude` and fix all type errors.
 Just ignore the red squiggles in test files.
 
 **Pros:**
+
 - ✅ No changes needed
 - ✅ Tests still pass
 
 **Cons:**
+
 - ❌ Annoying red squiggles
 - ❌ IDE autocomplete doesn't work for those imports
 - ❌ Confusing for contributors
@@ -196,6 +206,7 @@ npm test
 ```
 
 This gives you:
+
 - ✅ No IDE errors
 - ✅ Clean, semantic imports
 - ✅ Tests still pass
@@ -208,6 +219,7 @@ This gives you:
 **The `@/` pattern works at runtime (vitest) but not in IDE (tsconfig) for test files.**
 
 **Solution:** Use `@lesca/shared/*` and `@lesca/error` patterns which work in BOTH places because:
+
 1. tsconfig.json has the wildcard: `"@lesca/shared/*": ["./shared/*/src"]`
 2. vitest configs have explicit mappings for each
 3. Both configs agree, so IDE and runtime both work ✅

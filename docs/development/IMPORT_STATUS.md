@@ -20,28 +20,34 @@
 The codebase uses THREE import patterns that all work correctly:
 
 **Pattern 1: `@lesca/error`** ✅ **GOOD - Keep this**
+
 ```typescript
 import { ScrapingError, BrowserError } from '@lesca/error'
 ```
+
 - Used: 12 times
 - Clean, semantic package name
 - **This is the standard we should follow**
 
 **Pattern 2: `@/` prefix** ⚠️ **Works but verbose**
+
 ```typescript
 import type { Problem } from '@/shared/types/src/index.js'
 import { logger } from '@/shared/utils/src/index.js'
 import { GraphQLClient } from '@/packages/api-client/src/graphql-client.js'
 ```
+
 - Used: ~47 times in source files
 - Works via `tsconfig.json` wildcard: `"@/*": ["./*"]`
 - **Can be improved** - Too verbose, includes implementation details
 
 **Pattern 3: Deep relative paths** ⚠️ **Works but confusing**
+
 ```typescript
 import type { Problem } from '../../../../shared/types/src/index.js'
 import { ConfigManager } from '../../../../shared/config/src/index.js'
 ```
+
 - Used: ~22 times (mostly in test files)
 - Confusing, hard to refactor
 - **Can be improved** - Use aliases instead
@@ -217,18 +223,21 @@ If you choose to migrate:
 ## ⚠️ Current State Summary
 
 **✅ What's Working:**
+
 - Build compiles successfully
 - All 631 tests passing
 - TypeScript strict mode working
 - All imports resolve correctly
 
 **🔧 What Can Be Improved:**
+
 - 36 source files use verbose `@/shared/*` imports
 - 11 source files use verbose `@/packages/*` imports
 - 22 files (tests) use confusing deep relative paths
 - All could use cleaner `@lesca/*` aliases instead
 
 **⏸️ Migration Status:**
+
 - Migration is **OPTIONAL** - everything works as-is
 - Benefit is **consistency and clarity**, not functionality
 - Estimated time: **15-30 minutes** using find/replace
@@ -239,12 +248,14 @@ If you choose to migrate:
 ## 🤔 Decision Points
 
 ### Option A: Keep As-Is (No Migration)
+
 - ✅ Everything works
 - ✅ No risk of breaking changes
 - ⚠️ Less consistent import patterns
 - ⚠️ More verbose imports
 
 ### Option B: Migrate to Standard Pattern
+
 - ✅ Consistent `@lesca/*` pattern everywhere
 - ✅ Cleaner, more semantic imports
 - ✅ Better long-term maintainability
@@ -252,6 +263,7 @@ If you choose to migrate:
 - ⚠️ Small risk of sed errors (verify with tests)
 
 ### Option C: Migrate Gradually
+
 - ✅ New code uses `@lesca/*` pattern
 - ✅ Old code stays as-is until refactored
 - ✅ No dedicated migration effort
@@ -264,12 +276,14 @@ If you choose to migrate:
 **My recommendation: Option B - Do the migration now**
 
 Why:
+
 1. It's quick (~30 minutes)
 2. Low risk (immediately verifiable)
 3. Better foundation for future development
 4. Eliminates confusion about which pattern to use
 
 You can run the sed commands above, then verify:
+
 ```bash
 npm run build    # Should succeed
 npm test         # Should pass 631 tests

@@ -5,6 +5,7 @@
 This document outlines the comprehensive implementation plan for taking Lesca from v0.1.0 (MVP Complete) to v1.0.0 (Stable Production Release). The plan combines immediate stability priorities with medium-term feature development, creating a cohesive roadmap spanning approximately 8-12 weeks.
 
 **Current State:** v0.1.0 - MVP Complete
+
 - 539 passing tests (73.66% coverage)
 - Zero TypeScript/ESLint errors
 - 10 packages: core, cli, scrapers, converters, storage, browser-automation, auth, api-client, + 2 shared
@@ -12,6 +13,7 @@ This document outlines the comprehensive implementation plan for taking Lesca fr
 - Core functionality working
 
 **Target State:** v1.0.0 - Production Stable
+
 - 90%+ test coverage with comprehensive integration tests
 - Production-ready CI/CD pipeline
 - Plugin system for extensibility
@@ -35,15 +37,18 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 ---
 
 ## Phase 1: Stability & Testing (v0.1.0 → v0.2.0)
+
 **Duration:** 3-4 weeks
 **Goal:** Production-ready foundation with comprehensive testing
 
 ### 1.1 Browser Automation Completion (Week 1-2)
+
 **Estimated Effort:** 10 days (split into 3 issues)
 **Priority:** High
 **GitHub Issues:** #[TBD] Session Management, #[TBD] Cookie Management, #[TBD] Request Interception
 
 #### Current State
+
 - Basic Playwright integration exists
 - Cookie management partially implemented
 - Needs production hardening
@@ -51,6 +56,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 #### Tasks
 
 **ISSUE #1: Browser Session Management & Pooling** (4 days)
+
 - [ ] **Session Management**
   - Persistent browser contexts
   - Session restoration
@@ -68,6 +74,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - No memory leaks on repeated runs
 
 **ISSUE #2: Cookie Management & Login Helpers** (3 days)
+
 - [ ] **Cookie Management**
   - Auto-save cookies after login
   - Cookie refresh logic
@@ -86,6 +93,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - Clear error messages
 
 **ISSUE #3: Request Interception & Performance** (3 days)
+
 - [ ] **Request Interception**
   - Block unnecessary resources (images, fonts, ads) by default
   - Capture API responses
@@ -104,6 +112,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - Network error detection
 
 **Acceptance Criteria:**
+
 - ✓ Login flow works reliably
 - ✓ Cookies persist across sessions
 - ✓ Browser cleanup has no memory leaks
@@ -113,11 +122,13 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 ---
 
 ### 1.2 Error Handling & Logging Audit (Week 2-3)
+
 **Estimated Effort:** 4 days
 **Priority:** High
 **GitHub Issue:** #[TBD] Error Handling Audit & Structured Logger
 
 #### Objectives
+
 - Comprehensive error handling across all packages
 - Structured logging with appropriate levels
 - User-friendly error messages
@@ -125,6 +136,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 #### Tasks
 
 **1.2.1 Error Handling Standards**
+
 - [ ] **Error Code System**
   - Audit all LescaError usage
   - Ensure consistent error codes
@@ -144,6 +156,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - Files: Update all `throw new LescaError()` calls
 
 **1.2.2 Logging Infrastructure**
+
 - [ ] **Structured Logging**
   - Implement logging levels (DEBUG, INFO, WARN, ERROR)
   - Add structured log format (JSON for production)
@@ -163,6 +176,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - Files: `shared/utils/src/sanitizer.ts`
 
 **1.2.3 User Experience**
+
 - [ ] **Error Messages**
   - User-friendly error descriptions
   - Actionable error messages
@@ -175,6 +189,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
   - Show stack traces in debug mode
 
 **Acceptance Criteria:**
+
 - ✓ All errors use LescaError with codes
 - ✓ Logging implemented across all packages
 - ✓ No sensitive data in logs
@@ -184,11 +199,13 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 ---
 
 ### 1.3 Test Coverage Expansion (Week 1-2)
+
 **Estimated Effort:** 4 days
 **Priority:** Critical
 **GitHub Issue:** #[TBD] Test Coverage: fast/slow split + per-package thresholds
 
 #### Objectives
+
 - Increase test coverage from 73.66% to 90%+
 - Add integration tests for end-to-end workflows
 - Ensure all edge cases are covered
@@ -241,6 +258,7 @@ Total Duration: 8-9 weeks (Web UI deferred to post-v1.0.0)
 Create new test suite: `tests/integration/`
 
 - [ ] **End-to-End Workflows**
+
   ```
   tests/integration/
   ├── e2e-single-problem.test.ts    # Scrape single problem to Obsidian
@@ -271,6 +289,7 @@ Create new test suite: `tests/integration/`
   - Files: `tests/benchmarks/`
 
 **Acceptance Criteria:**
+
 - ✓ `test:unit` and `test:integration` scripts configured
 - ✓ Unit tests run on PRs, integration tests on release only
 - ✓ Coverage check script enforces per-package thresholds
@@ -282,6 +301,7 @@ Create new test suite: `tests/integration/`
 ---
 
 ### 1.4 CI/CD Pipeline (Week 3)
+
 **Estimated Effort:** 2 days
 **Priority:** High
 **GitHub Issue:** #[TBD] CI: PR (fast) and Release (full) workflows
@@ -292,6 +312,7 @@ Create new test suite: `tests/integration/`
 Create `.github/workflows/`:
 
 - [ ] **PR CI Workflow** (`ci.yml`) - Fast checks
+
   ```yaml
   name: CI
   on: [push, pull_request]
@@ -304,6 +325,7 @@ Create `.github/workflows/`:
   ```
 
 - [ ] **Release Workflow** (`release.yml`) - Full validation
+
   ```yaml
   name: Release
   on:
@@ -329,12 +351,14 @@ Create `.github/workflows/`:
   ```
 
 **1.4.2 Pre-commit Hooks**
+
 - [ ] **Husky Setup**
   - Pre-commit: lint-staged (lint + format)
   - Pre-push: type check + tests
   - Commit-msg: conventional commit validation
 
 **1.4.3 Release Process**
+
 - [ ] **Versioning Strategy**
   - Semantic versioning (semver)
   - Changelog generation (conventional-changelog)
@@ -345,6 +369,7 @@ Create `.github/workflows/`:
   - Create release checklist
 
 **Acceptance Criteria:**
+
 - ✓ PR CI runs lint, typecheck, unit tests (fast feedback loop)
 - ✓ Release workflow runs full test suite
 - ✓ Releases build packages and upload coverage
@@ -354,6 +379,7 @@ Create `.github/workflows/`:
 ---
 
 ### 1.5 npm Package Publication (Week 3-4)
+
 **Estimated Effort:** 2 days
 **Priority:** Medium
 **GitHub Issue:** #[TBD] npm Publication Pre-flight
@@ -378,6 +404,7 @@ Create `.github/workflows/`:
   - Test global CLI installation
 
 **Acceptance Criteria:**
+
 - ✓ Dry-run publish succeeds
 - ✓ Publishing process documented
 - ✓ `npm install -g @lesca/cli` validated locally
@@ -387,6 +414,7 @@ Create `.github/workflows/`:
 ---
 
 ### 1.6 Risk Mitigation & Monitoring (Parallel to Week 1-3)
+
 **Estimated Effort:** 2 days (can be done in parallel)
 **Priority:** Medium
 **GitHub Issues:** #[TBD] Selector Monitoring, #[TBD] Flaky Test Mitigation
@@ -394,6 +422,7 @@ Create `.github/workflows/`:
 #### Tasks
 
 **ISSUE: Selector Monitoring Job** (1 day)
+
 - [ ] **Scheduled Selector Validation**
   - Create GitHub Actions workflow that runs daily
   - Scrapes sample problems to detect selector breakage
@@ -405,7 +434,7 @@ Create `.github/workflows/`:
   name: Selector Monitor
   on:
     schedule:
-      - cron: '0 0 * * *'  # Daily at midnight
+      - cron: '0 0 * * *' # Daily at midnight
   jobs:
     monitor:
       - Run sample scrapes for each scraper type
@@ -414,6 +443,7 @@ Create `.github/workflows/`:
   ```
 
 **ISSUE: Flaky Test Mitigation Policy** (1 day)
+
 - [ ] **Test Retry Logic**
   - Re-run failing tests automatically once
   - Label flaky tests for triage
@@ -423,9 +453,9 @@ Create `.github/workflows/`:
   // vitest.config.ts
   export default {
     test: {
-      retry: 1,  // Retry failed tests once
-      reporters: ['verbose', 'flaky-reporter']
-    }
+      retry: 1, // Retry failed tests once
+      reporters: ['verbose', 'flaky-reporter'],
+    },
   }
   ```
 
@@ -435,6 +465,7 @@ Create `.github/workflows/`:
   - Document flaky test debugging process
 
 **Acceptance Criteria:**
+
 - ✓ Selector monitoring job runs daily
 - ✓ Alerts triggered on selector failures
 - ✓ Flaky tests auto-retry once
@@ -443,15 +474,18 @@ Create `.github/workflows/`:
 ---
 
 ## Phase 2: Extension & Advanced Features (v0.2.0 → v0.3.0)
+
 **Duration:** 3-4 weeks
 **Goal:** Extensibility and advanced functionality
 
 ### 2.1 Plugin System & Hooks (Week 4-5)
+
 **Estimated Effort:** 6 days
 **Priority:** High
 **GitHub Issue:** #[TBD] Core: Plugin Manager & Hook Registry
 
 #### Objectives
+
 - Allow users to extend Lesca with custom functionality
 - Provide hooks at key points in the scraping pipeline
 - Enable third-party scrapers, converters, and enhancers
@@ -459,6 +493,7 @@ Create `.github/workflows/`:
 #### Architecture
 
 **Plugin Types:**
+
 1. **Scraper Plugins** - Custom scraping strategies
 2. **Converter Plugins** - Custom output formats
 3. **Enhancer Plugins** - Custom content enhancements
@@ -466,6 +501,7 @@ Create `.github/workflows/`:
 5. **Middleware Plugins** - Request/response modification
 
 **Hook Points:**
+
 ```typescript
 // Before/after scraping
 hooks.beforeScrape(problem)
@@ -486,21 +522,23 @@ hooks.onError(error, context)
 #### Implementation
 
 **2.1.1 Plugin Infrastructure** (3 days)
+
 - [ ] **Plugin Manager**
+
   ```typescript
   // packages/core/src/plugin-manager.ts
   interface Plugin {
-    name: string;
-    version: string;
-    type: PluginType;
-    init(context: PluginContext): Promise<void>;
-    destroy(): Promise<void>;
+    name: string
+    version: string
+    type: PluginType
+    init(context: PluginContext): Promise<void>
+    destroy(): Promise<void>
   }
 
   class PluginManager {
-    register(plugin: Plugin): void;
-    unregister(name: string): void;
-    execute(hook: HookName, data: any): Promise<any>;
+    register(plugin: Plugin): void
+    unregister(name: string): void
+    execute(hook: HookName, data: any): Promise<any>
   }
   ```
 
@@ -516,19 +554,21 @@ hooks.onError(error, context)
   - Type-safe context per plugin type
 
 **2.1.2 Hook System** (2 days)
+
 - [ ] **Hook Registry**
+
   ```typescript
   // packages/core/src/hooks.ts
   interface Hook {
-    name: string;
-    priority: number;
-    handler: (data: any) => Promise<any>;
+    name: string
+    priority: number
+    handler: (data: any) => Promise<any>
   }
 
   class HookRegistry {
-    register(hookName: string, handler: Hook): void;
-    execute(hookName: string, data: any): Promise<any>;
-    clear(hookName: string): void;
+    register(hookName: string, handler: Hook): void
+    execute(hookName: string, data: any): Promise<any>
+    clear(hookName: string): void
   }
   ```
 
@@ -538,6 +578,7 @@ hooks.onError(error, context)
   - Add hook execution to scraper flow
 
 **Acceptance Criteria:**
+
 - ✓ Plugin discovery works (local `plugins/` + npm `@lesca/plugin-*`)
 - ✓ Registration/unregistration working
 - ✓ Hook execution with priority ordering
@@ -547,6 +588,7 @@ hooks.onError(error, context)
 ---
 
 ### 2.2 Plugin Examples & Developer Guide (Week 5-6)
+
 **Estimated Effort:** 3 days
 **Priority:** Medium
 **GitHub Issue:** #[TBD] Plugin Examples & Developer Guide
@@ -565,6 +607,7 @@ hooks.onError(error, context)
   - Best practices and patterns
 
 **Acceptance Criteria:**
+
 - ✓ At least 2 example plugins working with tests
 - ✓ Plugin development guide complete
 - ✓ Examples demonstrate different plugin types
@@ -572,11 +615,13 @@ hooks.onError(error, context)
 ---
 
 ### 2.3 Quality Scoring for Discussions (Week 6)
+
 **Estimated Effort:** 4 days
 **Priority:** Medium
 **GitHub Issue:** #[TBD] Scrapers: Quality Scoring Engine for Discussions
 
 #### Objectives
+
 - Automatically score discussion quality
 - Filter low-quality discussions
 - Sort discussions by quality + votes
@@ -584,6 +629,7 @@ hooks.onError(error, context)
 #### Scoring Algorithm
 
 **Quality Factors:**
+
 1. **Content Quality** (40%)
    - Has code examples (+15)
    - Has explanation (+10)
@@ -608,22 +654,24 @@ hooks.onError(error, context)
 #### Implementation
 
 **2.3.1 Scoring Engine**
+
 - [ ] **Quality Analyzer**
+
   ```typescript
   // packages/scrapers/src/quality-scorer.ts
   interface QualityScore {
-    overall: number;        // 0-100
-    content: number;        // 0-40
-    engagement: number;     // 0-30
-    recency: number;        // 0-20
-    relevance: number;      // 0-10
-    breakdown: ScoreBreakdown;
+    overall: number // 0-100
+    content: number // 0-40
+    engagement: number // 0-30
+    recency: number // 0-20
+    relevance: number // 0-10
+    breakdown: ScoreBreakdown
   }
 
   class QualityScorer {
-    score(discussion: Discussion): QualityScore;
-    filter(discussions: Discussion[], minScore: number): Discussion[];
-    sort(discussions: Discussion[]): Discussion[];
+    score(discussion: Discussion): QualityScore
+    filter(discussions: Discussion[], minScore: number): Discussion[]
+    sort(discussions: Discussion[]): Discussion[]
   }
   ```
 
@@ -639,17 +687,20 @@ hooks.onError(error, context)
   - Calculate engagement score
 
 **2.3.2 Integration & Configuration**
+
 - [ ] **Discussion Scraper Update**
   - Integrate with discussion scraper to store `quality_score` in metadata
   - Apply config-driven weights
   - Configuration: `discussion.minQualityScore`, `discussion.qualityWeights`
 
 **2.3.3 Testing**
+
 - [ ] **Validation**
   - Tests using sample discussion fixtures
   - Validate scoring factors work correctly
 
 **Acceptance Criteria:**
+
 - ✓ Scoring factors implemented (content, engagement, recency, relevance)
 - ✓ Config-driven weights working
 - ✓ Integration with discussion scraper complete
@@ -658,11 +709,13 @@ hooks.onError(error, context)
 ---
 
 ### 2.4 SQLite Storage Adapter (Week 7)
+
 **Estimated Effort:** 6 days
 **Priority:** Medium
 **GitHub Issue:** #[TBD] Storage: SQLite Adapter + Migrations
 
 #### Objectives
+
 - Provide database storage option
 - Enable advanced querying
 - Support metadata indexing
@@ -731,21 +784,23 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 #### Implementation
 
 **2.4.1 SQLite Adapter**
+
 - [ ] **Storage Adapter Implementation**
+
   ```typescript
   // packages/storage/src/adapters/sqlite-adapter.ts
   class SQLiteStorageAdapter implements StorageAdapter {
-    constructor(dbPath: string);
+    constructor(dbPath: string)
 
-    async save(data: ScrapedData): Promise<void>;
-    async get(slug: string): Promise<ScrapedData | null>;
-    async list(filter?: Filter): Promise<ScrapedData[]>;
-    async delete(slug: string): Promise<void>;
-    async search(query: SearchQuery): Promise<ScrapedData[]>;
+    async save(data: ScrapedData): Promise<void>
+    async get(slug: string): Promise<ScrapedData | null>
+    async list(filter?: Filter): Promise<ScrapedData[]>
+    async delete(slug: string): Promise<void>
+    async search(query: SearchQuery): Promise<ScrapedData[]>
 
     // Database-specific methods
-    async query(sql: string, params?: any[]): Promise<any[]>;
-    async migrate(): Promise<void>;
+    async query(sql: string, params?: any[]): Promise<any[]>
+    async migrate(): Promise<void>
   }
   ```
 
@@ -756,7 +811,9 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Files: `packages/storage/src/adapters/sqlite-adapter.ts`
 
 **2.4.2 Migrations**
+
 - [ ] **Migration System**
+
   ```typescript
   // packages/storage/src/migrations/
   ├── 001_initial_schema.sql
@@ -770,17 +827,20 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Migration validation
 
 **2.4.3 CLI Integration**
+
 - [ ] **CLI Commands**
   - `lesca db init` - Initialize database
   - `lesca db migrate` - Run migrations
   - Configuration support for SQLite backend
 
 **2.4.4 Testing**
+
 - [ ] **Tests**
   - Tests for migrations and queries
   - CRUD operation validation
 
 **Acceptance Criteria:**
+
 - ✓ Adapter CRUD + query/search working
 - ✓ Migration runner and example migrations functional
 - ✓ CLI commands `lesca db init` and `lesca db migrate` working
@@ -789,12 +849,14 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 ---
 
 ## Phase 3: Polish & Release (v0.3.0 → v1.0.0)
+
 **Duration:** 2-3 weeks
 **Goal:** Production-ready v1.0.0 release
 
 **Note:** Web UI deferred to post-v1.0.0 (minimal placeholders kept)
 
 ### 3.1 Documentation Sweep & Release Notes (Week 8)
+
 **Estimated Effort:** 3 days
 **Priority:** High
 **GitHub Issue:** #[TBD] Documentation Sweep & Release Notes
@@ -818,6 +880,7 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Create migration guide from v0.1.0 to v1.0.0
 
 **Acceptance Criteria:**
+
 - ✓ All new features documented
 - ✓ Config reference updated
 - ✓ Changelog and migration notes prepared
@@ -825,11 +888,13 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 ---
 
 ### 3.2 Performance Profiling & Optimizations (Week 8-9)
+
 **Estimated Effort:** 4 days
 **Priority:** High
 **GitHub Issue:** #[TBD] Performance Profiling & Hotpath Optimizations
 
 #### Tasks
+
 - [ ] **Identify Bottlenecks**
   - Profile scraping flows
   - Identify top 3 bottlenecks
@@ -845,6 +910,7 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Validate improvements with benchmarks
 
 **Acceptance Criteria:**
+
 - ✓ Top 3 bottlenecks identified and reduced
 - ✓ Benchmarks added to `tests/benchmarks/`
 - ✓ Performance improvements measurable
@@ -852,11 +918,13 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 ---
 
 ### 3.3 Security Audit & Dependency Pinning (Week 9)
+
 **Estimated Effort:** 3 days
 **Priority:** High
 **GitHub Issue:** #[TBD] Security Audit & Dependency Pinning
 
 #### Tasks
+
 - [ ] **Dependency Audit**
   - Run `npm audit` and resolve critical items
   - Update vulnerable dependencies
@@ -868,6 +936,7 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Basic mitigation strategies documented
 
 **Acceptance Criteria:**
+
 - ✓ Critical `npm audit` items resolved
 - ✓ Secure credential storage documented
 - ✓ Input validation and SQL injection prevention reviewed
@@ -875,6 +944,7 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 ---
 
 ### 3.4 Final Integration Tests & Release Execution (Week 9)
+
 **Estimated Effort:** 3 days
 **Priority:** Critical
 **GitHub Issue:** #[TBD] Final Integration Tests & Release Execution
@@ -898,6 +968,7 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
   - Communicate release to users
 
 **Acceptance Criteria:**
+
 - ✓ Release CI passes full test matrix
 - ✓ Release artifacts published
 - ✓ Smoke-checks executed
@@ -910,21 +981,27 @@ CREATE INDEX idx_discussions_quality ON discussions(quality_score);
 These can be implemented alongside main phases (1 day each):
 
 ### ISSUE: Centralize Selectors & Fallback Logic (1 day)
+
 **GitHub Issue:** #[TBD] Centralize selectors & fallback logic
+
 - [ ] Centralize all CSS selectors
 - [ ] Add selector validation
 - [ ] Fallback selectors for breaking changes
 - Files: `packages/scrapers/src/selectors/index.ts`
 
 ### ISSUE: Cache Statistics & Limits (1 day)
+
 **GitHub Issue:** #[TBD] Cache statistics & limits
+
 - [ ] Cache statistics
 - [ ] Cache size limits
 - [ ] Cache warming utilities
 - Files: `shared/utils/src/metrics.ts`, `shared/utils/src/cache.ts`
 
 ### ISSUE: Adaptive Rate Limiter Improvements (1 day)
+
 **GitHub Issue:** #[TBD] Adaptive rate limiter improvements
+
 - [ ] Adaptive rate limiting
 - [ ] Per-endpoint rate limits
 - [ ] Burst allowance
@@ -936,24 +1013,28 @@ These can be implemented alongside main phases (1 day each):
 ## Success Metrics
 
 ### Code Quality
+
 - [ ] Test coverage ≥ 90%
 - [ ] Zero TypeScript errors
 - [ ] Zero ESLint errors
 - [ ] Code duplication < 5%
 
 ### Performance
+
 - [ ] Scrape single problem < 5s
 - [ ] Batch scrape 100 problems < 5 min
 - [ ] Memory usage < 500 MB
 - [ ] Package size < 10 MB
 
 ### Reliability
+
 - [ ] Uptime 99.9% (for web UI)
 - [ ] Error rate < 0.1%
 - [ ] All edge cases handled
 - [ ] Graceful degradation
 
 ### Documentation
+
 - [ ] All features documented
 - [ ] Examples for all use cases
 - [ ] Troubleshooting guide complete
@@ -964,31 +1045,34 @@ These can be implemented alongside main phases (1 day each):
 ## Dependencies & Risks
 
 ### Dependencies
+
 - **External:** LeetCode HTML structure (risk: breaking changes)
 - **Internal:** Playwright browser automation
 - **Infrastructure:** npm registry, GitHub Actions
 
 ### Risks & Mitigation
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| LeetCode HTML changes | High | High | Selector fallbacks, monitoring, quick updates |
-| Browser automation issues | Medium | Medium | Graceful fallback to non-browser mode |
-| npm publishing issues | Low | Medium | Test with dry-run, manual backup |
-| Performance degradation | Medium | Medium | Regular benchmarking, optimization |
-| Plugin system bugs | Medium | High | Thorough testing, sandboxing |
-| Security vulnerabilities | Low | High | Regular audits, dependency updates |
+| Risk                      | Probability | Impact | Mitigation                                    |
+| ------------------------- | ----------- | ------ | --------------------------------------------- |
+| LeetCode HTML changes     | High        | High   | Selector fallbacks, monitoring, quick updates |
+| Browser automation issues | Medium      | Medium | Graceful fallback to non-browser mode         |
+| npm publishing issues     | Low         | Medium | Test with dry-run, manual backup              |
+| Performance degradation   | Medium      | Medium | Regular benchmarking, optimization            |
+| Plugin system bugs        | Medium      | High   | Thorough testing, sandboxing                  |
+| Security vulnerabilities  | Low         | High   | Regular audits, dependency updates            |
 
 ---
 
 ## Resource Requirements
 
 ### Development Time
+
 - **Total Effort:** 50-65 days (10-13 weeks with parallel work)
 - **Team Size:** 1-2 developers
 - **Availability:** Full-time or part-time
 
 ### Infrastructure
+
 - **CI/CD:** GitHub Actions (free for public repos)
 - **npm:** Free account
 - **Testing:** Local + CI
@@ -999,8 +1083,10 @@ These can be implemented alongside main phases (1 day each):
 ## Version Milestones
 
 ### v0.2.0 - Stable Foundation
+
 **Target:** Week 3-4
 **Estimated Effort:** ~22 days total
+
 - ✓ Browser automation complete (10 days)
   - Session management & pooling (4 days)
   - Cookie management & login (3 days)
@@ -1012,16 +1098,20 @@ These can be implemented alongside main phases (1 day each):
 - ✓ Risk mitigation (2 days, parallel)
 
 ### v0.3.0 - Extended Features
+
 **Target:** Week 7
 **Estimated Effort:** ~19 days total
+
 - ✓ Plugin system & hooks (6 days)
 - ✓ Plugin examples & guide (3 days)
 - ✓ Quality scoring (4 days)
 - ✓ SQLite adapter & migrations (6 days)
 
 ### v1.0.0 - Production Release
+
 **Target:** Week 9
 **Estimated Effort:** ~13 days total
+
 - ✓ Documentation sweep (3 days)
 - ✓ Performance profiling & optimization (4 days)
 - ✓ Security audit (3 days)
@@ -1035,7 +1125,9 @@ These can be implemented alongside main phases (1 day each):
 ## Post-v1.0.0 Roadmap
 
 ### v1.1.0 - Web UI (Optional)
+
 **Estimated Effort:** 12-15 days
+
 - React + TypeScript frontend
 - Express.js REST API backend
 - Problem browser, scraping management
@@ -1043,12 +1135,14 @@ These can be implemented alongside main phases (1 day each):
 - Statistics dashboard
 
 ### v1.2.0 - Community & Enhancements
+
 - More plugin examples
 - Performance improvements
 - Community feedback integration
 - Binary releases (pkg or @vercel/ncc)
 
 ### v2.0.0 - Major Update
+
 - Support for other platforms (Codeforces, HackerRank)
 - AI-powered features (solution explanations, hints)
 - Cloud sync (optional)
@@ -1179,6 +1273,7 @@ lesca/
 This comprehensive plan takes Lesca from v0.1.0 (MVP) to v1.0.0 (Production Stable) over **8-9 weeks**:
 
 **Phase 1 (Weeks 1-3):** Stability & Foundation
+
 - Browser automation production hardening (10 days)
 - Error handling & structured logging (4 days)
 - Test coverage expansion to 90%+ (4 days)
@@ -1187,23 +1282,27 @@ This comprehensive plan takes Lesca from v0.1.0 (MVP) to v1.0.0 (Production Stab
 - Risk mitigation (selector monitoring, flaky tests) (2 days)
 
 **Phase 2 (Weeks 4-7):** Extension & Advanced Features
+
 - Plugin system with hooks (6 days)
 - Plugin examples & developer guide (3 days)
 - Quality scoring for discussions (4 days)
 - SQLite storage adapter with migrations (6 days)
 
 **Phase 3 (Weeks 8-9):** Polish & Release
+
 - Documentation sweep & release notes (3 days)
 - Performance profiling & optimization (4 days)
 - Security audit & dependency review (3 days)
 - Final integration tests & release execution (3 days)
 
 **Quick Wins (Parallel):**
+
 - Centralize selectors (1 day)
 - Cache statistics & limits (1 day)
 - Adaptive rate limiting (1 day)
 
 **Key Changes from Original Plan:**
+
 - ✓ Web UI deferred to post-v1.0.0 (saves ~3 weeks)
 - ✓ Package names corrected (browser-automation vs browser)
 - ✓ Test strategy refined (fast/slow split)
@@ -1211,6 +1310,7 @@ This comprehensive plan takes Lesca from v0.1.0 (MVP) to v1.0.0 (Production Stab
 - ✓ Risk mitigation added (selector monitoring, flaky tests)
 
 **Outcome:** A production-ready, extensible, well-tested LeetCode scraper with:
+
 - 90%+ test coverage
 - Plugin system for extensibility
 - Advanced features (quality scoring, SQLite storage)

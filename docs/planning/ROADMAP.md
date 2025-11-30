@@ -54,6 +54,7 @@
 ## Priority Roadmap
 
 ## 🎯 Phase 1: Stability & Testing (PRIORITY)
+
 **Timeline**: 1-2 weeks
 **Goal**: Make existing functionality reliable and well-tested
 
@@ -62,6 +63,7 @@
 **Why First**: Can't ship without tests. Need to catch regressions.
 
 **Tasks**:
+
 - [ ] **Unit Tests for Core Packages** (3-5 days)
   - `packages/api-client` - GraphQL queries, rate limiting
   - `packages/auth` - Cookie loading, validation
@@ -82,6 +84,7 @@
   - Set up coverage reporting
 
 **Files to Create**:
+
 ```
 packages/api-client/src/__tests__/graphql-client.test.ts
 packages/api-client/src/__tests__/rate-limiter.test.ts
@@ -99,6 +102,7 @@ tests/integration/e2e-scraping.test.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `npm test` runs successfully
 - [ ] Coverage report generated
 - [ ] All critical paths tested
@@ -109,6 +113,7 @@ tests/integration/e2e-scraping.test.ts
 **Current State**: PlaywrightDriver exists but incomplete
 
 **Tasks**:
+
 - [ ] Implement missing BrowserDriver methods
   - `getBrowser()` - Return browser instance
   - `getHtml(selector)` - Get element HTML
@@ -123,12 +128,14 @@ tests/integration/e2e-scraping.test.ts
 - [ ] Test with actual LeetCode pages
 
 **Files to Modify**:
+
 ```
 packages/browser-automation/src/playwright-driver.ts
 packages/browser-automation/src/__tests__/playwright-driver.test.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All BrowserDriver interface methods implemented
 - [ ] Can scrape premium content (with auth)
 - [ ] Screenshot capture working
@@ -137,6 +144,7 @@ packages/browser-automation/src/__tests__/playwright-driver.test.ts
 ### 1.3 Error Handling & Logging (1-2 days)
 
 **Tasks**:
+
 - [ ] Audit all error throwing for LescaError usage
 - [ ] Add error codes to all error scenarios
 - [ ] Implement structured logging
@@ -144,12 +152,14 @@ packages/browser-automation/src/__tests__/playwright-driver.test.ts
 - [ ] Create error recovery strategies
 
 **Files to Modify**:
+
 ```
 shared/utils/src/logger.ts
 shared/types/src/index.ts (error types)
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All errors use LescaError with codes
 - [ ] Log levels configurable (debug/info/warn/error)
 - [ ] Errors include context for debugging
@@ -158,6 +168,7 @@ shared/types/src/index.ts (error types)
 ---
 
 ## 🎯 Phase 2: Configuration & Flexibility (RECOMMENDED)
+
 **Timeline**: 1 week
 **Goal**: Make the tool configurable and user-friendly
 
@@ -166,6 +177,7 @@ shared/types/src/index.ts (error types)
 **Current State**: Values hardcoded throughout
 
 **Tasks**:
+
 - [ ] Create configuration schema with Zod
 - [ ] Support multiple config sources:
   - Config file (`lesca.config.ts` or `.lescarc`)
@@ -176,6 +188,7 @@ shared/types/src/index.ts (error types)
 - [ ] Config validation
 
 **Files to Create**:
+
 ```
 shared/config/src/config.ts
 shared/config/src/schema.ts
@@ -184,6 +197,7 @@ shared/config/src/__tests__/config.test.ts
 ```
 
 **Configuration Structure**:
+
 ```typescript
 {
   auth: {
@@ -214,6 +228,7 @@ shared/config/src/__tests__/config.test.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Config loads from file
 - [ ] CLI flags override config
 - [ ] Schema validation works
@@ -222,6 +237,7 @@ shared/config/src/__tests__/config.test.ts
 ### 2.2 Improved CLI (2-3 days)
 
 **Tasks**:
+
 - [ ] Add more commands:
   - `lesca init` - Create config file
   - `lesca auth` - Authenticate interactively
@@ -234,6 +250,7 @@ shared/config/src/__tests__/config.test.ts
 - [ ] Progress indicators for all operations
 
 **Files to Modify**:
+
 ```
 packages/cli/src/index.ts
 packages/cli/src/commands/init.ts (new)
@@ -242,6 +259,7 @@ packages/cli/src/commands/list.ts (new)
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `lesca --help` shows clear documentation
 - [ ] All commands have examples
 - [ ] Interactive prompts for missing data
@@ -250,6 +268,7 @@ packages/cli/src/commands/list.ts (new)
 ### 2.3 User Documentation (2-3 days)
 
 **Tasks**:
+
 - [ ] Create user guide (docs/USER_GUIDE.md)
 - [ ] Write installation instructions
 - [ ] Add usage examples
@@ -258,6 +277,7 @@ packages/cli/src/commands/list.ts (new)
 - [ ] Add screenshots/GIFs
 
 **Files to Create**:
+
 ```
 docs/USER_GUIDE.md
 docs/INSTALLATION.md
@@ -270,6 +290,7 @@ examples/custom-converter.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] New users can install and run without help
 - [ ] All features documented with examples
 - [ ] Common issues have solutions
@@ -278,12 +299,14 @@ examples/custom-converter.ts
 ---
 
 ## 🎯 Phase 3: Advanced Features (OPTIONAL)
+
 **Timeline**: 2-3 weeks
 **Goal**: Add nice-to-have features
 
 ### 3.1 Plugin System (5-7 days)
 
 **Tasks**:
+
 - [ ] Design plugin API
 - [ ] Plugin discovery and loading
 - [ ] Plugin hooks:
@@ -294,6 +317,7 @@ examples/custom-converter.ts
 - [ ] Example plugins
 
 **Files to Create**:
+
 ```
 packages/plugins/src/plugin-manager.ts
 packages/plugins/src/types.ts
@@ -305,12 +329,14 @@ docs/PLUGIN_DEVELOPMENT.md
 ### 3.2 Additional Storage Backends (3-4 days)
 
 **Tasks**:
+
 - [ ] SQLite storage adapter
 - [ ] S3/Cloud storage adapter
 - [ ] Notion API adapter
 - [ ] Database schema design
 
 **Files to Create**:
+
 ```
 packages/storage/src/sqlite-storage.ts
 packages/storage/src/s3-storage.ts
@@ -320,6 +346,7 @@ packages/storage/src/notion-storage.ts
 ### 3.3 Advanced Scraping Features (4-5 days)
 
 **Tasks**:
+
 - [ ] Resume interrupted batch scrapes
 - [ ] Incremental updates (only scrape changed problems)
 - [ ] Parallel scraping with worker threads
@@ -330,12 +357,14 @@ packages/storage/src/notion-storage.ts
 ---
 
 ## 🎯 Phase 4: Production Ready (RECOMMENDED)
+
 **Timeline**: 1-2 weeks
 **Goal**: Ship it!
 
 ### 4.1 CI/CD Setup (2-3 days)
 
 **Tasks**:
+
 - [ ] GitHub Actions workflow
   - Run tests on PR
   - Type checking
@@ -346,6 +375,7 @@ packages/storage/src/notion-storage.ts
 - [ ] Version bumping
 
 **Files to Create**:
+
 ```
 .github/workflows/test.yml
 .github/workflows/release.yml
@@ -356,6 +386,7 @@ CHANGELOG.md
 ### 4.2 Package Distribution (2-3 days)
 
 **Tasks**:
+
 - [ ] Configure for npm publishing
 - [ ] Create standalone binary (pkg/nexe)
 - [ ] Docker image
@@ -363,6 +394,7 @@ CHANGELOG.md
 - [ ] Update package.json metadata
 
 **Files to Create**:
+
 ```
 Dockerfile
 .dockerignore
@@ -373,6 +405,7 @@ homebrew/lesca.rb
 ### 4.3 Performance Optimization (2-3 days)
 
 **Tasks**:
+
 - [ ] Profile hot paths
 - [ ] Optimize regex in HTML converter
 - [ ] Cache selector results
@@ -383,6 +416,7 @@ homebrew/lesca.rb
 ### 4.4 Security Audit (1-2 days)
 
 **Tasks**:
+
 - [ ] Input validation everywhere
 - [ ] SQL injection prevention (if SQLite added)
 - [ ] XSS prevention in HTML processing
@@ -397,21 +431,25 @@ homebrew/lesca.rb
 These can be done in parallel with other work:
 
 ### Quick Win 1: Better Selector Management (1 day)
+
 - [ ] Extract selectors to JSON config
 - [ ] Version selectors for LeetCode UI changes
 - [ ] Add selector fallbacks
 
 ### Quick Win 2: Better Caching (1 day)
+
 - [ ] Add cache invalidation
 - [ ] Cache size limits
 - [ ] Cache statistics
 
 ### Quick Win 3: Metrics/Analytics (1 day)
+
 - [ ] Track scraping stats
 - [ ] Export metrics
 - [ ] Performance monitoring
 
 ### Quick Win 4: Rate Limit Improvements (1 day)
+
 - [ ] Adaptive rate limiting
 - [ ] Respect Retry-After headers
 - [ ] Exponential backoff
@@ -471,6 +509,7 @@ These can be done in parallel with other work:
 ## 🎓 Success Criteria
 
 **Minimum Viable Product (MVP)**:
+
 - [ ] 70%+ test coverage
 - [ ] All BrowserDriver methods implemented
 - [ ] Configuration system working
@@ -479,6 +518,7 @@ These can be done in parallel with other work:
 - [ ] Can scrape all problem types reliably
 
 **Production Ready**:
+
 - [ ] All of MVP +
 - [ ] Published to npm
 - [ ] Docker image available
@@ -487,6 +527,7 @@ These can be done in parallel with other work:
 - [ ] 5+ example use cases documented
 
 **Feature Complete**:
+
 - [ ] All of Production Ready +
 - [ ] Plugin system functional
 - [ ] Multiple storage backends

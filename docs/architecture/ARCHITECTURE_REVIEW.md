@@ -740,5 +740,3 @@ Flexible, but lets target 2 weeks
 3. **Iterate fast**: Ship → Learn → Improve
 4. **Add complexity gradually**: Don't build everything at once
 5. **Stay disciplined**: Resist scope creep
-
-
