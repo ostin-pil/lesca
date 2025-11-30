@@ -1,7 +1,6 @@
+import { SessionManager } from '@lesca/browser-automation'
+import { logger } from '@lesca/shared/utils'
 import { Command } from 'commander'
-
-import { SessionManager } from '@/browser-automation/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 /**
  * Session management commands

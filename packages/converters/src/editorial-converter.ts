@@ -1,11 +1,5 @@
 import { ParsingError } from '@lesca/error'
-
-import type {
-  Converter,
-  ConverterOptions,
-  EditorialContent,
-} from '@/shared/types/src/index'
-
+import type { Converter, ConverterOptions, EditorialContent } from '@lesca/shared/types'
 
 import { HtmlToMarkdownConverter } from './html-to-markdown'
 
@@ -27,12 +21,7 @@ export class EditorialConverter implements Converter {
    * Check if this converter can handle the input
    */
   canConvert(input: unknown): boolean {
-    return (
-      typeof input === 'object' &&
-      input !== null &&
-      'titleSlug' in input &&
-      'content' in input
-    )
+    return typeof input === 'object' && input !== null && 'titleSlug' in input && 'content' in input
   }
 
   /**

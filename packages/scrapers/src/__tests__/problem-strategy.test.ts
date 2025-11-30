@@ -10,7 +10,7 @@ import type {
 import { GraphQLClient } from '@lesca/api-client'
 import { ScrapingError } from '@lesca/error'
 
-vi.mock('@/browser-automation/src/index', () => ({
+vi.mock('@lesca/browser-automation', () => ({
   SelectorManager: vi.fn().mockImplementation(() => ({
     getProblemSelectors: vi.fn().mockReturnValue({
       title: ['title-selector'],

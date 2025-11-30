@@ -1,14 +1,13 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 
+import { getDefaultPaths, ConfigManager } from '@lesca/shared/config'
+import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import inquirer from 'inquirer'
 import type { DistinctQuestion } from 'inquirer'
 import ora from 'ora'
-
-import { getDefaultPaths, ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import { handleCliError } from '../utils'
 

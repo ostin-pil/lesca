@@ -1,6 +1,5 @@
+import { logger } from '@lesca/shared/utils'
 import type { Page } from 'playwright'
-
-import { logger } from '@/shared/utils/src/index'
 
 export interface PerformanceMetrics {
   /** Page load time (ms) */
@@ -61,7 +60,9 @@ export class PerformanceMonitor {
 
     try {
       const timing = await this.page.evaluate(() => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+        const navigation = performance.getEntriesByType(
+          'navigation'
+        )[0] as PerformanceNavigationTiming
 
         return {
           loadTime: navigation?.loadEventEnd - navigation?.startTime,
@@ -92,7 +93,6 @@ export class PerformanceMonitor {
       } catch {
         // Ignore if memory API not available
       }
-
     } catch (error) {
       logger.warn('Failed to collect final performance metrics', { error })
     }
@@ -107,7 +107,7 @@ export class PerformanceMonitor {
     return { ...this.metrics }
   }
 
-   private resetMetrics(): void {
+  private resetMetrics(): void {
     this.metrics = {
       requestCount: 0,
       bytesTransferred: 0,

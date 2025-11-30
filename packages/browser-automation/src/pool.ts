@@ -1,7 +1,6 @@
 import { BrowserError } from '@lesca/error'
+import { logger } from '@lesca/shared/utils'
 import { chromium, type Browser, type LaunchOptions } from 'playwright'
-
-import { logger } from '@/shared/utils/src/index'
 
 /**
  * Browser pool configuration

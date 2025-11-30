@@ -1,7 +1,6 @@
+import { SelectorManager } from '@lesca/browser-automation'
 import { BrowserError, LescaError } from '@lesca/error'
-
-import { SelectorManager } from '@/browser-automation/src/index'
-import { DEFAULT_BROWSER_TIMEOUT } from '@/shared/config/src/constants'
+import { DEFAULT_BROWSER_TIMEOUT } from '@lesca/shared/config'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -11,7 +10,7 @@ import type {
   EditorialScrapeRequest,
   EditorialContent,
   CodeSnippet,
-} from '@/shared/types/src/index'
+} from '@lesca/shared/types'
 
 /**
  * Editorial Scraper Strategy

@@ -1,12 +1,5 @@
 import { ParsingError } from '@lesca/error'
-
-import type {
-  Converter,
-  ConverterOptions,
-  DiscussionList,
-  Discussion,
-} from '@/shared/types/src/index'
-
+import type { Converter, ConverterOptions, DiscussionList, Discussion } from '@lesca/shared/types'
 
 import { HtmlToMarkdownConverter } from './html-to-markdown'
 

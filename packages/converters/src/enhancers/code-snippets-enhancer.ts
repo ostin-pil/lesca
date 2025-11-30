@@ -1,4 +1,4 @@
-import type { Problem, RawData, CodeSnippet } from '@/shared/types/src/index'
+import type { Problem, RawData, CodeSnippet } from '@lesca/shared/types'
 
 import type { ContentEnhancer, EnhancementOptions } from './content-enhancer'
 
@@ -31,14 +31,20 @@ export class CodeSnippetsEnhancer implements ContentEnhancer {
       return markdown
     }
 
-        const languagePriority =
-      options?.languagePriority || ['python3', 'java', 'cpp', 'javascript', 'typescript', 'c']
+    const languagePriority = options?.languagePriority || [
+      'python3',
+      'java',
+      'cpp',
+      'javascript',
+      'typescript',
+      'c',
+    ]
     const languageOrder = new Map<string, number>()
     languagePriority.forEach((lang, index) => {
       languageOrder.set(lang, index)
     })
 
-        const sortedSnippets = [...problem.codeSnippets].sort((a: CodeSnippet, b: CodeSnippet) => {
+    const sortedSnippets = [...problem.codeSnippets].sort((a: CodeSnippet, b: CodeSnippet) => {
       const aOrder = languageOrder.get(a.langSlug) ?? 999
       const bOrder = languageOrder.get(b.langSlug) ?? 999
       if (aOrder !== bOrder) {
@@ -63,4 +69,3 @@ export class CodeSnippetsEnhancer implements ContentEnhancer {
     }
   }
 }
-

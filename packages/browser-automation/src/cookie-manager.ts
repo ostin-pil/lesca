@@ -2,9 +2,8 @@ import { readFile, writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
 import { BrowserError } from '@lesca/error'
+import { logger } from '@lesca/shared/utils'
 import type { Cookie } from 'playwright'
-
-import { logger } from '@/shared/utils/src/index'
 
 import type { PlaywrightDriver } from './playwright-driver'
 
@@ -58,9 +57,7 @@ export class CookieManager {
       const context = page.context()
       const cookies = await context.cookies()
 
-      const csrfCookie = cookies.find(
-        (c) => c.name === 'csrftoken' || c.name === 'csrf_token'
-      )
+      const csrfCookie = cookies.find((c) => c.name === 'csrftoken' || c.name === 'csrf_token')
 
       const data: CookieFile = {
         cookies,
@@ -74,11 +71,10 @@ export class CookieManager {
 
       logger.info(`Saved ${cookies.length} cookies to ${path}`)
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to save cookies',
-        { cause: error as Error, context: { path } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to save cookies', {
+        cause: error as Error,
+        context: { path },
+      })
     }
   }
 
@@ -104,18 +100,15 @@ export class CookieManager {
       return data.cookies
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        throw new BrowserError(
-          'BROWSER_LAUNCH_FAILED',
-          `Cookie file not found: ${path}`,
-          { context: { path } }
-        )
+        throw new BrowserError('BROWSER_LAUNCH_FAILED', `Cookie file not found: ${path}`, {
+          context: { path },
+        })
       }
 
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to load cookies',
-        { cause: error as Error, context: { path } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to load cookies', {
+        cause: error as Error,
+        context: { path },
+      })
     }
   }
 
@@ -191,11 +184,9 @@ export class CookieManager {
       logger.info(`Refreshed ${cookies.length} cookies from browser`)
       return cookies
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to refresh cookies',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to refresh cookies', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -345,11 +336,9 @@ export class CookieManager {
       )
 
       if (validCookies.length === 0) {
-        throw new BrowserError(
-          'BROWSER_LAUNCH_FAILED',
-          'All cookies are expired or invalid',
-          { context: { path, validation } }
-        )
+        throw new BrowserError('BROWSER_LAUNCH_FAILED', 'All cookies are expired or invalid', {
+          context: { path, validation },
+        })
       }
 
       await this.injectCookies(driver, validCookies)
@@ -377,11 +366,9 @@ export class CookieManager {
       await context.addCookies(cookies)
       logger.info(`Injected ${cookies.length} cookies into browser`)
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to inject cookies',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to inject cookies', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -404,11 +391,9 @@ export class CookieManager {
       await context.clearCookies()
       logger.info('Cleared all cookies from browser')
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to clear cookies',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to clear cookies', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -434,10 +419,7 @@ export class CookieManager {
 
     const page = driver.getPage()
     if (!page) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Cannot set cookie: browser not initialized'
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Cannot set cookie: browser not initialized')
     }
 
     try {
@@ -445,11 +427,10 @@ export class CookieManager {
       await context.addCookies([cookie])
       logger.debug(`Set cookie: ${cookie.name}`)
     } catch (error) {
-      throw new BrowserError(
-        'BROWSER_LAUNCH_FAILED',
-        'Failed to set cookie',
-        { cause: error as Error, context: { cookieName: cookie.name } }
-      )
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to set cookie', {
+        cause: error as Error,
+        context: { cookieName: cookie.name },
+      })
     }
   }
 }

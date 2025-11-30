@@ -16,4 +16,4 @@ export type {
   Discussion,
   DiscussionList,
   CodeSnippet,
-} from '@/shared/types/src/index'
+} from '@lesca/shared/types'

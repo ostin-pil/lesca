@@ -1,14 +1,9 @@
 import { BrowserError } from '@lesca/error'
+import { logger } from '@lesca/shared/utils'
 import type { Cookie } from 'playwright'
 
-import { logger } from '@/shared/utils/src/index'
-
 import type { CookieManager } from './cookie-manager'
-import {
-  detectLoginState,
-  detectCaptcha,
-  type LoginState,
-} from './detectors'
+import { detectLoginState, detectCaptcha, type LoginState } from './detectors'
 import type { PlaywrightDriver } from './playwright-driver'
 
 /**
@@ -59,16 +54,8 @@ export class AuthHelper {
   /**
    * Perform interactive login to LeetCode
    */
-  async login(
-    credentials: LoginCredentials,
-    options: LoginOptions = {}
-  ): Promise<LoginResult> {
-    const {
-      timeout = 60000,
-      saveCookies = true,
-      cookiePath,
-      waitForSelector,
-    } = options
+  async login(credentials: LoginCredentials, options: LoginOptions = {}): Promise<LoginResult> {
+    const { timeout = 60000, saveCookies = true, cookiePath, waitForSelector } = options
 
     logger.info('Starting interactive login to LeetCode')
 
@@ -142,11 +129,9 @@ export class AuthHelper {
       }
     } catch (error) {
       logger.error('Login failed with error')
-      throw new BrowserError(
-        'BROWSER_NAVIGATION_FAILED',
-        'Interactive login failed',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_NAVIGATION_FAILED', 'Interactive login failed', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -228,11 +213,9 @@ export class AuthHelper {
       }
     } catch (error) {
       logger.error('Manual login wait failed')
-      throw new BrowserError(
-        'BROWSER_NAVIGATION_FAILED',
-        'Failed while waiting for manual login',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_NAVIGATION_FAILED', 'Failed while waiting for manual login', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -250,11 +233,9 @@ export class AuthHelper {
       logger.info('Logout successful')
     } catch (error) {
       logger.error('Logout failed')
-      throw new BrowserError(
-        'BROWSER_NAVIGATION_FAILED',
-        'Logout failed',
-        { cause: error as Error }
-      )
+      throw new BrowserError('BROWSER_NAVIGATION_FAILED', 'Logout failed', {
+        cause: error as Error,
+      })
     }
   }
 
@@ -299,10 +280,12 @@ export class AuthHelper {
       }
     }
 
-    return lastResult || {
-      success: false,
-      state: 'logged-out',
-      message: 'All login attempts failed',
-    }
+    return (
+      lastResult || {
+        success: false,
+        state: 'logged-out',
+        message: 'All login attempts failed',
+      }
+    )
   }
 }

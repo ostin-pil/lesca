@@ -1,11 +1,9 @@
+import { PlaywrightDriver, AuthHelper, CookieManager } from '@lesca/browser-automation'
+import { DEFAULT_LOGIN_TIMEOUT, ConfigManager, getDefaultPaths } from '@lesca/shared/config'
+import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
-
-import { PlaywrightDriver, AuthHelper, CookieManager } from '@/browser-automation/src/index'
-import { DEFAULT_LOGIN_TIMEOUT } from '@/shared/config/src/constants'
-import { ConfigManager, getDefaultPaths } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import { handleCliError } from '../utils'
 

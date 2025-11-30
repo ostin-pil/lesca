@@ -23,13 +23,13 @@ const mockConfigManagerInstance = {
 }
 
 // Mock dependencies
-vi.mock('@/shared/config/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => mockConfigManagerInstance),
   },
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -82,7 +82,7 @@ describe('Config Command', () => {
     mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
 
     // Get mocked modules
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
 
     // Import and add config command

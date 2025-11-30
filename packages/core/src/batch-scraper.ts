@@ -2,11 +2,9 @@ import { existsSync } from 'fs'
 import { writeFile, readFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 
-
 import { SystemError } from '@lesca/error'
-
-import type { ScrapeRequest, ScrapeResult } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
+import type { ScrapeRequest, ScrapeResult } from '@lesca/shared/types'
+import { logger } from '@lesca/shared/utils'
 
 import type { LeetCodeScraper } from './scraper'
 

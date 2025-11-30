@@ -2,7 +2,7 @@
  * Constants and configuration defaults for Lesca
  */
 
-import { logger } from '@/shared/utils/src/index'
+import { logger } from '@lesca/shared/utils'
 
 /**
  * Default timeout for browser page loads (30 seconds)

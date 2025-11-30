@@ -1,7 +1,6 @@
+import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
 import { SingleBar } from 'cli-progress'
-
-import { logger } from '@/shared/utils/src/index'
 
 export interface ProgressStats {
   total: number

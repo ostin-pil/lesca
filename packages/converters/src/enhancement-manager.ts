@@ -1,6 +1,6 @@
-import type { RawData } from '@/shared/types/src/index'
+import type { RawData } from '@lesca/shared/types'
 
-import type { CodeSnippetsOptions } from './enhancers/code-snippets-enhancer';
+import type { CodeSnippetsOptions } from './enhancers/code-snippets-enhancer'
 import { CodeSnippetsEnhancer } from './enhancers/code-snippets-enhancer'
 import { CompaniesEnhancer } from './enhancers/companies-enhancer'
 import type { ContentEnhancer, EnhancementOptions } from './enhancers/content-enhancer'
@@ -30,11 +30,7 @@ export class EnhancementManager {
   private enhancers: ContentEnhancer[]
 
   constructor(config?: EnhancementConfig) {
-    this.enhancers = [
-      new HintsEnhancer(),
-      new CodeSnippetsEnhancer(),
-      new CompaniesEnhancer(),
-    ]
+    this.enhancers = [new HintsEnhancer(), new CodeSnippetsEnhancer(), new CompaniesEnhancer()]
 
     // If enhancements are globally disabled, remove all enhancers
     if (config?.enabled === false) {
@@ -98,4 +94,3 @@ export class EnhancementManager {
     return { enabled: true }
   }
 }
-

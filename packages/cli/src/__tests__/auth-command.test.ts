@@ -11,13 +11,13 @@ const mockConfigManagerInstance = {
   getPaths: vi.fn().mockReturnValue({ config: 'lesca.config.yaml' }),
 }
 
-vi.mock('@/shared/config/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => mockConfigManagerInstance),
   },
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -32,7 +32,7 @@ const mockAuthInstance = {
   authenticate: vi.fn().mockResolvedValue(undefined),
 }
 
-vi.mock('@/auth/src/index', () => ({
+vi.mock('@lesca/auth', () => ({
   CookieFileAuth: vi.fn(() => mockAuthInstance),
 }))
 
@@ -100,7 +100,7 @@ describe('Auth Command', () => {
     }) as any)
 
     // Get mocked modules
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
     inquirer = (await import('inquirer')).default
     fs = await import('fs')

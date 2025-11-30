@@ -1,20 +1,20 @@
+import { CookieFileAuth } from '@lesca/auth'
+import { PlaywrightDriver } from '@lesca/browser-automation'
+import {
+  ProblemScraperStrategy,
+  ListScraperStrategy,
+  EditorialScraperStrategy,
+} from '@lesca/scrapers'
+import { ConfigManager } from '@lesca/shared/config'
+import type { EditorialScrapeRequest, AuthCredentials } from '@lesca/shared/types'
+import { logger, createCache } from '@lesca/shared/utils'
+import { FileSystemStorage } from '@lesca/storage'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
 
 import { GraphQLClient, RateLimiter } from '@/api-client/src/index'
-import { CookieFileAuth } from '@/auth/src/index'
-import { PlaywrightDriver } from '@/browser-automation/src/index'
 import { LeetCodeScraper } from '@/core/src/index'
-import {
-  ProblemScraperStrategy,
-  ListScraperStrategy,
-  EditorialScraperStrategy,
-} from '@/scrapers/src/index'
-import { FileSystemStorage } from '@/storage/src/index'
-import { ConfigManager } from '@/shared/config/src/index'
-import type { EditorialScrapeRequest, AuthCredentials } from '@/shared/types/src/index'
-import { logger, createCache } from '@/shared/utils/src/index'
 
 import { handleCliError } from '../utils'
 

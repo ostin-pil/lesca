@@ -20,7 +20,7 @@ vi.mock('../pool', () => {
   }
 })
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),

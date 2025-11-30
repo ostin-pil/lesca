@@ -1,8 +1,7 @@
 import { ParsingError } from '@lesca/error'
+import type { Converter, ConverterOptions } from '@lesca/shared/types'
+import { logger } from '@lesca/shared/utils'
 import TurndownService from 'turndown'
-
-import type { Converter, ConverterOptions } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 /**
  * Interface for HTML to Markdown conversion

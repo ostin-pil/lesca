@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { BrowserError } from '@lesca/error'
+import type { PoolStatistics, SessionPoolConfig } from '@lesca/shared/types'
+import { logger } from '@lesca/shared/utils'
 import type { Browser, LaunchOptions } from 'playwright'
-
-import type { PoolStatistics, SessionPoolConfig } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import type { BrowserPool } from './pool'
 import { BrowserPool as BrowserPoolImpl } from './pool'

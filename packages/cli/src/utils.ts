@@ -1,9 +1,8 @@
 import { existsSync } from 'fs'
 import { dirname } from 'path'
 
+import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
-
-import { logger } from '@/shared/utils/src/index'
 
 /**
  * Format error message with actionable guidance

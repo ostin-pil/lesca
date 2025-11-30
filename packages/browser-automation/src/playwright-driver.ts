@@ -3,10 +3,9 @@
 // which performs runtime checks. TypeScript cannot infer this relationship statically.
 
 import { BrowserError, BrowserTimeoutError } from '@lesca/error'
+import type { BrowserDriver, BrowserLaunchOptions, AuthCredentials } from '@lesca/shared/types'
+import { logger } from '@lesca/shared/utils'
 import { chromium, type Browser, type Page, type Cookie } from 'playwright'
-
-import type { BrowserDriver, BrowserLaunchOptions, AuthCredentials } from '@/shared/types/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import type { CookieManager } from './cookie-manager'
 import { RequestInterceptor } from './interceptor'

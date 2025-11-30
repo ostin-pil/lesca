@@ -32,13 +32,13 @@ const mockConfigManagerInstance = {
   }),
 }
 
-vi.mock('@/shared/config/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => mockConfigManagerInstance),
   },
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -59,7 +59,7 @@ const mockAuthInstance = {
   getCredentials: vi.fn().mockReturnValue({ cookie: 'test-cookie' }),
 }
 
-vi.mock('@/auth/src/index', () => ({
+vi.mock('@lesca/auth', () => ({
   CookieFileAuth: vi.fn(() => mockAuthInstance),
 }))
 
@@ -69,7 +69,7 @@ const mockDriverInstance = {
   getBrowser: vi.fn().mockReturnValue(undefined),
 }
 
-vi.mock('@/browser-automation/src/index', () => ({
+vi.mock('@lesca/browser-automation', () => ({
   PlaywrightDriver: vi.fn(() => mockDriverInstance),
   SessionManager: vi.fn(),
   SessionPoolManager: vi.fn(),
@@ -87,12 +87,12 @@ vi.mock('@/core/src/index', () => ({
   LeetCodeScraper: vi.fn(() => mockScraperInstance),
 }))
 
-vi.mock('@/scrapers/src/index', () => ({
+vi.mock('@lesca/scrapers', () => ({
   ProblemScraperStrategy: vi.fn(),
   ListScraperStrategy: vi.fn(),
 }))
 
-vi.mock('@/storage/src/index', () => ({
+vi.mock('@lesca/storage', () => ({
   FileSystemStorage: vi.fn(),
 }))
 
@@ -148,10 +148,10 @@ describe('Scrape Command', () => {
     mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
 
     // Get mocked modules
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
 
-    const auth = await import('@/auth/src/index')
+    const auth = await import('@lesca/auth')
     CookieFileAuth = auth.CookieFileAuth
 
     // Import and add scrape command
@@ -230,9 +230,9 @@ describe('Scrape Command', () => {
       '--no-cache',
     ])
 
-    const { FileSystemStorage } = await import('@/storage/src/index')
+    const { FileSystemStorage } = await import('@lesca/storage')
     const { LeetCodeScraper } = await import('@/core/src/index')
-    const { createCache } = await import('@/shared/utils/src/index')
+    const { createCache } = await import('@lesca/shared/utils')
 
     expect(FileSystemStorage).toHaveBeenCalledWith('./custom')
     expect(LeetCodeScraper).toHaveBeenCalledWith(

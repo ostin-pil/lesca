@@ -3,9 +3,8 @@ import { homedir } from 'os'
 import { resolve, join } from 'path'
 
 import { BrowserError } from '@lesca/error'
+import { logger } from '@lesca/shared/utils'
 import type { BrowserContext, Cookie } from 'playwright'
-
-import { logger } from '@/shared/utils/src/index'
 
 /**
  * Session storage data structure

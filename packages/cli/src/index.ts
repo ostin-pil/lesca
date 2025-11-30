@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
+import { ConfigManager } from '@lesca/shared/config'
+import { logger } from '@lesca/shared/utils'
 import { Command } from 'commander'
-
-import { ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import { authCommand } from './commands/auth'
 import { configCommand } from './commands/config'

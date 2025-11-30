@@ -9,16 +9,17 @@ const mockConfigManagerInstance = {
   }),
 }
 
-vi.mock('@/shared/config/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => mockConfigManagerInstance),
   },
   getDefaultPaths: vi.fn().mockReturnValue({
     cookieFile: 'default-cookies.json',
   }),
+  DEFAULT_LOGIN_TIMEOUT: 60000,
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -43,7 +44,7 @@ const mockAuthHelperInstance = {
   login: vi.fn().mockResolvedValue({ success: true }),
 }
 
-vi.mock('@/browser-automation/src/index', () => ({
+vi.mock('@lesca/browser-automation', () => ({
   PlaywrightDriver: vi.fn(() => mockDriverInstance),
   CookieManager: vi.fn(() => mockCookieManagerInstance),
   AuthHelper: vi.fn(() => mockAuthHelperInstance),
@@ -106,7 +107,7 @@ describe('Login Command', () => {
     }) as any)
 
     // Get mocked modules
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
 
     // Import and add login command

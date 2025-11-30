@@ -4,7 +4,11 @@ import type { EditorialScrapeRequest, EditorialContent, ScrapeRequest } from '@l
 import type { BrowserDriver } from '@lesca/shared/types'
 import { LescaError } from '@lesca/error'
 
-vi.mock('@/browser-automation/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
+  DEFAULT_BROWSER_TIMEOUT: 30000,
+}))
+
+vi.mock('@lesca/browser-automation', () => ({
   SelectorManager: vi.fn().mockImplementation(() => ({
     getEditorialSelectors: vi.fn().mockReturnValue({
       container: ['container-selector'],

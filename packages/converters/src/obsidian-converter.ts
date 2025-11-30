@@ -1,4 +1,4 @@
-import type { Problem, ParsedProblem, Difficulty } from '@/shared/types/src/index'
+import type { Problem, ParsedProblem, Difficulty } from '@lesca/shared/types'
 
 /**
  * Type definitions for JSON parsed data
@@ -172,7 +172,9 @@ export class ObsidianConverter {
     }
 
     try {
-      const stats: ProblemStats | null = problem.stats ? (JSON.parse(problem.stats) as ProblemStats) : null
+      const stats: ProblemStats | null = problem.stats
+        ? (JSON.parse(problem.stats) as ProblemStats)
+        : null
       if (stats) {
         metadata.push(`**Acceptance Rate:** ${String(stats.acRate)}`)
       }

@@ -1,4 +1,4 @@
-import type { RawData } from '@/shared/types/src/index'
+import type { RawData } from '@lesca/shared/types'
 
 /**
  * Options for content enhancement
@@ -33,4 +33,3 @@ export interface ContentEnhancer {
    */
   getDefaultOptions?(): EnhancementOptions
 }
-

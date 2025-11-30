@@ -1,4 +1,4 @@
-import type { Problem, RawData } from '@/shared/types/src/index'
+import type { Problem, RawData } from '@lesca/shared/types'
 
 import type { ContentEnhancer, EnhancementOptions } from './content-enhancer'
 
@@ -24,9 +24,7 @@ export class HintsEnhancer implements ContentEnhancer {
       return markdown
     }
 
-    const hints = problem.hints
-      .map((hint, index) => `${index + 1}. ${hint}`)
-      .join('\n')
+    const hints = problem.hints.map((hint, index) => `${index + 1}. ${hint}`).join('\n')
 
     return markdown + '\n\n## Hints\n\n' + hints + '\n'
   }
@@ -35,4 +33,3 @@ export class HintsEnhancer implements ContentEnhancer {
     return { enabled: true }
   }
 }
-

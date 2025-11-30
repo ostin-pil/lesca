@@ -1,4 +1,4 @@
-import { ConfigManager } from '@/shared/config/src/index'
+import { ConfigManager } from '@lesca/shared/config'
 import { Command } from 'commander'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import inquirer from 'inquirer'
@@ -58,7 +58,7 @@ vi.mock('@/api-client/src/index', () => ({
   RateLimiter: vi.fn(),
 }))
 
-vi.mock('@/scrapers/src/index', () => {
+vi.mock('@lesca/scrapers', () => {
   return {
     ListScraperStrategy: vi.fn().mockImplementation(() => ({
       execute: vi.fn().mockResolvedValue({
@@ -90,14 +90,14 @@ vi.mock('@/scrapers/src/index', () => {
   }
 })
 
-vi.mock('@/auth/src/index', () => ({
+vi.mock('@lesca/auth', () => ({
   CookieFileAuth: vi.fn().mockImplementation(() => ({
     authenticate: vi.fn().mockResolvedValue(undefined),
     getCredentials: vi.fn().mockReturnValue({ cookies: [], csrfToken: '' }),
   })),
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -167,7 +167,7 @@ describe('CLI Commands', () => {
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
 
     // Reset ListScraperStrategy mock to default happy path
-    const { ListScraperStrategy } = await import('@/scrapers/src/index')
+    const { ListScraperStrategy } = await import('@lesca/scrapers')
     vi.mocked(ListScraperStrategy).mockImplementation(
       () =>
         ({
@@ -255,7 +255,7 @@ describe('CLI Commands', () => {
 
       await program.parseAsync(['node', 'lesca', 'auth', '--cookies', 'cookies.json'])
 
-      const { CookieFileAuth } = await import('@/auth/src/index')
+      const { CookieFileAuth } = await import('@lesca/auth')
       expect(CookieFileAuth).toHaveBeenCalledWith(expect.stringContaining('cookies.json'))
     })
 
@@ -273,7 +273,7 @@ describe('CLI Commands', () => {
       await program.parseAsync(['node', 'lesca', 'auth'])
 
       expect(inquirer.prompt).toHaveBeenCalled()
-      const { CookieFileAuth } = await import('@/auth/src/index')
+      const { CookieFileAuth } = await import('@lesca/auth')
       expect(CookieFileAuth).toHaveBeenCalledWith(
         expect.stringContaining('interactive-cookies.json')
       )
@@ -285,7 +285,7 @@ describe('CLI Commands', () => {
       program.addCommand(listCommand)
       await program.parseAsync(['node', 'lesca', 'list', '--no-auth'])
 
-      const logger = (await import('@/shared/utils/src/index')).logger
+      const logger = (await import('@lesca/shared/utils')).logger
       expect(logger.log).toHaveBeenCalled()
     })
 
@@ -310,7 +310,7 @@ describe('CLI Commands', () => {
       program.addCommand(searchCommand)
       await program.parseAsync(['node', 'lesca', 'search', 'two sum', '--no-auth'])
 
-      const logger = (await import('@/shared/utils/src/index')).logger
+      const logger = (await import('@lesca/shared/utils')).logger
       expect(logger.log).toHaveBeenCalled()
     })
 
@@ -318,7 +318,7 @@ describe('CLI Commands', () => {
       program.addCommand(searchCommand)
 
       // Mock empty result
-      const { ListScraperStrategy } = await import('@/scrapers/src/index')
+      const { ListScraperStrategy } = await import('@lesca/scrapers')
       vi.mocked(ListScraperStrategy).mockImplementation(
         () =>
           ({
@@ -331,7 +331,7 @@ describe('CLI Commands', () => {
 
       await program.parseAsync(['node', 'lesca', 'search', 'nonexistent', '--no-auth'])
 
-      const logger = (await import('@/shared/utils/src/index')).logger
+      const logger = (await import('@lesca/shared/utils')).logger
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('No problems found'))
     })
   })

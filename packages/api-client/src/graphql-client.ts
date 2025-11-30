@@ -2,15 +2,9 @@ import { createHash } from 'crypto'
 
 import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
 import { getDefaultConfig } from '@lesca/shared/config'
+import type { Problem, ProblemList, ProblemListFilters, AuthCredentials } from '@lesca/shared/types'
 import { calculateQuality } from '@lesca/shared/utils'
-
-import type {
-  Problem,
-  ProblemList,
-  ProblemListFilters,
-  AuthCredentials,
-} from '@/shared/types/src/index'
-import type { TieredCache } from '@/shared/utils/src/index'
+import type { TieredCache } from '@lesca/shared/utils'
 
 interface GraphQLResponse<T> {
   data?: T

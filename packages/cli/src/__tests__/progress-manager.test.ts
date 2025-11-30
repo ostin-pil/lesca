@@ -14,7 +14,7 @@ vi.mock('cli-progress', () => ({
 }))
 
 // Mock logger
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
   },

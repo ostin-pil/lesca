@@ -1,4 +1,4 @@
-import { logger } from '@/shared/utils/src/index'
+import { logger } from '@lesca/shared/utils'
 
 import type { PlaywrightDriver } from './playwright-driver'
 
@@ -144,9 +144,7 @@ export async function detectRateLimit(driver: PlaywrightDriver): Promise<boolean
         '429',
       ]
 
-      return rateLimitPhrases.some((phrase) =>
-        text.toLowerCase().includes(phrase.toLowerCase())
-      )
+      return rateLimitPhrases.some((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
     })
 
     if (hasRateLimit) {
@@ -282,9 +280,7 @@ export async function detectErrorPage(driver: PlaywrightDriver): Promise<boolean
         'Oops',
       ]
 
-      return errorPhrases.some((phrase) =>
-        text.toLowerCase().includes(phrase.toLowerCase())
-      )
+      return errorPhrases.some((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
     })
 
     if (isErrorPage) {

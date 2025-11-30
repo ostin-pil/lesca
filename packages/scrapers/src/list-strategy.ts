@@ -1,12 +1,11 @@
+import type { GraphQLClient } from '@lesca/api-client'
 import { ScrapingError, GraphQLError } from '@lesca/error'
-
-import type { GraphQLClient } from '@/api-client/src/graphql-client'
 import type {
   ScraperStrategy,
   ScrapeRequest,
   ListScrapeRequest,
   RawData,
-} from '@/shared/types/src/index'
+} from '@lesca/shared/types'
 
 /**
  * List scraper strategy

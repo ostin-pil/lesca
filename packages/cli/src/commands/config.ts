@@ -1,11 +1,10 @@
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 
+import { ConfigManager } from '@lesca/shared/config'
+import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
 import { Command } from 'commander'
-
-import { ConfigManager } from '@/shared/config/src/index'
-import { logger } from '@/shared/utils/src/index'
 
 import { handleCliError } from '../utils'
 

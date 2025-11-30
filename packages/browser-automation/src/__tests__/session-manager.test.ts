@@ -5,7 +5,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import type { BrowserContext, Cookie } from 'playwright'
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),

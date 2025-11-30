@@ -1,5 +1,3 @@
-import { LescaError } from '@lesca/error'
-
 import {
   HtmlToMarkdownConverter,
   ObsidianConverter,
@@ -7,7 +5,8 @@ import {
   DiscussionConverter,
   EnhancementManager,
   type EnhancementConfig,
-} from '@/converters/src/index'
+} from '@lesca/converters'
+import { LescaError } from '@lesca/error'
 import type {
   ScrapeRequest,
   ScrapeResult,
@@ -17,7 +16,7 @@ import type {
   StorageAdapter,
   DiscussionList,
   EditorialContent,
-} from '@/shared/types/src/index'
+} from '@lesca/shared/types'
 
 /**
  * Main LeetCode scraper facade

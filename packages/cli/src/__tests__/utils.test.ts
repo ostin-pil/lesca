@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { formatErrorMessage, handleCliError } from '../utils'
 
 // Mock logger
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     box: vi.fn(),
     error: vi.fn(),
@@ -32,7 +32,7 @@ describe('CLI Utils', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     // Get the mocked logger
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
     // Reset process.argv
     process.argv = ['node', 'lesca']

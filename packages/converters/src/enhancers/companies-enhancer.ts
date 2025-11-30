@@ -1,4 +1,4 @@
-import type { Problem, RawData } from '@/shared/types/src/index'
+import type { Problem, RawData } from '@lesca/shared/types'
 
 import type { ContentEnhancer, EnhancementOptions } from './content-enhancer'
 
@@ -49,7 +49,7 @@ export class CompaniesEnhancer implements ContentEnhancer {
       return markdown
     }
 
-        const formattedCompanies = companies
+    const formattedCompanies = companies
       .map((company) => {
         // Convert slug to readable name
         return company
@@ -68,4 +68,3 @@ export class CompaniesEnhancer implements ContentEnhancer {
     return { enabled: true }
   }
 }
-

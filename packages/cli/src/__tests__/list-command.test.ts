@@ -10,13 +10,13 @@ const mockConfigManagerInstance = {
   }),
 }
 
-vi.mock('@/shared/config/src/index', () => ({
+vi.mock('@lesca/shared/config', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => mockConfigManagerInstance),
   },
 }))
 
-vi.mock('@/shared/utils/src/index', () => ({
+vi.mock('@lesca/shared/utils', () => ({
   logger: {
     log: vi.fn(),
     error: vi.fn(),
@@ -38,7 +38,7 @@ const mockAuthInstance = {
   getCredentials: vi.fn().mockReturnValue({ cookie: 'test-cookie' }),
 }
 
-vi.mock('@/auth/src/index', () => ({
+vi.mock('@lesca/auth', () => ({
   CookieFileAuth: vi.fn(() => mockAuthInstance),
 }))
 
@@ -66,7 +66,7 @@ const mockListScraperInstance = {
   }),
 }
 
-vi.mock('@/scrapers/src/index', () => ({
+vi.mock('@lesca/scrapers', () => ({
   ListScraperStrategy: vi.fn(() => mockListScraperInstance),
 }))
 
@@ -129,7 +129,7 @@ describe('List Command', () => {
     }) as any)
 
     // Get mocked modules
-    const utils = await import('@/shared/utils/src/index')
+    const utils = await import('@lesca/shared/utils')
     logger = utils.logger
     const interactive = await import('../interactive-select')
     InteractiveSelector = interactive.InteractiveSelector
