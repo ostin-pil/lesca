@@ -10,6 +10,10 @@ import type {
 import { GraphQLClient } from '@lesca/api-client'
 import { ScrapingError } from '@lesca/error'
 
+vi.mock('@/browser-automation/src/index', () => ({
+  SelectorManager: vi.fn(),
+}))
+
 describe('ProblemScraperStrategy', () => {
   let strategy: ProblemScraperStrategy
   let mockGraphQLClient: GraphQLClient

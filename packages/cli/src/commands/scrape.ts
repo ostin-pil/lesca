@@ -122,7 +122,6 @@ ${chalk.bold('See also:')}
       // 4. Set up session management (if requested)
       let sessionManager: SessionManager | undefined
       let poolManager: SessionPoolManager | undefined
-      let pooledBrowser
 
       if (options.session) {
         sessionManager = new SessionManager()
@@ -146,14 +145,15 @@ ${chalk.bold('See also:')}
           )
 
           spinner.info(`Using session pool: ${options.session}`)
-          pooledBrowser = await poolManager.acquireBrowser(options.session)
         }
       }
 
-      // 5. Set up strategies
-      const browserDriver = pooledBrowser
-        ? new PlaywrightDriver(pooledBrowser, auth?.getCredentials())
-        : new PlaywrightDriver(undefined, auth?.getCredentials())
+      // 5. Set up strategies with pool injection
+      const browserDriver = new PlaywrightDriver(
+        auth?.getCredentials(),
+        poolManager,
+        options.session
+      )
 
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth?.getCredentials()),
@@ -163,7 +163,39 @@ ${chalk.bold('See also:')}
       // 6. Set up storage
       const storage = new FileSystemStorage(outputDir)
 
-      // 7. Restore session if exists
+      // 7. Launch browser (will acquire from pool if poolManager is provided)
+      const launchOptions: {
+        headless?: boolean
+        timeout?: number
+        viewport?: { width: number; height: number }
+        blockResources?: string[]
+        interception?: {
+          enabled?: boolean
+          blockResources?: string[]
+          captureResponses?: boolean
+          capturePattern?: string
+        }
+      } = {
+        headless: config.browser.headless,
+        timeout: config.browser.timeout,
+        viewport: config.browser.viewport,
+        blockResources: config.browser.blockedResources,
+      }
+
+      if (config.browser.interception.enabled) {
+        launchOptions.interception = {
+          enabled: config.browser.interception.enabled,
+          blockResources: config.browser.interception.blockResources,
+          captureResponses: config.browser.interception.captureResponses,
+        }
+        if (config.browser.interception.capturePattern) {
+          launchOptions.interception.capturePattern = config.browser.interception.capturePattern
+        }
+      }
+
+      await browserDriver.launch(launchOptions)
+
+      // 8. Restore session if exists
       if (sessionManager && options.session) {
         const context = browserDriver.getBrowser()?.contexts()[0]
         if (context) {
@@ -174,12 +206,12 @@ ${chalk.bold('See also:')}
         }
       }
 
-      // 8. Create scraper
+      // 9. Create scraper
       const scraper = new LeetCodeScraper(strategies, storage, {
         format: format,
       })
 
-      // 9. Scrape the problem
+      // 10. Scrape the problem
       spinner.start(`Scraping problem: ${chalk.cyan(problem)}`)
 
       const request: ProblemScrapeRequest = {
@@ -214,10 +246,8 @@ ${chalk.bold('See also:')}
         process.exit(1)
       }
 
-      // Clean up pooled browser
-      if (pooledBrowser && poolManager && options.session) {
-        await poolManager.releaseBrowser(pooledBrowser, options.session)
-      }
+      // Clean up: close browser (will release to pool if poolManager is provided)
+      await browserDriver.close()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)

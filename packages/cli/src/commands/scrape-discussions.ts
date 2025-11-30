@@ -81,7 +81,7 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
       }
 
       // 2. Set up browser driver
-      const browserDriver = new PlaywrightDriver(undefined, auth)
+      const browserDriver = new PlaywrightDriver(auth)
       spinner.start('Launching browser...')
 
       await browserDriver.launch({

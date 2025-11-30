@@ -9,6 +9,26 @@ const mockConfigManagerInstance = {
     auth: { method: 'cookie', cookiePath: 'cookies.json' },
     cache: { enabled: true },
     api: { rateLimit: { minDelay: 100, maxDelay: 200, jitter: 0.1 } },
+    browser: {
+      headless: true,
+      timeout: 30000,
+      viewport: { width: 1280, height: 720 },
+      blockedResources: [],
+      pool: {
+        enabled: false,
+        strategy: 'lazy',
+        maxSize: 3,
+        maxIdleTime: 300000,
+        acquireTimeout: 30000,
+        retryOnFailure: true,
+        maxRetries: 3,
+      },
+      interception: {
+        enabled: false,
+        blockResources: [],
+        captureResponses: false,
+      },
+    },
   }),
 }
 
@@ -43,8 +63,16 @@ vi.mock('@/auth/src/index', () => ({
   CookieFileAuth: vi.fn(() => mockAuthInstance),
 }))
 
+const mockDriverInstance = {
+  launch: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn().mockResolvedValue(undefined),
+  getBrowser: vi.fn().mockReturnValue(undefined),
+}
+
 vi.mock('@/browser-automation/src/index', () => ({
-  PlaywrightDriver: vi.fn(),
+  PlaywrightDriver: vi.fn(() => mockDriverInstance),
+  SessionManager: vi.fn(),
+  SessionPoolManager: vi.fn(),
 }))
 
 const mockScraperInstance = {
@@ -108,6 +136,9 @@ describe('Scrape Command', () => {
     mockAuthInstance.authenticate.mockClear()
     mockAuthInstance.getCredentials.mockClear()
     mockScraperInstance.scrape.mockClear()
+    mockDriverInstance.launch.mockClear()
+    mockDriverInstance.close.mockClear()
+    mockDriverInstance.getBrowser.mockClear()
 
     // Create fresh program
     program = new Command()

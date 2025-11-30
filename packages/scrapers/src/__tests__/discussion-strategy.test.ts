@@ -4,6 +4,10 @@ import type { DiscussionScrapeRequest, DiscussionList, ScrapeRequest } from '@le
 import type { BrowserDriver } from '@lesca/shared/types'
 import { LescaError } from '@lesca/shared/types'
 
+vi.mock('@/browser-automation/src/index', () => ({
+  SelectorManager: vi.fn(),
+}))
+
 describe('DiscussionScraperStrategy', () => {
   let strategy: DiscussionScraperStrategy
   let mockBrowserDriver: BrowserDriver
@@ -128,14 +132,9 @@ describe('DiscussionScraperStrategy', () => {
       }
 
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
-      mockBrowserDriver.extractAll = vi.fn().mockResolvedValue([
-        'Title 1',
-        'Title 2',
-        'Title 3',
-        'Title 4',
-        'Title 5',
-        'Title 6',
-      ])
+      mockBrowserDriver.extractAll = vi
+        .fn()
+        .mockResolvedValue(['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5', 'Title 6'])
 
       const result = await strategy.execute(request)
 

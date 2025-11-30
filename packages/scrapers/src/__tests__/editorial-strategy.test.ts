@@ -4,6 +4,10 @@ import type { EditorialScrapeRequest, EditorialContent, ScrapeRequest } from '@l
 import type { BrowserDriver } from '@lesca/shared/types'
 import { LescaError } from '@lesca/shared/types'
 
+vi.mock('@/browser-automation/src/index', () => ({
+  SelectorManager: vi.fn(),
+}))
+
 describe('EditorialScraperStrategy', () => {
   let strategy: EditorialScraperStrategy
   let mockBrowserDriver: BrowserDriver

@@ -11,6 +11,8 @@ import { logger } from '@/shared/utils/src/index'
 import type { CookieManager } from './cookie-manager'
 import { RequestInterceptor } from './interceptor'
 import { PerformanceMonitor, type PerformanceMetrics } from './performance'
+import type { BrowserPool } from './pool'
+import type { SessionPoolManager } from './session-pool-manager'
 
 /**
  * Playwright browser driver
@@ -20,18 +22,22 @@ export class PlaywrightDriver implements BrowserDriver {
   private browser?: Browser
   private page?: Page
   private isLaunched = false
-  private isPooledBrowser = false // Track if browser is from pool
+  private pool?: BrowserPool | SessionPoolManager
+  private sessionName?: string
   private cookieManager?: CookieManager
   private interceptor?: RequestInterceptor
   private performanceMonitor?: PerformanceMonitor
 
   constructor(
-    browser?: Browser, // Accept pre-initialized browser from pool
-    private auth?: AuthCredentials
+    private auth?: AuthCredentials,
+    pool?: BrowserPool | SessionPoolManager,
+    sessionName?: string
   ) {
-    if (browser) {
-      this.browser = browser
-      this.isPooledBrowser = true
+    if (pool !== undefined) {
+      this.pool = pool
+    }
+    if (sessionName !== undefined) {
+      this.sessionName = sessionName
     }
   }
 
@@ -53,14 +59,34 @@ export class PlaywrightDriver implements BrowserDriver {
     } = options
 
     try {
-      // If browser already provided (from pool), skip launch
-      if (!this.browser) {
+      // Acquire browser from pool if available
+      if (this.pool !== undefined) {
+        if ('acquireBrowser' in this.pool) {
+          // SessionPoolManager
+          if (this.sessionName !== undefined) {
+            this.browser = await this.pool.acquireBrowser(this.sessionName)
+            logger.debug('Acquired browser from SessionPoolManager', { session: this.sessionName })
+          } else {
+            throw new BrowserError(
+              'BROWSER_LAUNCH_FAILED',
+              'SessionPoolManager requires a session name'
+            )
+          }
+        } else if ('acquire' in this.pool) {
+          // BrowserPool
+          this.browser = await this.pool.acquire()
+          logger.debug('Acquired browser from BrowserPool')
+        }
+      } else if (!this.browser) {
+        // No pool, create new browser
         this.browser = await chromium.launch({
           headless,
           timeout,
         })
-      } else {
-        logger.debug('Using pooled browser')
+      }
+
+      if (!this.browser) {
+        throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to acquire or create browser')
       }
 
       this.page = await this.browser.newPage({
@@ -294,9 +320,23 @@ export class PlaywrightDriver implements BrowserDriver {
       delete this.page
     }
 
-    // Don't close pooled browsers - they're managed by the pool
-    if (this.browser && !this.isPooledBrowser) {
-      await this.browser.close()
+    // Release browser back to pool or close it
+    if (this.browser) {
+      if (this.pool) {
+        // Release to pool
+        if ('releaseBrowser' in this.pool && this.sessionName) {
+          // SessionPoolManager
+          await this.pool.releaseBrowser(this.browser, this.sessionName)
+          logger.debug('Released browser to SessionPoolManager', { session: this.sessionName })
+        } else if ('release' in this.pool) {
+          // BrowserPool
+          await this.pool.release(this.browser)
+          logger.debug('Released browser to BrowserPool')
+        }
+      } else {
+        // No pool, close browser directly
+        await this.browser.close()
+      }
       delete this.browser
     }
 

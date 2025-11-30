@@ -94,7 +94,7 @@ export const scrapeListCommand = new Command('scrape-list')
       const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
 
       // 4. Set up strategies
-      const browserDriver = new PlaywrightDriver(undefined, auth?.getCredentials())
+      const browserDriver = new PlaywrightDriver(auth?.getCredentials())
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth?.getCredentials()),
         new ListScraperStrategy(graphqlClient),

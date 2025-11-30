@@ -439,6 +439,135 @@ export class SessionManager {
   }
 
   /**
+   * Validate session before use
+   */
+  async validateSession(name: string): Promise<boolean> {
+    const session = await this.getSession(name)
+    if (!session) {
+      return false
+    }
+
+    // Check if expired
+    if (this.isExpired(session)) {
+      await this.deleteSession(name)
+      return false
+    }
+
+    // Check if cookies are valid
+    if (!Array.isArray(session.cookies) || session.cookies.length === 0) {
+      logger.warn(`Session "${name}" has no cookies`)
+      return false
+    }
+
+    // Check if session data is complete
+    if (!session.metadata) {
+      logger.warn(`Session "${name}" is missing metadata`)
+      return false
+    }
+
+    logger.debug(`Session "${name}" is valid`)
+    return true
+  }
+
+  /**
+   * Merge multiple sessions into a target session
+   */
+  async mergeSessions(
+    sourceNames: string[],
+    targetName: string,
+    strategy: 'keep-existing' | 'prefer-fresh' | 'merge-all' = 'merge-all'
+  ): Promise<SessionData> {
+    await this.ensureSessionsDir()
+
+    // Load all source sessions
+    const sourceSessions: SessionData[] = []
+    for (const sourceName of sourceNames) {
+      const session = await this.getSession(sourceName)
+      if (session) {
+        sourceSessions.push(session)
+      } else {
+        logger.warn(`Source session not found: ${sourceName}`)
+      }
+    }
+
+    if (sourceSessions.length === 0) {
+      throw new BrowserError(
+        'BROWSER_SELECTOR_NOT_FOUND',
+        'No valid source sessions found to merge'
+      )
+    }
+
+    // Load or create target session
+    const targetSession = await this.getSession(targetName)
+    const cookieMap = new Map<string, Cookie>()
+    const localStorageMap = new Map<string, string>()
+    const sessionStorageMap = new Map<string, string>()
+
+    // Apply merge strategy
+    if (targetSession && strategy === 'keep-existing') {
+      // Keep existing target data, only add new keys from sources
+      targetSession.cookies.forEach((cookie) => cookieMap.set(cookie.name, cookie))
+      Object.entries(targetSession.localStorage).forEach(([k, v]) => localStorageMap.set(k, v))
+      Object.entries(targetSession.sessionStorage).forEach(([k, v]) => sessionStorageMap.set(k, v))
+
+      sourceSessions.forEach((session) => {
+        session.cookies.forEach((cookie) => {
+          if (!cookieMap.has(cookie.name)) {
+            cookieMap.set(cookie.name, cookie)
+          }
+        })
+        Object.entries(session.localStorage).forEach(([k, v]) => {
+          if (!localStorageMap.has(k)) {
+            localStorageMap.set(k, v)
+          }
+        })
+        Object.entries(session.sessionStorage).forEach(([k, v]) => {
+          if (!sessionStorageMap.has(k)) {
+            sessionStorageMap.set(k, v)
+          }
+        })
+      })
+    } else if (strategy === 'prefer-fresh') {
+      // Sort by lastUsed, prefer newer data
+      const allSessions = targetSession ? [targetSession, ...sourceSessions] : sourceSessions
+      const sortedSessions = allSessions.sort((a, b) => b.metadata.lastUsed - a.metadata.lastUsed)
+
+      sortedSessions.reverse().forEach((session) => {
+        session.cookies.forEach((cookie) => cookieMap.set(cookie.name, cookie))
+        Object.entries(session.localStorage).forEach(([k, v]) => localStorageMap.set(k, v))
+        Object.entries(session.sessionStorage).forEach(([k, v]) => sessionStorageMap.set(k, v))
+      })
+    } else {
+      // merge-all: combine all data, last one wins on conflicts
+      const allSessions = targetSession ? [targetSession, ...sourceSessions] : sourceSessions
+
+      allSessions.forEach((session) => {
+        session.cookies.forEach((cookie) => cookieMap.set(cookie.name, cookie))
+        Object.entries(session.localStorage).forEach(([k, v]) => localStorageMap.set(k, v))
+        Object.entries(session.sessionStorage).forEach(([k, v]) => sessionStorageMap.set(k, v))
+      })
+    }
+
+    // Create merged session
+    const mergedSession: SessionData = {
+      name: targetName,
+      cookies: Array.from(cookieMap.values()),
+      localStorage: Object.fromEntries(localStorageMap),
+      sessionStorage: Object.fromEntries(sessionStorageMap),
+      metadata: {
+        created: targetSession?.metadata.created ?? Date.now(),
+        lastUsed: Date.now(),
+        description: `Merged from: ${sourceNames.join(', ')}`,
+      },
+    }
+
+    await this.saveSession(targetName, mergedSession)
+    logger.info(`Merged ${sourceSessions.length} sessions into "${targetName}" using ${strategy}`)
+
+    return mergedSession
+  }
+
+  /**
    * Clean up expired sessions
    */
   async cleanupExpiredSessions(): Promise<number> {
