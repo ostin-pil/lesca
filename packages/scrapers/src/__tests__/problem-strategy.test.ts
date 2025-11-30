@@ -11,7 +11,16 @@ import { GraphQLClient } from '@lesca/api-client'
 import { ScrapingError } from '@lesca/error'
 
 vi.mock('@/browser-automation/src/index', () => ({
-  SelectorManager: vi.fn(),
+  SelectorManager: vi.fn().mockImplementation(() => ({
+    getProblemSelectors: vi.fn().mockReturnValue({
+      title: ['title-selector'],
+      description: ['desc-selector'],
+      difficulty: ['diff-selector'],
+      tags: ['tag-selector'],
+    }),
+    getPrimary: vi.fn().mockImplementation((s) => s[0]),
+    getAll: vi.fn().mockImplementation((s) => s),
+  })),
 }))
 
 describe('ProblemScraperStrategy', () => {
@@ -113,7 +122,7 @@ describe('ProblemScraperStrategy', () => {
       expect(result.metadata.source).toBe('browser')
       expect(mockBrowserDriver.launch).toHaveBeenCalled()
       expect(mockBrowserDriver.navigate).toHaveBeenCalledWith(
-        'https://leetcode.com/problems/two-sum/'
+        'https://leetcode.com/problems/two-sum/description/'
       )
 
       const data = result.data as Problem

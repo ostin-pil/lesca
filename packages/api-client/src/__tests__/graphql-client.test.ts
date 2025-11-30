@@ -6,6 +6,14 @@ import { TieredCache } from '@lesca/shared/utils'
 import { resolve } from 'path'
 import { existsSync, rmSync, mkdirSync } from 'fs'
 
+vi.mock('@lesca/shared/utils', async () => {
+  const actual = await vi.importActual('@lesca/shared/utils')
+  return {
+    ...actual,
+    calculateQuality: vi.fn().mockReturnValue(100),
+  }
+})
+
 describe('RateLimiter', () => {
   describe('basic rate limiting', () => {
     it('should enforce minimum delay between requests', async () => {

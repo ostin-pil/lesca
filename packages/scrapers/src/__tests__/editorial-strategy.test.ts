@@ -2,10 +2,23 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { EditorialScraperStrategy } from '../editorial-strategy'
 import type { EditorialScrapeRequest, EditorialContent, ScrapeRequest } from '@lesca/shared/types'
 import type { BrowserDriver } from '@lesca/shared/types'
-import { LescaError } from '@lesca/shared/types'
+import { LescaError } from '@lesca/error'
 
 vi.mock('@/browser-automation/src/index', () => ({
-  SelectorManager: vi.fn(),
+  SelectorManager: vi.fn().mockImplementation(() => ({
+    getEditorialSelectors: vi.fn().mockReturnValue({
+      container: ['container-selector'],
+      premiumBanner: ['premium-selector'],
+      content: ['content-selector'],
+      approach: ['approach-selector'],
+      complexity: ['complexity-selector'],
+      code: ['code-selector'],
+    }),
+    getAll: vi.fn().mockImplementation((s) => (Array.isArray(s) ? s : [s])),
+    getCommonSelectors: vi.fn().mockReturnValue({
+      notFound: ['not-found-selector'],
+    }),
+  })),
 }))
 
 describe('EditorialScraperStrategy', () => {
@@ -176,7 +189,7 @@ describe('EditorialScraperStrategy', () => {
         titleSlug: 'two-sum',
       }
 
-      const originalError = new LescaError('Original error', 'TEST_ERROR')
+      const originalError = new LescaError('SYS_UNKNOWN_ERROR', 'Original error')
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
       mockBrowserDriver.navigate = vi.fn().mockRejectedValue(originalError)
 

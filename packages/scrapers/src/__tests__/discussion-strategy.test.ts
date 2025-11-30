@@ -2,10 +2,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { DiscussionScraperStrategy } from '../discussion-strategy'
 import type { DiscussionScrapeRequest, DiscussionList, ScrapeRequest } from '@lesca/shared/types'
 import type { BrowserDriver } from '@lesca/shared/types'
-import { LescaError } from '@lesca/shared/types'
+import { LescaError } from '@lesca/error'
 
 vi.mock('@/browser-automation/src/index', () => ({
-  SelectorManager: vi.fn(),
+  SelectorManager: vi.fn().mockImplementation(() => ({
+    getDiscussionSelectors: vi.fn().mockReturnValue({
+      list: ['list-selector'],
+      post: ['post-selector'],
+      title: ['title-selector'],
+      author: ['author-selector'],
+      votes: ['votes-selector'],
+      timestamp: ['timestamp-selector'],
+      content: ['content-selector'],
+      comments: ['comments-selector'],
+    }),
+    getAll: vi.fn().mockImplementation((s) => (Array.isArray(s) ? s : [s])),
+    getCommonSelectors: vi.fn().mockReturnValue({
+      notFound: ['not-found-selector'],
+    }),
+  })),
 }))
 
 describe('DiscussionScraperStrategy', () => {
@@ -176,7 +191,7 @@ describe('DiscussionScraperStrategy', () => {
         titleSlug: 'two-sum',
       }
 
-      const originalError = new LescaError('Original error', 'TEST_ERROR')
+      const originalError = new LescaError('SYS_UNKNOWN_ERROR', 'Original error')
       mockBrowserDriver.getBrowser = vi.fn().mockReturnValue({ isConnected: true })
       mockBrowserDriver.navigate = vi.fn().mockRejectedValue(originalError)
 

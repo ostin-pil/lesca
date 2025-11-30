@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { CookieFileAuth, parseCookieString, exportCookies } from '../cookie-auth'
-import { AuthError } from '@lesca/shared/types'
+import { AuthError } from '@lesca/error'
 import type { Cookie, AuthCredentials } from '@lesca/shared/types'
 import { writeFile, readFile, rm, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
