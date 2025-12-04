@@ -13,9 +13,13 @@ import {
   loadEnvConfig,
   mergeConfigs,
   findConfigFile,
+  createConfig,
+  loadConfigWithCLI,
+  exportConfigToYaml,
+  exportConfigToJson,
 } from '../loader'
-import { getDefaultConfig, getDefaultPaths } from '../defaults'
-import { mkdtempSync, writeFileSync } from 'fs'
+import { getDefaultConfig, getDefaultPaths, getConfigSearchPaths } from '../defaults'
+import { mkdtempSync, writeFileSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
@@ -26,7 +30,7 @@ describe('Configuration System', () => {
     // Create temporary directory for test files
     tempDir = mkdtempSync(join(tmpdir(), 'lesca-config-test-'))
     // Reset environment variables
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (key.startsWith('LESCA_')) {
         delete process.env[key]
       }
@@ -232,9 +236,11 @@ scraping:
       manager.on('config-changed', listener)
 
       manager.update({ output: { format: 'obsidian' as const } } as any)
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        output: expect.objectContaining({ format: 'obsidian' })
-      }))
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          output: expect.objectContaining({ format: 'obsidian' }),
+        })
+      )
     })
 
     it('should save configuration to file', async () => {
@@ -278,7 +284,7 @@ scraping:
 
     it('should handle CLI overrides', async () => {
       const manager = await ConfigManager.initialize({
-        cliOptions: { output: { format: 'json' as const } } as unknown as PartialConfig
+        cliOptions: { output: { format: 'json' as const } } as unknown as PartialConfig,
       })
 
       const config = manager.getEffectiveConfig()
@@ -308,6 +314,203 @@ scraping:
       }
 
       expect(() => validateConfig(invalid as any)).toThrow()
+    })
+
+    it('should throw error for unsupported file format', () => {
+      const configPath = join(tempDir, 'config.txt')
+      writeFileSync(configPath, 'some content')
+
+      expect(() => loadConfigFile(configPath)).toThrow(/Unsupported/)
+    })
+  })
+
+  describe('ConfigManager Additional Methods', () => {
+    it('should reload configuration from disk', async () => {
+      const configPath = join(tempDir, 'reload-test.json')
+      writeFileSync(configPath, JSON.stringify({ output: { format: 'markdown' } }))
+
+      const manager = await ConfigManager.initialize({ configPath })
+      expect(manager.getConfig().output.format).toBe('markdown')
+
+      // Modify file
+      writeFileSync(configPath, JSON.stringify({ output: { format: 'obsidian' } }))
+
+      manager.reload()
+      expect(manager.getConfig().output.format).toBe('obsidian')
+    })
+
+    it('should emit config-reloaded event', async () => {
+      const configPath = join(tempDir, 'reload-event.json')
+      writeFileSync(configPath, JSON.stringify({ output: { format: 'markdown' } }))
+
+      const manager = await ConfigManager.initialize({ configPath })
+      const listener = vi.fn()
+      manager.on('config-reloaded', listener)
+
+      manager.reload()
+      expect(listener).toHaveBeenCalled()
+    })
+
+    it('should create default configuration file', async () => {
+      const manager = await ConfigManager.initialize()
+      const savePath = join(tempDir, 'default-config.yaml')
+
+      const result = manager.createDefaultConfigFile(savePath)
+      expect(result).toBe(savePath)
+
+      const loaded = loadConfigFile(savePath)
+      expect(loaded.auth?.method).toBe('cookie')
+    })
+
+    it('should get all paths', async () => {
+      const manager = await ConfigManager.initialize()
+      const paths = manager.getPaths()
+
+      expect(paths.lescaDir).toContain('.lesca')
+      expect(paths.configFile).toContain('config.yaml')
+      expect(paths.cookieFile).toContain('cookies.json')
+      expect(paths.cacheDir).toContain('cache')
+    })
+
+    it('should validate partial configuration', async () => {
+      const manager = await ConfigManager.initialize()
+
+      expect(manager.validate({ output: { format: 'obsidian' } })).toBe(true)
+      expect(manager.validate({ auth: { method: 'invalid' } })).toBe(false)
+    })
+
+    it('should set CLI overrides and emit event', async () => {
+      const manager = await ConfigManager.initialize()
+      const listener = vi.fn()
+      manager.on('cli-overrides-changed', listener)
+
+      manager.setCLIOverrides({ output: { format: 'json' as const } } as any)
+      expect(listener).toHaveBeenCalled()
+    })
+
+    it('should save configuration in JSON format', async () => {
+      const manager = await ConfigManager.initialize()
+      const savePath = join(tempDir, 'saved-config.json')
+
+      manager.save(savePath, 'json')
+      const content = readFileSync(savePath, 'utf-8')
+      const parsed = JSON.parse(content)
+      expect(parsed.auth.method).toBe('cookie')
+    })
+
+    it('should emit config-saved event', async () => {
+      const manager = await ConfigManager.initialize()
+      const listener = vi.fn()
+      manager.on('config-saved', listener)
+
+      const savePath = join(tempDir, 'emit-save.yaml')
+      manager.save(savePath)
+      expect(listener).toHaveBeenCalledWith(savePath)
+    })
+
+    it('should emit config-reset event', async () => {
+      const manager = await ConfigManager.initialize()
+      const listener = vi.fn()
+      manager.on('config-reset', listener)
+
+      manager.reset()
+      expect(listener).toHaveBeenCalled()
+    })
+
+    it('should handle deep path access', async () => {
+      const manager = await ConfigManager.initialize()
+
+      expect(manager.get('api.rateLimit.requestsPerMinute')).toBe(30)
+      expect(manager.get('browser.viewport.width')).toBe(1920)
+      expect(manager.get('cache.ttl.problem')).toBeDefined()
+    })
+
+    it('should return undefined for null/undefined in path', async () => {
+      const manager = await ConfigManager.initialize()
+
+      expect(manager.get('nonexistent.deep.path')).toBeUndefined()
+    })
+  })
+
+  describe('Loader Additional Functions', () => {
+    it('should create config with overrides', () => {
+      const config = createConfig({ output: { format: 'obsidian' as const } })
+
+      expect(config.output.format).toBe('obsidian')
+      expect(config.auth.method).toBe('cookie') // Default preserved
+    })
+
+    it('should load config with CLI options', () => {
+      const config = loadConfigWithCLI({ output: { format: 'json' as const } }, {})
+
+      expect(config.output.format).toBe('json')
+    })
+
+    it('should handle empty CLI options in loadConfigWithCLI', () => {
+      const config = loadConfigWithCLI({}, {})
+
+      expect(config.output.format).toBe('markdown') // Default
+    })
+
+    it('should export to YAML format', () => {
+      const config = getDefaultConfig()
+      const yaml = exportConfigToYaml(config)
+
+      expect(yaml).toContain('auth:')
+      expect(yaml).toContain('method: cookie')
+    })
+
+    it('should export to JSON format with pretty print', () => {
+      const config = getDefaultConfig()
+      const json = exportConfigToJson(config, true)
+
+      expect(json).toContain('\n') // Pretty printed
+      const parsed = JSON.parse(json)
+      expect(parsed.auth.method).toBe('cookie')
+    })
+
+    it('should export to JSON format without pretty print', () => {
+      const config = getDefaultConfig()
+      const json = exportConfigToJson(config, false)
+
+      expect(json).not.toContain('\n  ') // Not pretty printed
+    })
+  })
+
+  describe('Defaults', () => {
+    it('should provide all expected default paths', () => {
+      const paths = getDefaultPaths()
+
+      expect(paths).toHaveProperty('lescaDir')
+      expect(paths).toHaveProperty('configFile')
+      expect(paths).toHaveProperty('cookieFile')
+      expect(paths).toHaveProperty('cacheDir')
+      expect(paths).toHaveProperty('pluginDir')
+      expect(paths).toHaveProperty('logDir')
+    })
+
+    it('should provide config search paths', () => {
+      const paths = getConfigSearchPaths()
+
+      expect(paths.length).toBeGreaterThan(0)
+      expect(paths.some((p: string) => p.includes('lesca.config'))).toBe(true)
+    })
+
+    it('should include browser pool configuration', () => {
+      const config = getDefaultConfig()
+
+      expect(config.browser.pool).toBeDefined()
+      expect(config.browser.pool.enabled).toBe(true)
+      expect(config.browser.pool.maxSize).toBe(2)
+      expect(config.browser.pool.strategy).toBe('per-session')
+    })
+
+    it('should include discussion defaults', () => {
+      const config = getDefaultConfig()
+
+      expect(config.scraping.discussion).toBeDefined()
+      expect(config.scraping.discussion.defaultLimit).toBe(10)
+      expect(config.scraping.discussion.defaultSort).toBe('hot')
     })
   })
 })
