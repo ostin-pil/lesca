@@ -315,6 +315,266 @@ describe('ListScraperStrategy', () => {
     })
   })
 
+  describe('sorting', () => {
+    it('should sort by quality ascending', async () => {
+      const unsortedList: ProblemList = {
+        total: 2,
+        questions: [
+          { ...mockProblemList.questions[0]!, quality: 80 },
+          { ...mockProblemList.questions[1]!, quality: 60 },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'quality', order: 'asc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      expect(data.questions[0]?.quality).toBe(60)
+      expect(data.questions[1]?.quality).toBe(80)
+    })
+
+    it('should sort by quality descending', async () => {
+      const unsortedList: ProblemList = {
+        total: 2,
+        questions: [
+          { ...mockProblemList.questions[0]!, quality: 60 },
+          { ...mockProblemList.questions[1]!, quality: 80 },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'quality', order: 'desc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      expect(data.questions[0]?.quality).toBe(80)
+      expect(data.questions[1]?.quality).toBe(60)
+    })
+
+    it('should sort by acRate ascending', async () => {
+      const unsortedList: ProblemList = {
+        total: 2,
+        questions: [
+          { ...mockProblemList.questions[0]!, acRate: 70 },
+          { ...mockProblemList.questions[1]!, acRate: 30 },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'acRate', order: 'asc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      expect(data.questions[0]?.acRate).toBe(30)
+      expect(data.questions[1]?.acRate).toBe(70)
+    })
+
+    it('should sort by difficulty ascending', async () => {
+      const unsortedList: ProblemList = {
+        total: 3,
+        questions: [
+          { ...mockProblemList.questions[0]!, difficulty: 'Hard' },
+          { ...mockProblemList.questions[1]!, difficulty: 'Easy' },
+          { ...mockProblemList.questions[0]!, questionId: '3', difficulty: 'Medium' },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'difficulty', order: 'asc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      expect(data.questions[0]?.difficulty).toBe('Easy')
+      expect(data.questions[1]?.difficulty).toBe('Medium')
+      expect(data.questions[2]?.difficulty).toBe('Hard')
+    })
+
+    it('should sort by difficulty descending', async () => {
+      const unsortedList: ProblemList = {
+        total: 3,
+        questions: [
+          { ...mockProblemList.questions[0]!, difficulty: 'Easy' },
+          { ...mockProblemList.questions[1]!, difficulty: 'Hard' },
+          { ...mockProblemList.questions[0]!, questionId: '3', difficulty: 'Medium' },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'difficulty', order: 'desc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      expect(data.questions[0]?.difficulty).toBe('Hard')
+      expect(data.questions[1]?.difficulty).toBe('Medium')
+      expect(data.questions[2]?.difficulty).toBe('Easy')
+    })
+
+    it('should handle undefined quality values in sort', async () => {
+      const unsortedList: ProblemList = {
+        total: 2,
+        questions: [
+          { ...mockProblemList.questions[0]!, quality: undefined },
+          { ...mockProblemList.questions[1]!, quality: 50 },
+        ],
+      }
+      mockGraphQLClient.getProblemList = vi.fn().mockResolvedValue(unsortedList)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+        sort: { field: 'quality', order: 'asc' },
+      }
+
+      const result = await strategy.execute(request)
+      const data = result.data as ProblemList
+
+      // Undefined quality treated as 0
+      expect(data.questions[0]?.quality).toBeUndefined()
+      expect(data.questions[1]?.quality).toBe(50)
+    })
+  })
+
+  describe('offset', () => {
+    it('should pass offset to GraphQL client', async () => {
+      const request: ListScrapeRequest = {
+        type: 'list',
+        offset: 20,
+      }
+
+      await strategy.execute(request)
+
+      expect(mockGraphQLClient.getProblemList).toHaveBeenCalledWith(undefined, 50, 20)
+    })
+
+    it('should handle both offset and limit', async () => {
+      const request: ListScrapeRequest = {
+        type: 'list',
+        limit: 10,
+        offset: 50,
+      }
+
+      await strategy.execute(request)
+
+      expect(mockGraphQLClient.getProblemList).toHaveBeenCalledWith(undefined, 10, 50)
+    })
+  })
+
+  describe('executeAll', () => {
+    beforeEach(() => {
+      mockGraphQLClient.getAllProblems = vi.fn().mockResolvedValue(mockProblemList)
+    })
+
+    it('should fetch all problems', async () => {
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      const result = await strategy.executeAll(request)
+
+      expect(result.type).toBe('list')
+      expect(result.data).toEqual(mockProblemList)
+      expect(mockGraphQLClient.getAllProblems).toHaveBeenCalled()
+    })
+
+    it('should pass filters to getAllProblems', async () => {
+      const request: ListScrapeRequest = {
+        type: 'list',
+        filters: { difficulty: 'Easy' },
+      }
+
+      await strategy.executeAll(request)
+
+      expect(mockGraphQLClient.getAllProblems).toHaveBeenCalledWith(
+        expect.objectContaining({ difficulty: 'Easy' })
+      )
+    })
+
+    it('should handle errors from getAllProblems', async () => {
+      const error = new Error('Network error')
+      mockGraphQLClient.getAllProblems = vi.fn().mockRejectedValue(error)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      await expect(strategy.executeAll(request)).rejects.toThrow('Network error')
+    })
+
+    it('should re-throw GraphQLError', async () => {
+      const { GraphQLError } = await import('@lesca/error')
+      const graphqlError = new GraphQLError('GQL_QUERY_FAILED', 'GraphQL query failed')
+      mockGraphQLClient.getAllProblems = vi.fn().mockRejectedValue(graphqlError)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      await expect(strategy.executeAll(request)).rejects.toThrow(graphqlError)
+    })
+
+    it('should return metadata with executeAll', async () => {
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      const result = await strategy.executeAll(request)
+
+      expect(result.metadata).toBeDefined()
+      expect(result.metadata.source).toBe('graphql')
+      expect(result.metadata.scrapedAt).toBeInstanceOf(Date)
+    })
+  })
+
+  describe('error handling', () => {
+    it('should throw ScrapingError for wrong request type', async () => {
+      const request = { type: 'problem' } as unknown as ScrapeRequest
+
+      await expect(strategy.execute(request)).rejects.toThrow(/cannot handle request type/)
+    })
+
+    it('should re-throw GraphQLError from getProblemList', async () => {
+      const { GraphQLError } = await import('@lesca/error')
+      const graphqlError = new GraphQLError('GQL_QUERY_FAILED', 'Query failed')
+      mockGraphQLClient.getProblemList = vi.fn().mockRejectedValue(graphqlError)
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      await expect(strategy.execute(request)).rejects.toThrow(graphqlError)
+    })
+
+    it('should wrap non-Error throws in GraphQLError', async () => {
+      mockGraphQLClient.getProblemList = vi.fn().mockRejectedValue('string error')
+
+      const request: ListScrapeRequest = {
+        type: 'list',
+      }
+
+      await expect(strategy.execute(request)).rejects.toThrow(/string error/)
+    })
+  })
+
   describe('data validation', () => {
     it('should preserve problem details in list', async () => {
       const request: ListScrapeRequest = {
