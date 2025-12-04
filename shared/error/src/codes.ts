@@ -152,11 +152,7 @@ export const ERROR_CODES = {
       'Server taking too long to respond',
       'Timeout configuration too low',
     ],
-    resolution: [
-      'Increase timeout in configuration',
-      'Check network speed',
-      'Try again later',
-    ],
+    resolution: ['Increase timeout in configuration', 'Check network speed', 'Try again later'],
     statusCode: 504,
   },
 
@@ -206,11 +202,7 @@ export const ERROR_CODES = {
     category: 'parsing' as ErrorCategory,
     recovery: 'fatal' as ErrorRecovery,
     description: 'Invalid or unexpected GraphQL response format',
-    commonCauses: [
-      'API schema changed',
-      'Response format changed',
-      'Malformed JSON',
-    ],
+    commonCauses: ['API schema changed', 'Response format changed', 'Malformed JSON'],
     resolution: [
       'Check for LeetCode API updates',
       'Update Lesca to latest version',
@@ -251,11 +243,7 @@ export const ERROR_CODES = {
       'Corrupted file',
       'Invalid file format',
     ],
-    resolution: [
-      'Verify file exists',
-      'Check file permissions',
-      'Re-scrape if file corrupted',
-    ],
+    resolution: ['Verify file exists', 'Check file permissions', 'Re-scrape if file corrupted'],
   },
 
   STORAGE_INVALID_PATH: {
@@ -268,11 +256,7 @@ export const ERROR_CODES = {
       'Path is outside allowed directories',
       'Relative path used where absolute required',
     ],
-    resolution: [
-      'Use valid path format',
-      'Check path configuration',
-      'Use absolute paths',
-    ],
+    resolution: ['Use valid path format', 'Check path configuration', 'Use absolute paths'],
   },
 
   // ============================================================================
@@ -326,11 +310,7 @@ export const ERROR_CODES = {
       'Selector not found within timeout',
       'Script execution timed out',
     ],
-    resolution: [
-      'Increase timeout duration',
-      'Check network speed',
-      'Verify page structure',
-    ],
+    resolution: ['Increase timeout duration', 'Check network speed', 'Verify page structure'],
   },
 
   BROWSER_SELECTOR_NOT_FOUND: {
@@ -357,17 +337,99 @@ export const ERROR_CODES = {
     category: 'browser' as ErrorCategory,
     recovery: 'recoverable' as ErrorRecovery,
     description: 'Browser process crashed',
-    commonCauses: [
-      'Out of memory',
-      'Browser bug',
-      'System resources exhausted',
-    ],
+    commonCauses: ['Out of memory', 'Browser bug', 'System resources exhausted'],
     resolution: [
       'Restart scraping',
       'Reduce concurrent operations',
       'Increase system resources',
       'Update browser binaries',
     ],
+  },
+
+  BROWSER_POOL_EXHAUSTED: {
+    code: 'BROWSER_POOL_EXHAUSTED',
+    category: 'browser' as ErrorCategory,
+    recovery: 'recoverable' as ErrorRecovery,
+    description: 'Browser pool exhausted - no browsers available',
+    commonCauses: [
+      'Too many concurrent operations',
+      'Pool size too small',
+      'Browsers not being released',
+      'Long-running operations blocking pool',
+    ],
+    resolution: [
+      'Wait and retry',
+      'Increase pool maxSize',
+      'Reduce concurrent operations',
+      'Check for browser leaks',
+    ],
+  },
+
+  BROWSER_POOL_CONFIG_INVALID: {
+    code: 'BROWSER_POOL_CONFIG_INVALID',
+    category: 'browser' as ErrorCategory,
+    recovery: 'fatal' as ErrorRecovery,
+    description: 'Invalid browser pool configuration',
+    commonCauses: ['minSize greater than maxSize', 'Negative timeout values', 'Invalid pool size'],
+    resolution: [
+      'Check pool configuration values',
+      'Ensure minSize <= maxSize',
+      'Use positive timeout values',
+    ],
+  },
+
+  BROWSER_CIRCUIT_OPEN: {
+    code: 'BROWSER_CIRCUIT_OPEN',
+    category: 'browser' as ErrorCategory,
+    recovery: 'recoverable' as ErrorRecovery,
+    description: 'Circuit breaker open - browser launches temporarily disabled',
+    commonCauses: [
+      'Too many consecutive browser launch failures',
+      'System resources exhausted',
+      'Browser installation issues',
+    ],
+    resolution: [
+      'Wait for circuit to reset',
+      'Check system resources',
+      'Verify browser installation',
+      'Run: npx playwright install',
+    ],
+  },
+
+  BROWSER_SESSION_CORRUPTED: {
+    code: 'BROWSER_SESSION_CORRUPTED',
+    category: 'browser' as ErrorCategory,
+    recovery: 'recoverable' as ErrorRecovery,
+    description: 'Browser session data is corrupted',
+    commonCauses: ['Incomplete session save', 'File system error', 'Manual file modification'],
+    resolution: [
+      'Delete corrupted session file',
+      'Re-authenticate to create new session',
+      'Check backup files (.bak)',
+    ],
+  },
+
+  BROWSER_SESSION_NOT_FOUND: {
+    code: 'BROWSER_SESSION_NOT_FOUND',
+    category: 'browser' as ErrorCategory,
+    recovery: 'user-action' as ErrorRecovery,
+    description: 'Browser session not found',
+    commonCauses: ['Session was deleted', 'Session never created', 'Wrong session name'],
+    resolution: [
+      'Create a new session with lesca session create',
+      'List available sessions with lesca session list',
+      'Check session name spelling',
+    ],
+    statusCode: 404,
+  },
+
+  BROWSER_SESSION_EXPIRED: {
+    code: 'BROWSER_SESSION_EXPIRED',
+    category: 'browser' as ErrorCategory,
+    recovery: 'user-action' as ErrorRecovery,
+    description: 'Browser session has expired',
+    commonCauses: ['Session age exceeded TTL', 'Authentication token expired'],
+    resolution: ['Re-authenticate to create new session', 'Delete expired session and recreate'],
   },
 
   // ============================================================================
@@ -378,11 +440,7 @@ export const ERROR_CODES = {
     category: 'scraping' as ErrorCategory,
     recovery: 'user-action' as ErrorRecovery,
     description: 'Problem not found on LeetCode',
-    commonCauses: [
-      'Invalid problem slug',
-      'Problem deleted or moved',
-      'Typo in problem name',
-    ],
+    commonCauses: ['Invalid problem slug', 'Problem deleted or moved', 'Typo in problem name'],
     resolution: [
       'Verify problem slug is correct',
       'Check LeetCode website',
@@ -413,11 +471,7 @@ export const ERROR_CODES = {
     category: 'scraping' as ErrorCategory,
     recovery: 'fatal' as ErrorRecovery,
     description: 'No scraper strategy available for request',
-    commonCauses: [
-      'Unsupported scrape type',
-      'Strategy not registered',
-      'Configuration error',
-    ],
+    commonCauses: ['Unsupported scrape type', 'Strategy not registered', 'Configuration error'],
     resolution: [
       'Check scrape request type',
       'Verify strategies are registered',
@@ -452,16 +506,8 @@ export const ERROR_CODES = {
     category: 'parsing' as ErrorCategory,
     recovery: 'fatal' as ErrorRecovery,
     description: 'Failed to parse HTML content',
-    commonCauses: [
-      'Malformed HTML',
-      'Empty response',
-      'Unexpected content type',
-    ],
-    resolution: [
-      'Verify HTML source',
-      'Check for empty responses',
-      'Report parsing error',
-    ],
+    commonCauses: ['Malformed HTML', 'Empty response', 'Unexpected content type'],
+    resolution: ['Verify HTML source', 'Check for empty responses', 'Report parsing error'],
   },
 
   PARSE_JSON_FAILED: {
@@ -511,11 +557,7 @@ export const ERROR_CODES = {
     category: 'validation' as ErrorCategory,
     recovery: 'user-action' as ErrorRecovery,
     description: 'Data does not match expected schema',
-    commonCauses: [
-      'Missing required fields',
-      'Type mismatch',
-      'Invalid data structure',
-    ],
+    commonCauses: ['Missing required fields', 'Type mismatch', 'Invalid data structure'],
     resolution: [
       'Check data schema',
       'Verify field types',
@@ -531,11 +573,7 @@ export const ERROR_CODES = {
     category: 'conversion' as ErrorCategory,
     recovery: 'recoverable' as ErrorRecovery,
     description: 'Failed to convert invalid HTML',
-    commonCauses: [
-      'Malformed HTML structure',
-      'Unsupported HTML elements',
-      'Empty or null input',
-    ],
+    commonCauses: ['Malformed HTML structure', 'Unsupported HTML elements', 'Empty or null input'],
     resolution: [
       'Verify HTML is well-formed',
       'Check for unsupported elements',
@@ -568,11 +606,7 @@ export const ERROR_CODES = {
     category: 'configuration' as ErrorCategory,
     recovery: 'fatal' as ErrorRecovery,
     description: 'Failed to load configuration',
-    commonCauses: [
-      'Config file not found',
-      'Invalid config format',
-      'Parse error in config file',
-    ],
+    commonCauses: ['Config file not found', 'Invalid config format', 'Parse error in config file'],
     resolution: [
       'Create config file',
       'Verify config syntax',
@@ -586,11 +620,7 @@ export const ERROR_CODES = {
     category: 'configuration' as ErrorCategory,
     recovery: 'user-action' as ErrorRecovery,
     description: 'Configuration validation failed',
-    commonCauses: [
-      'Invalid configuration value',
-      'Missing required field',
-      'Type mismatch',
-    ],
+    commonCauses: ['Invalid configuration value', 'Missing required field', 'Type mismatch'],
     resolution: ['Fix configuration errors', 'Check config schema', 'Use example config'],
   },
 
@@ -599,11 +629,7 @@ export const ERROR_CODES = {
     category: 'configuration' as ErrorCategory,
     recovery: 'user-action' as ErrorRecovery,
     description: 'Invalid configuration value',
-    commonCauses: [
-      'Value out of range',
-      'Invalid enum value',
-      'Wrong data type',
-    ],
+    commonCauses: ['Value out of range', 'Invalid enum value', 'Wrong data type'],
     resolution: ['Use valid value', 'Check documentation', 'See example configs'],
   },
 
@@ -632,11 +658,7 @@ export const ERROR_CODES = {
     category: 'system' as ErrorCategory,
     recovery: 'fatal' as ErrorRecovery,
     description: 'System initialization failed',
-    commonCauses: [
-      'Missing dependencies',
-      'Corrupted installation',
-      'Incompatible Node version',
-    ],
+    commonCauses: ['Missing dependencies', 'Corrupted installation', 'Incompatible Node version'],
     resolution: [
       'Reinstall dependencies: npm install',
       'Check Node version >= 18',
@@ -649,11 +671,7 @@ export const ERROR_CODES = {
     category: 'system' as ErrorCategory,
     recovery: 'recoverable' as ErrorRecovery,
     description: 'Insufficient memory',
-    commonCauses: [
-      'Too many concurrent operations',
-      'Large dataset processing',
-      'Memory leak',
-    ],
+    commonCauses: ['Too many concurrent operations', 'Large dataset processing', 'Memory leak'],
     resolution: [
       'Reduce batch size',
       'Process fewer items concurrently',
@@ -668,11 +686,7 @@ export const ERROR_CODES = {
     recovery: 'fatal' as ErrorRecovery,
     description: 'An unknown error occurred',
     commonCauses: ['Unexpected exception', 'Uncaught error', 'Programming bug'],
-    resolution: [
-      'Check error details',
-      'Report issue with stack trace',
-      'Try again',
-    ],
+    resolution: ['Check error details', 'Report issue with stack trace', 'Try again'],
   },
 } as const
 

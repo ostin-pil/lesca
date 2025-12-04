@@ -116,10 +116,7 @@ export class AuthError extends LescaError {
 
 export class NetworkError extends LescaError {
   constructor(
-    code: Extract<
-      ErrorCode,
-      'NET_CONNECTION_FAILED' | 'NET_TIMEOUT' | 'NET_RATE_LIMITED'
-    >,
+    code: Extract<ErrorCode, 'NET_CONNECTION_FAILED' | 'NET_TIMEOUT' | 'NET_RATE_LIMITED'>,
     message?: string,
     options?: { cause?: Error; context?: ErrorContext; statusCode?: number }
   ) {
@@ -181,6 +178,12 @@ export class BrowserError extends LescaError {
       | 'BROWSER_SELECTOR_NOT_FOUND'
       | 'BROWSER_CRASH'
       | 'BROWSER_TIMEOUT'
+      | 'BROWSER_POOL_EXHAUSTED'
+      | 'BROWSER_POOL_CONFIG_INVALID'
+      | 'BROWSER_CIRCUIT_OPEN'
+      | 'BROWSER_SESSION_CORRUPTED'
+      | 'BROWSER_SESSION_NOT_FOUND'
+      | 'BROWSER_SESSION_EXPIRED'
     >,
     message?: string,
     options?: { cause?: Error; context?: ErrorContext }
@@ -191,10 +194,7 @@ export class BrowserError extends LescaError {
 }
 
 export class BrowserTimeoutError extends BrowserError {
-  constructor(
-    message?: string,
-    options?: { cause?: Error; context?: ErrorContext }
-  ) {
+  constructor(message?: string, options?: { cause?: Error; context?: ErrorContext }) {
     super('BROWSER_TIMEOUT', message, options)
     this.name = 'BrowserTimeoutError'
   }
@@ -225,10 +225,7 @@ export class ScrapingError extends LescaError {
  */
 export class ParsingError extends LescaError {
   constructor(
-    code: Extract<
-      ErrorCode,
-      'PARSE_HTML_FAILED' | 'PARSE_JSON_FAILED' | 'PARSE_MARKDOWN_FAILED'
-    >,
+    code: Extract<ErrorCode, 'PARSE_HTML_FAILED' | 'PARSE_JSON_FAILED' | 'PARSE_MARKDOWN_FAILED'>,
     message?: string,
     options?: { cause?: Error; context?: ErrorContext }
   ) {
