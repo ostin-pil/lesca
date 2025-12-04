@@ -2,39 +2,8 @@ import { BrowserError } from '@lesca/error'
 import { logger } from '@lesca/shared/utils'
 import { chromium, type Browser, type LaunchOptions } from 'playwright'
 
-/**
- * Browser pool configuration
- */
-export interface BrowserPoolConfig {
-  /** Enable browser pooling */
-  enabled?: boolean
-  /** Minimum number of browsers to keep ready */
-  minSize?: number
-  /** Maximum number of concurrent browsers */
-  maxSize?: number
-  /** Maximum idle time before eviction (ms) */
-  maxIdleTime?: number
-  /** Reuse pages within browser */
-  reusePages?: boolean
-}
-
-/**
- * Browser pool statistics
- */
-export interface BrowserPoolStats {
-  /** Total browsers in pool */
-  total: number
-  /** Active (in-use) browsers */
-  active: number
-  /** Idle (available) browsers */
-  idle: number
-  /** Browsers created (lifetime) */
-  created: number
-  /** Browsers destroyed (lifetime) */
-  destroyed: number
-  /** Browsers reused (lifetime) */
-  reused: number
-}
+import { CircuitBreaker } from './circuit-breaker'
+import type { IBrowserPool, BrowserPoolConfig, BrowserPoolStats } from './interfaces'
 
 /**
  * Pooled browser wrapper
@@ -51,7 +20,7 @@ interface PooledBrowser {
  * Browser Pool
  * Manages browser instance reuse across multiple scraping operations
  */
-export class BrowserPool {
+export class BrowserPool implements IBrowserPool {
   private pool: PooledBrowser[] = []
   private config: Required<BrowserPoolConfig>
   private launchOptions: LaunchOptions
@@ -59,6 +28,7 @@ export class BrowserPool {
   private cleanupInterval?: NodeJS.Timeout
   private isShuttingDown = false
   private cleanupHandler?: (() => void) | undefined
+  private circuitBreaker: CircuitBreaker
 
   constructor(config: BrowserPoolConfig = {}, launchOptions: LaunchOptions = {}) {
     this.config = {
@@ -80,11 +50,15 @@ export class BrowserPool {
       reused: 0,
     }
 
-    if (this.config.minSize > this.config.maxSize) {
-      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'minSize cannot be greater than maxSize', {
-        context: { minSize: this.config.minSize, maxSize: this.config.maxSize },
-      })
-    }
+    // Validate configuration
+    this.validateConfig()
+
+    // Initialize circuit breaker for browser launches
+    this.circuitBreaker = new CircuitBreaker({
+      failureThreshold: 3, // Open after 3 consecutive failures
+      resetTimeout: 30000, // Try again after 30 seconds
+      successThreshold: 2, // Need 2 successes to close
+    })
 
     this.startCleanupInterval()
 
@@ -94,6 +68,43 @@ export class BrowserPool {
       config: this.config,
       launchOptions: this.launchOptions,
     })
+  }
+
+  /**
+   * Validate pool configuration
+   */
+  private validateConfig(): void {
+    const { minSize, maxSize, maxIdleTime } = this.config
+
+    if (minSize < 0) {
+      throw new BrowserError('BROWSER_POOL_CONFIG_INVALID', 'minSize cannot be negative', {
+        context: { minSize },
+      })
+    }
+
+    if (maxSize < 1) {
+      throw new BrowserError('BROWSER_POOL_CONFIG_INVALID', 'maxSize must be at least 1', {
+        context: { maxSize },
+      })
+    }
+
+    if (minSize > maxSize) {
+      throw new BrowserError(
+        'BROWSER_POOL_CONFIG_INVALID',
+        'minSize cannot be greater than maxSize',
+        { context: { minSize, maxSize } }
+      )
+    }
+
+    if (maxIdleTime < 0) {
+      throw new BrowserError('BROWSER_POOL_CONFIG_INVALID', 'maxIdleTime cannot be negative', {
+        context: { maxIdleTime },
+      })
+    }
+
+    if (maxSize > 10) {
+      logger.warn('Large maxSize may consume significant resources', { maxSize })
+    }
   }
 
   private pendingCreates = 0
@@ -240,21 +251,37 @@ export class BrowserPool {
   }
 
   /**
-   * Create a new browser instance
+   * Create a new browser instance (protected by circuit breaker)
    */
   private async createBrowser(): Promise<Browser> {
-    try {
-      const browser = await chromium.launch(this.launchOptions)
-      this.stats.created++
+    return this.circuitBreaker.execute(async () => {
+      try {
+        const browser = await chromium.launch(this.launchOptions)
+        this.stats.created++
 
-      logger.debug('Created new browser instance')
+        logger.debug('Created new browser instance')
 
-      return browser
-    } catch (error) {
-      throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to create browser instance', {
-        cause: error as Error,
-      })
-    }
+        return browser
+      } catch (error) {
+        throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to create browser instance', {
+          cause: error as Error,
+        })
+      }
+    })
+  }
+
+  /**
+   * Get circuit breaker statistics
+   */
+  getCircuitBreakerStats(): ReturnType<CircuitBreaker['getStats']> {
+    return this.circuitBreaker.getStats()
+  }
+
+  /**
+   * Reset circuit breaker (for recovery scenarios)
+   */
+  resetCircuitBreaker(): void {
+    this.circuitBreaker.reset()
   }
 
   /**
@@ -304,9 +331,16 @@ export class BrowserPool {
     }
 
     throw new BrowserError(
-      'BROWSER_NAVIGATION_FAILED',
-      'Timeout waiting for available browser in pool',
-      { context: { timeout, poolSize: this.pool.length } }
+      'BROWSER_POOL_EXHAUSTED',
+      `Pool exhausted: all ${this.pool.length} browsers in use. Waited ${timeout}ms for availability.`,
+      {
+        context: {
+          timeout,
+          poolSize: this.pool.length,
+          maxSize: this.config.maxSize,
+          suggestion: 'Increase maxSize or reduce concurrent operations',
+        },
+      }
     )
   }
 

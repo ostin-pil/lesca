@@ -16,6 +16,16 @@ vi.mock('../pool', () => {
         peak: 0,
         pending: 0,
       }),
+      getConfig: vi.fn().mockReturnValue({}),
+      getCircuitBreakerStats: vi.fn().mockReturnValue({
+        state: 'closed',
+        failures: 0,
+        successes: 0,
+        totalCalls: 0,
+        totalFailures: 0,
+        totalSuccesses: 0,
+      }),
+      resetCircuitBreaker: vi.fn(),
     })),
   }
 })
@@ -62,7 +72,17 @@ describe('SessionPoolManager', () => {
             peak: 0,
             pending: 0,
           }),
-        }) as any
+          getConfig: vi.fn().mockReturnValue({}),
+          getCircuitBreakerStats: vi.fn().mockReturnValue({
+            state: 'closed',
+            failures: 0,
+            successes: 0,
+            totalCalls: 0,
+            totalFailures: 0,
+            totalSuccesses: 0,
+          }),
+          resetCircuitBreaker: vi.fn(),
+        }) as unknown as BrowserPool
     )
 
     manager = new SessionPoolManager(defaultConfig)
@@ -159,16 +179,19 @@ describe('SessionPoolManager', () => {
       const mockPool = {
         acquire: vi
           .fn()
-          .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100))),
+          .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 2000))),
         release: vi.fn().mockResolvedValue(undefined),
         drain: vi.fn().mockResolvedValue(undefined),
         getStats: vi.fn().mockReturnValue({}),
+        getConfig: vi.fn().mockReturnValue({}),
+        getCircuitBreakerStats: vi.fn().mockReturnValue({}),
+        resetCircuitBreaker: vi.fn(),
       }
-      vi.mocked(BrowserPool).mockImplementationOnce(() => mockPool as any)
+      vi.mocked(BrowserPool).mockImplementationOnce(() => mockPool as unknown as BrowserPool)
 
       const shortTimeoutManager = new SessionPoolManager({
         ...defaultConfig,
-        acquireTimeout: 10,
+        acquireTimeout: 1000, // Minimum valid timeout
         retryOnFailure: false,
       })
 

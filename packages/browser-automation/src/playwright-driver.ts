@@ -9,9 +9,8 @@ import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
 import type { CookieManager } from './cookie-manager'
 import { RequestInterceptor } from './interceptor'
+import type { IBrowserPool, ISessionPoolManager } from './interfaces'
 import { PerformanceMonitor, type PerformanceMetrics } from './performance'
-import type { BrowserPool } from './pool'
-import type { SessionPoolManager } from './session-pool-manager'
 
 /**
  * Playwright browser driver
@@ -21,7 +20,7 @@ export class PlaywrightDriver implements BrowserDriver {
   private browser?: Browser
   private page?: Page
   private isLaunched = false
-  private pool?: BrowserPool | SessionPoolManager
+  private pool?: IBrowserPool | ISessionPoolManager
   private sessionName?: string
   private cookieManager?: CookieManager
   private interceptor?: RequestInterceptor
@@ -29,7 +28,7 @@ export class PlaywrightDriver implements BrowserDriver {
 
   constructor(
     private auth?: AuthCredentials,
-    pool?: BrowserPool | SessionPoolManager,
+    pool?: IBrowserPool | ISessionPoolManager,
     sessionName?: string
   ) {
     if (pool !== undefined) {

@@ -6,42 +6,13 @@ import { BrowserError } from '@lesca/error'
 import { logger } from '@lesca/shared/utils'
 import type { BrowserContext, Cookie } from 'playwright'
 
-/**
- * Session storage data structure
- */
-export interface SessionData {
-  name: string
-  cookies: Cookie[]
-  localStorage: Record<string, string>
-  sessionStorage: Record<string, string>
-  metadata: SessionMetadata
-}
-
-/**
- * Session metadata
- */
-export interface SessionMetadata {
-  created: number
-  lastUsed: number
-  expires?: number
-  userAgent?: string
-  description?: string
-}
-
-/**
- * Session options for creation
- */
-export interface SessionOptions {
-  expires?: number // Timestamp when session expires
-  description?: string
-  userAgent?: string
-}
+import type { ISessionManager, SessionData, SessionOptions } from './interfaces'
 
 /**
  * Session Manager
  * Manages persistent browser sessions across scraping operations
  */
-export class SessionManager {
+export class SessionManager implements ISessionManager {
   private sessionsDir: string
 
   constructor(baseDir?: string) {
@@ -366,12 +337,16 @@ export class SessionManager {
 
     // Check if old session exists
     if (!(await this.sessionExists(oldName))) {
-      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Session "${oldName}" not found`)
+      throw new BrowserError('BROWSER_SESSION_NOT_FOUND', `Session "${oldName}" not found`, {
+        context: { sessionName: oldName },
+      })
     }
 
     // Check if new name already exists
     if (await this.sessionExists(newName)) {
-      throw new BrowserError('BROWSER_SELECTOR_NOT_FOUND', `Session "${newName}" already exists`)
+      throw new BrowserError('BROWSER_LAUNCH_FAILED', `Session "${newName}" already exists`, {
+        context: { sessionName: newName },
+      })
     }
 
     try {
@@ -491,8 +466,9 @@ export class SessionManager {
 
     if (sourceSessions.length === 0) {
       throw new BrowserError(
-        'BROWSER_SELECTOR_NOT_FOUND',
-        'No valid source sessions found to merge'
+        'BROWSER_SESSION_NOT_FOUND',
+        'No valid source sessions found to merge',
+        { context: { sourceNames } }
       )
     }
 

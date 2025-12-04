@@ -5,7 +5,7 @@ import type { PoolStatistics, SessionPoolConfig } from '@lesca/shared/types'
 import { logger } from '@lesca/shared/utils'
 import type { Browser, LaunchOptions } from 'playwright'
 
-import type { BrowserPool } from './pool'
+import type { IBrowserPool, ISessionPoolManager } from './interfaces'
 import { BrowserPool as BrowserPoolImpl } from './pool'
 
 /**
@@ -37,8 +37,8 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
  * - Handle pool exhaustion with retries
  * - Clean up idle pools
  */
-export class SessionPoolManager {
-  private sessionPools: Map<string, BrowserPool> = new Map()
+export class SessionPoolManager implements ISessionPoolManager {
+  private sessionPools: Map<string, IBrowserPool> = new Map()
   private stats: Map<string, PoolStatistics> = new Map()
   private config: Required<SessionPoolConfig>
   private launchOptions: LaunchOptions
@@ -54,13 +54,62 @@ export class SessionPoolManager {
     }
     this.launchOptions = launchOptions
 
+    // Validate configuration
+    this.validateConfig()
+
     logger.debug('SessionPoolManager initialized', { config: this.config })
+  }
+
+  /**
+   * Validate session pool manager configuration
+   */
+  private validateConfig(): void {
+    const { strategy, perSessionMaxSize, perSessionIdleTime, acquireTimeout, maxRetries } =
+      this.config
+
+    if (strategy !== 'per-session' && strategy !== 'shared') {
+      throw new BrowserError(
+        'BROWSER_POOL_CONFIG_INVALID',
+        `Invalid pool strategy: ${String(strategy)}. Must be 'per-session' or 'shared'`,
+        { context: { strategy } }
+      )
+    }
+
+    if (perSessionMaxSize < 1) {
+      throw new BrowserError(
+        'BROWSER_POOL_CONFIG_INVALID',
+        'perSessionMaxSize must be at least 1',
+        { context: { perSessionMaxSize } }
+      )
+    }
+
+    if (perSessionIdleTime < 0) {
+      throw new BrowserError(
+        'BROWSER_POOL_CONFIG_INVALID',
+        'perSessionIdleTime cannot be negative',
+        { context: { perSessionIdleTime } }
+      )
+    }
+
+    if (acquireTimeout < 1000) {
+      throw new BrowserError(
+        'BROWSER_POOL_CONFIG_INVALID',
+        'acquireTimeout must be at least 1000ms',
+        { context: { acquireTimeout } }
+      )
+    }
+
+    if (maxRetries < 0) {
+      throw new BrowserError('BROWSER_POOL_CONFIG_INVALID', 'maxRetries cannot be negative', {
+        context: { maxRetries },
+      })
+    }
   }
 
   /**
    * Get or create pool for session
    */
-  getPool(sessionName: string): BrowserPool {
+  getPool(sessionName: string): IBrowserPool {
     if (!this.sessionPools.has(sessionName)) {
       const pool = new BrowserPoolImpl(
         {

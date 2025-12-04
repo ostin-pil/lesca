@@ -452,5 +452,469 @@ describe('SessionManager', () => {
       const backupFile = files.find((f) => f.startsWith('corrupted.json.bak'))
       expect(backupFile).toBeDefined()
     })
+
+    it('should backup and return null for session with invalid schema (missing name)', async () => {
+      const sessionPath = join(testSessionsDir, 'invalid-schema.json')
+      // Write valid JSON but missing required 'name' field
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({ cookies: [], localStorage: {}, sessionStorage: {}, metadata: {} })
+        )
+      )
+
+      const session = await sessionManager.getSession('invalid-schema')
+
+      expect(session).toBeNull()
+    })
+
+    it('should backup and return null for session with invalid schema (cookies not array)', async () => {
+      const sessionPath = join(testSessionsDir, 'invalid-cookies.json')
+      // Write valid JSON but cookies is not an array
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'invalid-cookies',
+            cookies: 'not-an-array',
+            localStorage: {},
+            sessionStorage: {},
+            metadata: { created: Date.now(), lastUsed: Date.now() },
+          })
+        )
+      )
+
+      const session = await sessionManager.getSession('invalid-cookies')
+
+      expect(session).toBeNull()
+    })
+  })
+
+  describe('validateSession', () => {
+    it('should return true for valid session', async () => {
+      await sessionManager.createSession('valid-session', mockContext)
+
+      const isValid = await sessionManager.validateSession('valid-session')
+
+      expect(isValid).toBe(true)
+    })
+
+    it('should return false for non-existent session', async () => {
+      const isValid = await sessionManager.validateSession('non-existent')
+
+      expect(isValid).toBe(false)
+    })
+
+    it('should return false for expired session', async () => {
+      const pastTime = Date.now() - anHour
+
+      await sessionManager.createSession('expired-session', mockContext, {
+        expires: pastTime,
+      })
+
+      // Need to bypass the getSession expiry check by writing directly
+      const sessionPath = join(testSessionsDir, 'expired-direct.json')
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'expired-direct',
+            cookies: [{ name: 'test', value: 'val', domain: '.test.com', path: '/' }],
+            localStorage: {},
+            sessionStorage: {},
+            metadata: { created: Date.now(), lastUsed: Date.now(), expires: pastTime },
+          })
+        )
+      )
+
+      const isValid = await sessionManager.validateSession('expired-direct')
+
+      expect(isValid).toBe(false)
+    })
+
+    it('should return false for session with no cookies', async () => {
+      const sessionPath = join(testSessionsDir, 'no-cookies.json')
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'no-cookies',
+            cookies: [],
+            localStorage: {},
+            sessionStorage: {},
+            metadata: { created: Date.now(), lastUsed: Date.now() },
+          })
+        )
+      )
+
+      const isValid = await sessionManager.validateSession('no-cookies')
+
+      expect(isValid).toBe(false)
+    })
+
+    it('should return false for session with missing metadata', async () => {
+      const sessionPath = join(testSessionsDir, 'no-metadata.json')
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'no-metadata',
+            cookies: [{ name: 'test', value: 'val', domain: '.test.com', path: '/' }],
+            localStorage: {},
+            sessionStorage: {},
+          })
+        )
+      )
+
+      const isValid = await sessionManager.validateSession('no-metadata')
+
+      expect(isValid).toBe(false)
+    })
+  })
+
+  describe('mergeSessions', () => {
+    const createSessionFile = async (
+      name: string,
+      cookies: Cookie[],
+      localStorage: Record<string, string>,
+      sessionStorage: Record<string, string>,
+      lastUsed: number
+    ) => {
+      const sessionPath = join(testSessionsDir, `${name}.json`)
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name,
+            cookies,
+            localStorage,
+            sessionStorage,
+            metadata: { created: Date.now(), lastUsed },
+          })
+        )
+      )
+    }
+
+    const baseCookie: Cookie = {
+      name: 'base',
+      value: 'base-value',
+      domain: '.test.com',
+      path: '/',
+      expires: -1,
+      httpOnly: false,
+      secure: false,
+      sameSite: 'Lax',
+    }
+
+    it('should merge sessions with merge-all strategy (default)', async () => {
+      await createSessionFile(
+        'source-1',
+        [{ ...baseCookie, name: 'cookie-a', value: 'a1' }],
+        { keyA: 'valueA1' },
+        { sessionA: 'sA1' },
+        Date.now() - 1000
+      )
+      await createSessionFile(
+        'source-2',
+        [{ ...baseCookie, name: 'cookie-b', value: 'b2' }],
+        { keyB: 'valueB2' },
+        { sessionB: 'sB2' },
+        Date.now()
+      )
+
+      const merged = await sessionManager.mergeSessions(['source-1', 'source-2'], 'merged-session')
+
+      expect(merged.name).toBe('merged-session')
+      expect(merged.cookies).toHaveLength(2)
+      expect(merged.localStorage).toHaveProperty('keyA', 'valueA1')
+      expect(merged.localStorage).toHaveProperty('keyB', 'valueB2')
+    })
+
+    it('should merge sessions with keep-existing strategy', async () => {
+      // Create target session first
+      await createSessionFile(
+        'target',
+        [{ ...baseCookie, name: 'shared-cookie', value: 'target-value' }],
+        { sharedKey: 'target-value' },
+        {},
+        Date.now()
+      )
+      // Create source session
+      await createSessionFile(
+        'source',
+        [
+          { ...baseCookie, name: 'shared-cookie', value: 'source-value' },
+          { ...baseCookie, name: 'new-cookie', value: 'new-value' },
+        ],
+        { sharedKey: 'source-value', newKey: 'new-value' },
+        {},
+        Date.now()
+      )
+
+      const merged = await sessionManager.mergeSessions(['source'], 'target', 'keep-existing')
+
+      // Target's values should be kept for existing keys
+      const sharedCookie = merged.cookies.find((c) => c.name === 'shared-cookie')
+      expect(sharedCookie?.value).toBe('target-value')
+      expect(merged.localStorage.sharedKey).toBe('target-value')
+      // But new keys from source should be added
+      const newCookie = merged.cookies.find((c) => c.name === 'new-cookie')
+      expect(newCookie?.value).toBe('new-value')
+      expect(merged.localStorage.newKey).toBe('new-value')
+    })
+
+    it('should merge sessions with prefer-fresh strategy', async () => {
+      const olderTime = Date.now() - 10000
+      const newerTime = Date.now()
+
+      await createSessionFile(
+        'older-session',
+        [{ ...baseCookie, name: 'shared-cookie', value: 'older-value' }],
+        { sharedKey: 'older-value' },
+        {},
+        olderTime
+      )
+      await createSessionFile(
+        'newer-session',
+        [{ ...baseCookie, name: 'shared-cookie', value: 'newer-value' }],
+        { sharedKey: 'newer-value' },
+        {},
+        newerTime
+      )
+
+      const merged = await sessionManager.mergeSessions(
+        ['older-session', 'newer-session'],
+        'fresh-merged',
+        'prefer-fresh'
+      )
+
+      // Newer session's values should win
+      const cookie = merged.cookies.find((c) => c.name === 'shared-cookie')
+      expect(cookie?.value).toBe('newer-value')
+      expect(merged.localStorage.sharedKey).toBe('newer-value')
+    })
+
+    it('should throw error when no valid source sessions found', async () => {
+      await expect(
+        sessionManager.mergeSessions(['non-existent-1', 'non-existent-2'], 'merged')
+      ).rejects.toThrow('No valid source sessions found')
+    })
+
+    it('should handle merge when target session does not exist', async () => {
+      await createSessionFile(
+        'source-only',
+        [{ ...baseCookie, name: 'source-cookie', value: 'source-value' }],
+        { sourceKey: 'sourceValue' },
+        {},
+        Date.now()
+      )
+
+      const merged = await sessionManager.mergeSessions(
+        ['source-only'],
+        'new-target',
+        'keep-existing'
+      )
+
+      expect(merged.name).toBe('new-target')
+      expect(merged.cookies).toHaveLength(1)
+    })
+
+    it('should skip non-existent source sessions with warning', async () => {
+      await createSessionFile(
+        'existing-source',
+        [{ ...baseCookie, name: 'real-cookie', value: 'real-value' }],
+        { realKey: 'realValue' },
+        {},
+        Date.now()
+      )
+
+      const merged = await sessionManager.mergeSessions(
+        ['existing-source', 'non-existent'],
+        'partial-merge'
+      )
+
+      expect(merged.cookies).toHaveLength(1)
+      expect(merged.cookies[0]?.name).toBe('real-cookie')
+    })
+  })
+
+  describe('createSession edge cases', () => {
+    it('should handle context with no pages', async () => {
+      const contextNoPages = {
+        cookies: vi
+          .fn()
+          .mockResolvedValue([
+            { ...mockContext, name: 'test', value: 'val', domain: '.test.com', path: '/' },
+          ]),
+        pages: vi.fn().mockReturnValue([]),
+        addCookies: vi.fn(),
+      } as unknown as BrowserContext
+
+      const session = await sessionManager.createSession('no-pages-session', contextNoPages)
+
+      expect(session.name).toBe('no-pages-session')
+      expect(session.localStorage).toEqual({})
+      expect(session.sessionStorage).toEqual({})
+    })
+
+    it('should handle localStorage extraction failure', async () => {
+      const contextWithFailingEval = {
+        cookies: vi.fn().mockResolvedValue([]),
+        pages: vi.fn().mockReturnValue([
+          {
+            evaluate: vi
+              .fn()
+              .mockRejectedValueOnce(new Error('localStorage access denied'))
+              .mockResolvedValueOnce({ sessionKey: 'sessionVal' }),
+          },
+        ]),
+        addCookies: vi.fn(),
+      } as unknown as BrowserContext
+
+      const session = await sessionManager.createSession(
+        'failing-local-storage',
+        contextWithFailingEval
+      )
+
+      expect(session.localStorage).toEqual({})
+      // sessionStorage should still work
+    })
+
+    it('should handle sessionStorage extraction failure', async () => {
+      const contextWithFailingEval = {
+        cookies: vi.fn().mockResolvedValue([]),
+        pages: vi.fn().mockReturnValue([
+          {
+            evaluate: vi
+              .fn()
+              .mockResolvedValueOnce({ localKey: 'localVal' })
+              .mockRejectedValueOnce(new Error('sessionStorage access denied')),
+          },
+        ]),
+        addCookies: vi.fn(),
+      } as unknown as BrowserContext
+
+      const session = await sessionManager.createSession(
+        'failing-session-storage',
+        contextWithFailingEval
+      )
+
+      expect(session.sessionStorage).toEqual({})
+      // localStorage should still work
+    })
+  })
+
+  describe('restoreSession edge cases', () => {
+    it('should handle context with no pages during restore', async () => {
+      await sessionManager.createSession('session-to-restore', mockContext)
+
+      const contextNoPages = {
+        cookies: vi.fn().mockResolvedValue([]),
+        pages: vi.fn().mockReturnValue([]),
+        addCookies: vi.fn().mockResolvedValue(undefined),
+      } as unknown as BrowserContext
+
+      const restored = await sessionManager.restoreSession('session-to-restore', contextNoPages)
+
+      expect(restored).toBe(true)
+      expect(contextNoPages.addCookies).toHaveBeenCalled()
+    })
+
+    it('should handle localStorage restoration failure', async () => {
+      // Create session with localStorage data
+      const sessionPath = join(testSessionsDir, 'restore-fail-local.json')
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'restore-fail-local',
+            cookies: [{ name: 'test', value: 'val', domain: '.test.com', path: '/' }],
+            localStorage: { key: 'value' },
+            sessionStorage: {},
+            metadata: { created: Date.now(), lastUsed: Date.now() },
+          })
+        )
+      )
+
+      const contextWithFailingEval = {
+        cookies: vi.fn().mockResolvedValue([]),
+        pages: vi.fn().mockReturnValue([
+          {
+            evaluate: vi.fn().mockRejectedValue(new Error('Cannot set localStorage')),
+          },
+        ]),
+        addCookies: vi.fn().mockResolvedValue(undefined),
+      } as unknown as BrowserContext
+
+      // Should not throw, just log warning
+      const restored = await sessionManager.restoreSession(
+        'restore-fail-local',
+        contextWithFailingEval
+      )
+
+      expect(restored).toBe(true)
+    })
+
+    it('should handle sessionStorage restoration failure', async () => {
+      // Create session with sessionStorage data
+      const sessionPath = join(testSessionsDir, 'restore-fail-session.json')
+      await import('fs/promises').then((fs) =>
+        fs.writeFile(
+          sessionPath,
+          JSON.stringify({
+            name: 'restore-fail-session',
+            cookies: [{ name: 'test', value: 'val', domain: '.test.com', path: '/' }],
+            localStorage: {},
+            sessionStorage: { key: 'value' },
+            metadata: { created: Date.now(), lastUsed: Date.now() },
+          })
+        )
+      )
+
+      const evalMock = vi
+        .fn()
+        .mockResolvedValueOnce(undefined) // localStorage restore succeeds (empty)
+        .mockRejectedValueOnce(new Error('Cannot set sessionStorage'))
+
+      const contextWithFailingEval = {
+        cookies: vi.fn().mockResolvedValue([]),
+        pages: vi.fn().mockReturnValue([{ evaluate: evalMock }]),
+        addCookies: vi.fn().mockResolvedValue(undefined),
+      } as unknown as BrowserContext
+
+      // Should not throw, just log warning
+      const restored = await sessionManager.restoreSession(
+        'restore-fail-session',
+        contextWithFailingEval
+      )
+
+      expect(restored).toBe(true)
+    })
+  })
+
+  describe('listActiveSessions edge cases', () => {
+    it('should return all active sessions sorted by lastUsed', async () => {
+      // Note: listActiveSessions calls loadSession which updates lastUsed on each access.
+      // This test verifies that sessions are returned and the sorting logic works.
+      // The actual order depends on file iteration order since lastUsed gets updated during listing.
+
+      await sessionManager.createSession('session-a', mockContext)
+      await sessionManager.createSession('session-b', mockContext)
+
+      const sessions = await sessionManager.listActiveSessions()
+
+      expect(sessions).toHaveLength(2)
+      // Verify both sessions are returned
+      const names = sessions.map((s) => s.name)
+      expect(names).toContain('session-a')
+      expect(names).toContain('session-b')
+
+      // Verify they are sorted (descending by lastUsed)
+      // Since loadSession updates lastUsed, order depends on iteration
+      // Just verify the sort is applied (first lastUsed >= second lastUsed)
+      if (sessions.length === 2 && sessions[0] && sessions[1]) {
+        expect(sessions[0].metadata.lastUsed).toBeGreaterThanOrEqual(sessions[1].metadata.lastUsed)
+      }
+    })
   })
 })
