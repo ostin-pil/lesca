@@ -1,5 +1,4 @@
 import { CookieFileAuth } from '@lesca/auth'
-import { PlaywrightDriver } from '@lesca/browser-automation'
 import { ScrapingError } from '@lesca/error'
 import { ProblemScraperStrategy, ListScraperStrategy } from '@lesca/scrapers'
 import { ConfigManager } from '@lesca/shared/config'
@@ -23,6 +22,7 @@ import {
   type BatchScrapingOptions,
 } from '@/core/src/index'
 
+import { createBrowserService } from '../helpers'
 import { ProgressManager } from '../progress-manager'
 import { handleCliError } from '../utils'
 
@@ -38,6 +38,8 @@ interface ScrapeListOptions {
   limit: string
   concurrency: string
   resume?: boolean
+  session?: string
+  sessionPersist: boolean
 }
 
 export const scrapeListCommand = new Command('scrape-list')
@@ -53,6 +55,12 @@ export const scrapeListCommand = new Command('scrape-list')
   .option('--concurrency <number>', 'Number of parallel scrapes (overrides config)')
   .option('--resume', 'Resume from previous progress')
   .option('--no-auth', 'Skip authentication (public problems only)')
+  .option('-s, --session <name>', 'Use a browser session (enables pooling and persistence)')
+  .option(
+    '--session-persist',
+    'Save session state on exit (default: true when --session is used)',
+    true
+  )
   .action(async (options: ScrapeListOptions) => {
     const spinner = ora('Initializing...').start()
 
@@ -93,8 +101,18 @@ export const scrapeListCommand = new Command('scrape-list')
       )
       const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
 
-      // 4. Set up strategies
-      const browserDriver = new PlaywrightDriver(auth?.getCredentials())
+      // 4. Set up Browser Service
+      const browserService = createBrowserService(
+        configManager,
+        options.session,
+        !options.sessionPersist
+      )
+      const browserDriver = browserService.getDriver()
+      await browserService.startup()
+
+      if (browserService.getSessionName()) {
+        spinner.info(`Using session: ${browserService.getSessionName()}`)
+      }
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth?.getCredentials()),
         new ListScraperStrategy(graphqlClient),
@@ -210,6 +228,8 @@ export const scrapeListCommand = new Command('scrape-list')
         logger.log()
         logger.log(chalk.red(`${result.errors.length} errors occurred. Check logs for details.`))
       }
+      // Clean up: shutdown browser service
+      await browserService.shutdown()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)

@@ -4,10 +4,38 @@
  * Extracted helper functions for better testability
  */
 
+import { BrowserServiceFactory } from '@lesca/browser-automation'
+import type { BrowserService } from '@lesca/browser-automation'
 import { ValidationError } from '@lesca/error'
 import type { ConfigManager } from '@lesca/shared/config'
 import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
+
+/**
+ * Create BrowserService instance based on config and CLI options
+ */
+export function createBrowserService(
+  config: ConfigManager,
+  sessionName?: string,
+  noSessionPersist?: boolean
+): BrowserService {
+  // 1. CLI flag takes precedence
+  let finalSessionName = sessionName
+
+  // 2. Fallback to config if enabled
+  if (!finalSessionName && config.get('browser.session.enabled')) {
+    finalSessionName = config.get('browser.session.name')
+  }
+
+  const auth = config.get('auth')
+  const factory = BrowserServiceFactory.getInstance()
+  return factory.createService({
+    ...(finalSessionName ? { sessionName: finalSessionName } : {}),
+    persistOnShutdown: !noSessionPersist,
+    autoRestore: true,
+    ...(auth ? { auth } : {}),
+  })
+}
 
 /**
  * Initialize configuration with fallback to defaults

@@ -1,5 +1,4 @@
 import { CookieFileAuth } from '@lesca/auth'
-import { PlaywrightDriver } from '@lesca/browser-automation'
 import {
   ProblemScraperStrategy,
   ListScraperStrategy,
@@ -16,6 +15,7 @@ import ora from 'ora'
 import { GraphQLClient, RateLimiter } from '@/api-client/src/index'
 import { LeetCodeScraper } from '@/core/src/index'
 
+import { createBrowserService } from '../helpers'
 import { handleCliError } from '../utils'
 
 interface ScrapeEditorialOptions {
@@ -26,6 +26,8 @@ interface ScrapeEditorialOptions {
   premium?: boolean
   auth: boolean
   cache?: boolean // Added for the new cache option
+  session?: string
+  sessionPersist: boolean
 }
 
 export const scrapeEditorialCommand = new Command('scrape-editorial')
@@ -39,6 +41,12 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
   .option('--premium', 'Attempt to scrape premium content (requires auth)')
   .option('--no-auth', 'Skip authentication (will fail on premium content)')
   .option('--no-cache', 'Disable GraphQL caching') // Added new option
+  .option('-s, --session <name>', 'Use a browser session (enables pooling and persistence)')
+  .option(
+    '--session-persist',
+    'Save session state on exit (default: true when --session is used)',
+    true
+  )
   .action(async (problem: string, options: ScrapeEditorialOptions) => {
     const spinner = ora('Initializing browser automation...').start()
 
@@ -71,15 +79,24 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
         }
       }
 
-      // 2. Set up browser driver
-      const browserDriver = new PlaywrightDriver(auth)
+      // 2. Set up Browser Service
+      const browserService = createBrowserService(
+        configManager,
+        options.session,
+        !options.sessionPersist
+      )
+      const browserDriver = browserService.getDriver()
       spinner.start('Launching browser...')
 
-      await browserDriver.launch({
+      await browserService.startup({
         headless: headless,
         timeout: config.browser.timeout,
         blockResources: config.browser.blockedResources,
       })
+
+      if (browserService.getSessionName()) {
+        spinner.info(`Using session: ${browserService.getSessionName()}`)
+      }
 
       spinner.succeed('Browser launched')
 
@@ -137,7 +154,7 @@ export const scrapeEditorialCommand = new Command('scrape-editorial')
       }
 
       // 7. Clean up browser
-      await browserDriver.close()
+      await browserService.shutdown()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)

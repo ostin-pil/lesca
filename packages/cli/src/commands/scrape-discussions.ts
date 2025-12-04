@@ -1,5 +1,4 @@
 import { CookieFileAuth } from '@lesca/auth'
-import { PlaywrightDriver } from '@lesca/browser-automation'
 import {
   ProblemScraperStrategy,
   ListScraperStrategy,
@@ -17,6 +16,7 @@ import ora from 'ora'
 import { GraphQLClient, RateLimiter } from '@/api-client/src/index'
 import { LeetCodeScraper } from '@/core/src/index'
 
+import { createBrowserService } from '../helpers'
 import { handleCliError } from '../utils'
 
 interface ScrapeDiscussionsOptions {
@@ -30,6 +30,8 @@ interface ScrapeDiscussionsOptions {
   headless: boolean
   auth: boolean
   cache: boolean
+  session?: string
+  sessionPersist: boolean
 }
 
 export const scrapeDiscussionsCommand = new Command('scrape-discussions')
@@ -46,6 +48,12 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
   .option('--no-headless', 'Run browser in visible mode')
   .option('--no-auth', 'Skip authentication')
   .option('--no-cache', 'Do not use GraphQL caching')
+  .option('-s, --session <name>', 'Use a browser session (enables pooling and persistence)')
+  .option(
+    '--session-persist',
+    'Save session state on exit (default: true when --session is used)',
+    true
+  )
   .action(async (problem: string, options: ScrapeDiscussionsOptions) => {
     const spinner = ora('Initializing browser automation...').start()
 
@@ -80,15 +88,24 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
         }
       }
 
-      // 2. Set up browser driver
-      const browserDriver = new PlaywrightDriver(auth)
+      // 2. Set up Browser Service
+      const browserService = createBrowserService(
+        configManager,
+        options.session,
+        !options.sessionPersist
+      )
+      const browserDriver = browserService.getDriver()
       spinner.start('Launching browser...')
 
-      await browserDriver.launch({
+      await browserService.startup({
         headless: headless,
         timeout: config.browser.timeout,
         blockResources: config.browser.blockedResources,
       })
+
+      if (browserService.getSessionName()) {
+        spinner.info(`Using session: ${browserService.getSessionName()}`)
+      }
 
       spinner.succeed('Browser launched')
 
@@ -154,7 +171,7 @@ export const scrapeDiscussionsCommand = new Command('scrape-discussions')
       }
 
       // 7. Clean up browser
-      await browserDriver.close()
+      await browserService.shutdown()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)

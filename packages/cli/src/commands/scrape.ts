@@ -1,5 +1,4 @@
 import { CookieFileAuth } from '@lesca/auth'
-import { PlaywrightDriver, SessionManager, SessionPoolManager } from '@lesca/browser-automation'
 import { ProblemScraperStrategy, ListScraperStrategy } from '@lesca/scrapers'
 import { ConfigManager } from '@lesca/shared/config'
 import type { ProblemScrapeRequest } from '@lesca/shared/types'
@@ -12,6 +11,7 @@ import ora from 'ora'
 import { GraphQLClient, RateLimiter } from '@/api-client/src/index'
 import { LeetCodeScraper } from '@/core/src/index'
 
+import { createBrowserService } from '../helpers'
 import { handleCliError } from '../utils'
 
 interface ScrapeOptions {
@@ -115,42 +115,15 @@ ${chalk.bold('See also:')}
       )
       const graphqlClient = new GraphQLClient(auth?.getCredentials(), rateLimiter, cache)
 
-      // 4. Set up session management (if requested)
-      let sessionManager: SessionManager | undefined
-      let poolManager: SessionPoolManager | undefined
-
-      if (options.session) {
-        sessionManager = new SessionManager()
-
-        // Initialize pool manager if session is requested
-        if (config.browser.pool.enabled) {
-          const browserOptions = {
-            headless: config.browser.headless,
-          }
-
-          poolManager = new SessionPoolManager(
-            {
-              strategy: config.browser.pool.strategy,
-              perSessionMaxSize: config.browser.pool.maxSize,
-              perSessionIdleTime: config.browser.pool.maxIdleTime,
-              acquireTimeout: config.browser.pool.acquireTimeout || 30000,
-              retryOnFailure: config.browser.pool.retryOnFailure || true,
-              maxRetries: config.browser.pool.maxRetries || 3,
-            },
-            browserOptions
-          )
-
-          spinner.info(`Using session pool: ${options.session}`)
-        }
-      }
-
-      // 5. Set up strategies with pool injection
-      const browserDriver = new PlaywrightDriver(
-        auth?.getCredentials(),
-        poolManager,
-        options.session
+      // 4. Set up Browser Service
+      const browserService = createBrowserService(
+        configManager,
+        options.session,
+        !options.sessionPersist
       )
 
+      // 5. Set up strategies
+      const browserDriver = browserService.getDriver()
       const strategies = [
         new ProblemScraperStrategy(graphqlClient, browserDriver, auth?.getCredentials()),
         new ListScraperStrategy(graphqlClient),
@@ -159,7 +132,7 @@ ${chalk.bold('See also:')}
       // 6. Set up storage
       const storage = new FileSystemStorage(outputDir)
 
-      // 7. Launch browser (will acquire from pool if poolManager is provided)
+      // 7. Launch browser
       const launchOptions: {
         headless?: boolean
         timeout?: number
@@ -189,17 +162,10 @@ ${chalk.bold('See also:')}
         }
       }
 
-      await browserDriver.launch(launchOptions)
+      await browserService.startup(launchOptions)
 
-      // 8. Restore session if exists
-      if (sessionManager && options.session) {
-        const context = browserDriver.getBrowser()?.contexts()[0]
-        if (context) {
-          const restored = await sessionManager.restoreSession(options.session, context)
-          if (restored) {
-            spinner.succeed(`Session "${options.session}" restored`)
-          }
-        }
+      if (browserService.getSessionName()) {
+        spinner.info(`Using session: ${browserService.getSessionName()}`)
       }
 
       // 9. Create scraper
@@ -227,23 +193,14 @@ ${chalk.bold('See also:')}
           const preview = result.data.content.split('\n').slice(0, 5).join('\n')
           logger.log(chalk.gray('  ' + preview.replace(/\n/g, '\n  ')))
         }
-
-        // Save session if requested
-        if (sessionManager && options.session && options.sessionPersist) {
-          const context = browserDriver.getBrowser()?.contexts()[0]
-          if (context) {
-            await sessionManager.createSession(options.session, context)
-            logger.info(`Session "${options.session}" saved`)
-          }
-        }
       } else {
         spinner.fail('Failed to scrape problem')
         logger.error(chalk.red('Error:'), result.error)
         process.exit(1)
       }
 
-      // Clean up: close browser (will release to pool if poolManager is provided)
-      await browserDriver.close()
+      // Clean up: shutdown browser service
+      await browserService.shutdown()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)

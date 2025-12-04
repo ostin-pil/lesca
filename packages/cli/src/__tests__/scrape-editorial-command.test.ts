@@ -12,22 +12,7 @@ const mockConfigManagerInstance = {
     browser: {
       headless: true,
       timeout: 30000,
-      viewport: { width: 1280, height: 720 },
       blockedResources: [],
-      pool: {
-        enabled: false,
-        strategy: 'lazy',
-        maxSize: 3,
-        maxIdleTime: 300000,
-        acquireTimeout: 30000,
-        retryOnFailure: true,
-        maxRetries: 3,
-      },
-      interception: {
-        enabled: false,
-        blockResources: [],
-        captureResponses: false,
-      },
     },
   }),
 }
@@ -66,20 +51,17 @@ vi.mock('@lesca/auth', () => ({
 const mockDriverInstance = {
   launch: vi.fn().mockResolvedValue(undefined),
   close: vi.fn().mockResolvedValue(undefined),
-  getBrowser: vi.fn().mockReturnValue(undefined),
 }
 
 vi.mock('@lesca/browser-automation', () => ({
   PlaywrightDriver: vi.fn(() => mockDriverInstance),
-  SessionManager: vi.fn(),
-  SessionPoolManager: vi.fn(),
 }))
 
 const mockScraperInstance = {
   scrape: vi.fn().mockResolvedValue({
     success: true,
-    filePath: '/path/to/problem.md',
-    data: { content: 'Problem content' },
+    filePath: '/path/to/editorial.md',
+    data: { content: 'Editorial content\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6' },
   }),
 }
 
@@ -90,6 +72,7 @@ vi.mock('@/core/src/index', () => ({
 vi.mock('@lesca/scrapers', () => ({
   ProblemScraperStrategy: vi.fn(),
   ListScraperStrategy: vi.fn(),
+  EditorialScraperStrategy: vi.fn(),
 }))
 
 vi.mock('@lesca/storage', () => ({
@@ -114,6 +97,7 @@ vi.mock('chalk', () => ({
     cyan: (str: string) => str,
     green: (str: string) => str,
     red: (str: string) => str,
+    yellow: (str: string) => str,
   },
 }))
 
@@ -133,12 +117,11 @@ vi.mock('../utils', () => ({
   handleCliError: vi.fn(),
 }))
 
-describe('Scrape Command', () => {
+describe('Scrape Editorial Command', () => {
   let program: Command
-  let scrapeCommand: Command
   let mockExit: ReturnType<typeof vi.spyOn>
-  let logger: any
-  let CookieFileAuth: any
+  let logger: typeof import('@lesca/shared/utils').logger
+  let CookieFileAuth: typeof import('@lesca/auth').CookieFileAuth
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -150,14 +133,18 @@ describe('Scrape Command', () => {
     mockScraperInstance.scrape.mockClear()
     mockDriverInstance.launch.mockClear()
     mockDriverInstance.close.mockClear()
-    mockDriverInstance.getBrowser.mockClear()
+    mockBrowserServiceInstance.startup.mockClear()
+    mockBrowserServiceInstance.shutdown.mockClear()
+    mockBrowserServiceInstance.getDriver.mockClear()
 
     // Create fresh program
     program = new Command()
     program.exitOverride()
 
-    // Mock process.exit
-    mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any)
+    // Mock process.exit to throw (simulates termination)
+    mockExit = vi.spyOn(process, 'exit').mockImplementation(((code) => {
+      throw new Error(`Process.exit(${code})`)
+    }) as never)
 
     // Get mocked modules
     const utils = await import('@lesca/shared/utils')
@@ -166,56 +153,83 @@ describe('Scrape Command', () => {
     const auth = await import('@lesca/auth')
     CookieFileAuth = auth.CookieFileAuth
 
-    // Import and add scrape command
-    const { scrapeCommand: cmd } = await import('../commands/scrape')
-    scrapeCommand = cmd
-    program.addCommand(scrapeCommand)
+    // Import and add scrape-editorial command
+    const { scrapeEditorialCommand } = await import('../commands/scrape-editorial')
+    program.addCommand(scrapeEditorialCommand)
   })
 
   afterEach(() => {
     mockExit.mockRestore()
   })
 
-  it('should scrape a problem successfully', async () => {
-    await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum'])
+  it('should scrape an editorial successfully', async () => {
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
 
     expect(mockConfigManagerInstance.getConfig).toHaveBeenCalled()
     expect(CookieFileAuth).toHaveBeenCalled()
     expect(mockAuthInstance.authenticate).toHaveBeenCalled()
+    expect(mockBrowserServiceInstance.startup).toHaveBeenCalled()
     expect(mockScraperInstance.scrape).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'problem',
+        type: 'editorial',
         titleSlug: 'two-sum',
+        includePremium: false,
       })
     )
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Preview'))
+    expect(mockBrowserServiceInstance.shutdown).toHaveBeenCalled()
   })
 
-  it('should handle authentication failure but continue', async () => {
+  it('should handle authentication failure but continue without premium', async () => {
     mockAuthInstance.authenticate.mockRejectedValueOnce(new Error('Auth failed'))
 
-    await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum'])
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
 
     expect(mockAuthInstance.authenticate).toHaveBeenCalled()
     expect(mockScraperInstance.scrape).toHaveBeenCalled()
   })
 
+  it('should fail if auth fails and premium is requested', async () => {
+    mockAuthInstance.authenticate.mockRejectedValueOnce(new Error('Auth failed'))
+    const { handleCliError } = await import('../utils')
+
+    await expect(
+      program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum', '--premium'])
+    ).rejects.toThrow('Process.exit(1)')
+
+    expect(handleCliError).toHaveBeenCalled()
+    expect(mockExit).toHaveBeenCalledWith(1)
+    expect(mockScraperInstance.scrape).not.toHaveBeenCalled()
+  })
+
   it('should skip authentication with --no-auth', async () => {
-    await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum', '--no-auth'])
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum', '--no-auth'])
 
     expect(CookieFileAuth).not.toHaveBeenCalled()
     expect(mockScraperInstance.scrape).toHaveBeenCalled()
   })
 
+  it('should include premium flag when requested', async () => {
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum', '--premium'])
+
+    expect(mockScraperInstance.scrape).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'editorial',
+        includePremium: true,
+      })
+    )
+  })
+
   it('should handle scrape failure', async () => {
     mockScraperInstance.scrape.mockResolvedValueOnce({
       success: false,
-      error: 'Failed to fetch problem',
+      error: 'Editorial not found',
     })
 
-    await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum'])
+    await expect(
+      program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
+    ).rejects.toThrow('Process.exit(1)')
 
-    expect(logger.error).toHaveBeenCalledWith(expect.anything(), 'Failed to fetch problem')
+    expect(logger.error).toHaveBeenCalledWith(expect.anything(), 'Editorial not found')
     expect(mockExit).toHaveBeenCalledWith(1)
   })
 
@@ -223,46 +237,77 @@ describe('Scrape Command', () => {
     mockScraperInstance.scrape.mockRejectedValueOnce(new Error('Unexpected crash'))
     const { handleCliError } = await import('../utils')
 
-    await program.parseAsync(['node', 'lesca', 'scrape', 'two-sum'])
+    await expect(
+      program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
+    ).rejects.toThrow('Process.exit(1)')
 
     expect(handleCliError).toHaveBeenCalled()
     expect(mockExit).toHaveBeenCalledWith(1)
   })
 
-  it('should respect custom options', async () => {
+  it('should respect custom output directory', async () => {
     await program.parseAsync([
       'node',
       'lesca',
-      'scrape',
+      'scrape-editorial',
       'two-sum',
       '--output',
-      './custom',
-      '--format',
-      'obsidian',
-      '--no-cache',
+      './custom-editorials',
     ])
 
     const { FileSystemStorage } = await import('@lesca/storage')
-    const { LeetCodeScraper } = await import('@/core/src/index')
-    const { createCache } = await import('@lesca/shared/utils')
+    expect(FileSystemStorage).toHaveBeenCalledWith('./custom-editorials')
+  })
 
-    expect(FileSystemStorage).toHaveBeenCalledWith('./custom')
+  it('should respect custom format', async () => {
+    await program.parseAsync([
+      'node',
+      'lesca',
+      'scrape-editorial',
+      'two-sum',
+      '--format',
+      'obsidian',
+    ])
+
+    const { LeetCodeScraper } = await import('@/core/src/index')
     expect(LeetCodeScraper).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ format: 'obsidian' })
     )
-    // cache is disabled via --no-cache, but createCache might still be called if config enables it
-    // Wait, logic is: options.cache !== false && config.cache.enabled
-    // --no-cache sets options.cache to false.
-    // So createCache should NOT be called if we assume implementation logic is correct?
-    // Let's check implementation: const cacheEnabled = options.cache !== false && config.cache.enabled
-    // So if --no-cache is passed, cacheEnabled is false.
-    // const cache = cacheEnabled ? createCache(config) : undefined
-    // So createCache should NOT be called.
+  })
 
-    // However, createCache mock is global. Let's check if it was called.
-    // Wait, beforeEach clears mocks.
+  it('should disable cache with --no-cache', async () => {
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum', '--no-cache'])
+
+    const { createCache } = await import('@lesca/shared/utils')
     expect(createCache).not.toHaveBeenCalled()
+  })
+
+  it('should respect headless option', async () => {
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum', '--no-headless'])
+
+    expect(mockBrowserServiceInstance.startup).toHaveBeenCalledWith(
+      expect.objectContaining({ headless: false })
+    )
+  })
+
+  it('should display content preview on success', async () => {
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
+
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Preview'))
+  })
+
+  it('should handle result with no content', async () => {
+    mockScraperInstance.scrape.mockResolvedValueOnce({
+      success: true,
+      filePath: '/path/to/editorial.md',
+      data: {},
+    })
+
+    await program.parseAsync(['node', 'lesca', 'scrape-editorial', 'two-sum'])
+
+    // Should still succeed, just not show preview
+    expect(mockExit).not.toHaveBeenCalled()
   })
 })
