@@ -1,5 +1,9 @@
-import { SessionManager, MetricsCollector } from '@lesca/browser-automation'
-import type { MetricsSummary, SessionMetrics } from '@lesca/browser-automation'
+import {
+  SessionManager,
+  MetricsCollector,
+  SessionCleanupScheduler,
+} from '@lesca/browser-automation'
+import type { MetricsSummary, SessionMetrics, CleanupResult } from '@lesca/browser-automation'
 import { logger } from '@lesca/shared/utils'
 import { Command } from 'commander'
 
@@ -221,88 +225,128 @@ sessionCommand
   .option('--json', 'Output in JSON format')
   .option('-w, --watch', 'Watch mode: continuously update metrics')
   .option('-i, --interval <ms>', 'Update interval in milliseconds (default: 2000)', '2000')
-  .action((options: { session?: string; json?: boolean; watch?: boolean; interval?: string }) => {
-    const collector = getMetricsCollector()
+  .option('-e, --export <file>', 'Export metrics to file (JSON or CSV based on extension)')
+  .option('--include-history', 'Include raw event history in export (JSON only)')
+  .action(
+    async (options: {
+      session?: string
+      json?: boolean
+      watch?: boolean
+      interval?: string
+      export?: string
+      includeHistory?: boolean
+    }) => {
+      const collector = getMetricsCollector()
 
-    if (options.watch) {
-      // Watch mode: clear screen and display metrics at intervals
-      const intervalMs = parseInt(options.interval ?? '2000', 10)
-      let isRunning = true
+      if (options.watch) {
+        // Watch mode: clear screen and display metrics at intervals
+        const intervalMs = parseInt(options.interval ?? '2000', 10)
+        let isRunning = true
 
-      // Handle Ctrl+C gracefully
-      const cleanup = (): void => {
-        isRunning = false
-        // eslint-disable-next-line no-console -- Terminal output for exit message
-        console.log('\nExiting watch mode...')
-        process.exit(0)
-      }
-      process.on('SIGINT', cleanup)
-      process.on('SIGTERM', cleanup)
-
-      // Initial display
-      clearScreen()
-      displayMetricsWithTimestamp(collector, options.session)
-
-      // Subscribe to metric events for real-time updates
-      collector.on('metric', () => {
-        if (isRunning) {
-          clearScreen()
-          displayMetricsWithTimestamp(collector, options.session)
+        // Handle Ctrl+C gracefully
+        const cleanup = (): void => {
+          isRunning = false
+          // eslint-disable-next-line no-console -- Terminal output for exit message
+          console.log('\nExiting watch mode...')
+          process.exit(0)
         }
-      })
+        process.on('SIGINT', cleanup)
+        process.on('SIGTERM', cleanup)
 
-      // Periodic refresh (in case no events arrive)
-      const refreshInterval = setInterval(() => {
-        if (isRunning) {
-          clearScreen()
-          displayMetricsWithTimestamp(collector, options.session)
-        }
-      }, intervalMs)
+        // Initial display
+        clearScreen()
+        displayMetricsWithTimestamp(collector, options.session)
 
-      // Keep process alive
-      process.stdin.resume()
+        // Subscribe to metric events for real-time updates
+        collector.on('metric', () => {
+          if (isRunning) {
+            clearScreen()
+            displayMetricsWithTimestamp(collector, options.session)
+          }
+        })
 
-      // Cleanup on process exit
-      process.on('exit', () => {
-        clearInterval(refreshInterval)
-      })
+        // Periodic refresh (in case no events arrive)
+        const refreshInterval = setInterval(() => {
+          if (isRunning) {
+            clearScreen()
+            displayMetricsWithTimestamp(collector, options.session)
+          }
+        }, intervalMs)
 
-      return
-    }
+        // Keep process alive
+        process.stdin.resume()
 
-    // Non-watch mode: display once
-    if (options.session) {
-      const metrics = collector.getSessionMetrics(options.session)
-      if (!metrics) {
-        logger.warn(`No metrics found for session "${options.session}"`)
-        logger.info('Note: Pool metrics are only available during active scraping operations.')
+        // Cleanup on process exit
+        process.on('exit', () => {
+          clearInterval(refreshInterval)
+        })
+
         return
       }
 
-      if (options.json) {
-        // eslint-disable-next-line no-console -- JSON output for machine consumption
-        console.log(JSON.stringify(metrics, null, 2))
-      } else {
-        logger.info(formatSessionMetrics(metrics))
-      }
-    } else {
-      const summary = collector.getSummary()
+      // Export mode: write to file
+      if (options.export) {
+        const filePath = options.export
+        const isCSV = filePath.toLowerCase().endsWith('.csv')
 
-      if (summary.totalSessions === 0) {
-        logger.info('No pool metrics available.')
-        logger.info('Note: Pool metrics are collected during active scraping operations.')
-        logger.info('Use --session <name> to view metrics for a specific session.')
+        let content: string
+        if (isCSV) {
+          content = collector.exportToCSV()
+          logger.info(`Exporting metrics to CSV: ${filePath}`)
+        } else {
+          const exportOptions: { includeHistory?: boolean; pretty?: boolean } = {}
+          if (options.includeHistory) {
+            exportOptions.includeHistory = options.includeHistory
+          }
+          content = collector.exportToJSON(exportOptions)
+          logger.info(`Exporting metrics to JSON: ${filePath}`)
+        }
+
+        try {
+          const { writeFileSync } = await import('fs')
+          writeFileSync(filePath, content, 'utf-8')
+          logger.success(`Metrics exported to ${filePath}`)
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          logger.error(`Failed to write export file: ${message}`)
+        }
         return
       }
 
-      if (options.json) {
-        // eslint-disable-next-line no-console -- JSON output for machine consumption
-        console.log(JSON.stringify(summary, null, 2))
+      // Non-watch mode: display once
+      if (options.session) {
+        const metrics = collector.getSessionMetrics(options.session)
+        if (!metrics) {
+          logger.warn(`No metrics found for session "${options.session}"`)
+          logger.info('Note: Pool metrics are only available during active scraping operations.')
+          return
+        }
+
+        if (options.json) {
+          // eslint-disable-next-line no-console -- JSON output for machine consumption
+          console.log(JSON.stringify(metrics, null, 2))
+        } else {
+          logger.info(formatSessionMetrics(metrics))
+        }
       } else {
-        logger.info(formatMetricsSummary(summary))
+        const summary = collector.getSummary()
+
+        if (summary.totalSessions === 0) {
+          logger.info('No pool metrics available.')
+          logger.info('Note: Pool metrics are collected during active scraping operations.')
+          logger.info('Use --session <name> to view metrics for a specific session.')
+          return
+        }
+
+        if (options.json) {
+          // eslint-disable-next-line no-console -- JSON output for machine consumption
+          console.log(JSON.stringify(summary, null, 2))
+        } else {
+          logger.info(formatMetricsSummary(summary))
+        }
       }
     }
-  })
+  )
 
 // Reset pool statistics
 sessionCommand
@@ -312,4 +356,84 @@ sessionCommand
     const collector = getMetricsCollector()
     collector.reset()
     logger.success('Pool statistics reset')
+  })
+
+/**
+ * Format cleanup result for display
+ */
+function formatCleanupResult(result: CleanupResult): string {
+  const lines = [
+    result.dryRun ? '🔍 DRY RUN - No sessions were deleted' : '🧹 Cleanup Complete',
+    '',
+  ]
+
+  if (result.cleaned.length > 0) {
+    lines.push(`${result.dryRun ? 'Would clean' : 'Cleaned'}: ${result.cleaned.length} sessions`)
+    for (const name of result.cleaned) {
+      lines.push(`  - ${name}`)
+    }
+    lines.push('')
+  }
+
+  if (result.kept.length > 0) {
+    lines.push(`Kept: ${result.kept.length} sessions`)
+    for (const name of result.kept) {
+      lines.push(`  - ${name}`)
+    }
+    lines.push('')
+  }
+
+  if (result.errors.length > 0) {
+    lines.push(`Errors: ${result.errors.length}`)
+    for (const { session, error } of result.errors) {
+      lines.push(`  - ${session}: ${error}`)
+    }
+    lines.push('')
+  }
+
+  return lines.join('\n')
+}
+
+// Cleanup expired sessions
+sessionCommand
+  .command('cleanup')
+  .description('Clean up expired or excess sessions')
+  .option('--dry-run', 'Preview what would be cleaned without deleting')
+  .option('--max-age <days>', 'Maximum session age in days (default: 7)', '7')
+  .option('--max-sessions <count>', 'Maximum number of sessions to keep (0 = unlimited)', '0')
+  .action(async (options: { dryRun?: boolean; maxAge?: string; maxSessions?: string }) => {
+    const sessionManager = new SessionManager()
+    const maxAgeDays = parseInt(options.maxAge ?? '7', 10)
+    const maxSessions = parseInt(options.maxSessions ?? '0', 10)
+
+    const scheduler = new SessionCleanupScheduler(sessionManager, {
+      enabled: true,
+      maxSessionAge: maxAgeDays * 24 * 60 * 60 * 1000,
+      maxSessions,
+      cleanupOnStartup: false,
+      cleanupInterval: 0,
+    })
+
+    if (options.dryRun) {
+      logger.info('Running cleanup in dry-run mode (no sessions will be deleted)...')
+    } else {
+      logger.info('Running session cleanup...')
+    }
+
+    const cleanupOptions: { dryRun?: boolean } = {}
+    if (options.dryRun) {
+      cleanupOptions.dryRun = options.dryRun
+    }
+    const result = await scheduler.cleanup(cleanupOptions)
+
+    if (result.cleaned.length === 0 && result.errors.length === 0) {
+      logger.info('No sessions to clean up')
+      return
+    }
+
+    logger.info(formatCleanupResult(result))
+
+    if (!options.dryRun && result.cleaned.length > 0) {
+      logger.success(`Cleaned ${result.cleaned.length} sessions`)
+    }
   })

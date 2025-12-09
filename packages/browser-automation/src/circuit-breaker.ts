@@ -17,12 +17,56 @@ export interface CircuitBreakerConfig {
 
 /**
  * Circuit Breaker
- * Prevents cascading failures by temporarily blocking operations after repeated failures
  *
- * States:
- * - closed: Normal operation, calls pass through
- * - open: Failures exceeded threshold, calls are blocked
- * - half-open: Testing if service recovered, limited calls allowed
+ * Prevents cascading failures by temporarily blocking operations after repeated failures.
+ * Implements the circuit breaker pattern to protect browser launch operations.
+ *
+ * ## States
+ * - **Closed**: Normal operation, all calls pass through. Failures are counted.
+ * - **Open**: Failures exceeded threshold, all calls are blocked immediately.
+ * - **Half-Open**: Testing recovery. After reset timeout, limited calls are allowed.
+ *
+ * ## State Transitions
+ * ```
+ * ┌─────────┐  failures >= threshold  ┌────────┐
+ * │ CLOSED  │ ─────────────────────►  │  OPEN  │
+ * └─────────┘                         └────────┘
+ *      ▲                                   │
+ *      │                                   │ reset timeout
+ *      │                                   ▼
+ *      │   successes >= threshold    ┌───────────┐
+ *      └──────────────────────────── │ HALF-OPEN │
+ *                                    └───────────┘
+ *                 any failure │
+ *                             ▼
+ *                         ┌────────┐
+ *                         │  OPEN  │
+ *                         └────────┘
+ * ```
+ *
+ * ## Usage
+ * ```typescript
+ * const breaker = new CircuitBreaker({
+ *   failureThreshold: 3,   // Open after 3 failures
+ *   resetTimeout: 30000,   // Try again after 30s
+ *   successThreshold: 2    // Need 2 successes to close
+ * });
+ *
+ * // Execute operations through the breaker
+ * try {
+ *   const result = await breaker.execute(async () => {
+ *     return await launchBrowser();
+ *   });
+ * } catch (error) {
+ *   if (error.code === 'BROWSER_CIRCUIT_OPEN') {
+ *     // Circuit is open, operation was blocked
+ *   }
+ * }
+ * ```
+ *
+ * @see {@link CircuitBreakerConfig} for configuration options
+ * @see {@link CircuitState} for state types
+ * @see {@link CircuitBreakerStats} for statistics structure
  */
 export class CircuitBreaker {
   private state: CircuitState = 'closed'
@@ -35,6 +79,25 @@ export class CircuitBreaker {
   private totalSuccesses = 0
   private config: Required<CircuitBreakerConfig>
 
+  /**
+   * Creates a new CircuitBreaker instance.
+   *
+   * @param config - Circuit breaker configuration
+   * @param config.failureThreshold - Number of failures before opening (default: 5)
+   * @param config.resetTimeout - Time in ms before trying again (default: 30000)
+   * @param config.successThreshold - Successes needed in half-open to close (default: 2)
+   *
+   * @throws {BrowserError} If configuration values are invalid
+   *
+   * @example
+   * ```typescript
+   * const breaker = new CircuitBreaker({
+   *   failureThreshold: 3,
+   *   resetTimeout: 60000,
+   *   successThreshold: 2
+   * });
+   * ```
+   */
   constructor(config: Partial<CircuitBreakerConfig> = {}) {
     this.config = {
       failureThreshold: config.failureThreshold ?? 5,
@@ -79,7 +142,25 @@ export class CircuitBreaker {
   }
 
   /**
-   * Execute a function through the circuit breaker
+   * Executes a function through the circuit breaker.
+   *
+   * If the circuit is closed or half-open, the function is executed.
+   * If the circuit is open, a BrowserError is thrown immediately.
+   *
+   * @typeParam T - Return type of the function
+   * @param fn - The async function to execute
+   *
+   * @returns The result of the function
+   *
+   * @throws {BrowserError} BROWSER_CIRCUIT_OPEN - If circuit is open
+   * @throws Any error thrown by the function (circuit records as failure)
+   *
+   * @example
+   * ```typescript
+   * const browser = await breaker.execute(async () => {
+   *   return await chromium.launch();
+   * });
+   * ```
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     this.totalCalls++
@@ -112,7 +193,18 @@ export class CircuitBreaker {
   }
 
   /**
-   * Check if circuit allows execution
+   * Checks if the circuit currently allows execution.
+   *
+   * @returns True if operations can proceed, false if blocked
+   *
+   * @example
+   * ```typescript
+   * if (breaker.canExecute()) {
+   *   // Safe to attempt operation
+   * } else {
+   *   // Circuit is open, operation would be blocked
+   * }
+   * ```
    */
   canExecute(): boolean {
     if (this.state === 'closed') {
@@ -210,7 +302,20 @@ export class CircuitBreaker {
   }
 
   /**
-   * Get current state
+   * Gets the current circuit state.
+   *
+   * Note: This may trigger a state transition from open to half-open
+   * if the reset timeout has elapsed.
+   *
+   * @returns The current circuit state ('closed', 'open', or 'half-open')
+   *
+   * @example
+   * ```typescript
+   * const state = breaker.getState();
+   * if (state === 'open') {
+   *   console.log('Circuit is open, operations are blocked');
+   * }
+   * ```
    */
   getState(): CircuitState {
     // Check for automatic transition to half-open
@@ -221,7 +326,16 @@ export class CircuitBreaker {
   }
 
   /**
-   * Get statistics
+   * Gets circuit breaker statistics.
+   *
+   * @returns Statistics including state, failure counts, and timing information
+   *
+   * @example
+   * ```typescript
+   * const stats = breaker.getStats();
+   * console.log(`State: ${stats.state}`);
+   * console.log(`Failures: ${stats.totalFailures}/${stats.totalCalls}`);
+   * ```
    */
   getStats(): CircuitBreakerStats {
     return {
@@ -237,7 +351,16 @@ export class CircuitBreaker {
   }
 
   /**
-   * Manually reset the circuit breaker
+   * Manually resets the circuit breaker to closed state.
+   *
+   * Use this for recovery scenarios where you know the underlying
+   * issue has been resolved and want to restore normal operation.
+   *
+   * @example
+   * ```typescript
+   * // After fixing browser installation issues
+   * breaker.reset();
+   * ```
    */
   reset(): void {
     this.state = 'closed'
@@ -247,7 +370,16 @@ export class CircuitBreaker {
   }
 
   /**
-   * Manually trip the circuit breaker (force open)
+   * Manually trips (opens) the circuit breaker.
+   *
+   * Use this to proactively block operations when you detect
+   * issues that would cause failures.
+   *
+   * @example
+   * ```typescript
+   * // Detected system resource exhaustion
+   * breaker.trip();
+   * ```
    */
   trip(): void {
     this.lastFailureTime = Date.now()

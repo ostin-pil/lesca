@@ -2,10 +2,10 @@
 
 > **Purpose**: Comprehensive reference for AI agents working on the Lesca project. This document consolidates critical information from across the codebase, documentation, and development workflows.
 
-**Last Updated**: 2025-11-27
+**Last Updated**: 2025-12-09
 **Project Version**: v0.1.0
 **Tests**: 631 passing • Coverage: 68.43%
-**Recent Improvements**: Logger enhancements, Adapter pattern, eslint-disable audit (17 comments removed)
+**Recent Improvements**: Browser pooling with metrics/monitoring, session management CLI commands, circuit breaker protection
 
 ---
 
@@ -161,16 +161,16 @@ lesca/
 
 ### Package Responsibilities
 
-| Package                | Purpose                              | Key Exports                                     |
-| ---------------------- | ------------------------------------ | ----------------------------------------------- |
-| **core**               | Orchestration, batch processing      | `LeetCodeScraper`, `BatchScraper`               |
-| **auth**               | Cookie-based authentication          | `CookieFileAuth`                                |
-| **api-client**         | GraphQL requests with rate limiting  | `GraphQLClient`, `RateLimiter`                  |
-| **browser-automation** | Playwright driver, pooling, sessions | `PlaywrightDriver`, `BrowserPool`               |
-| **scrapers**           | Strategy implementations             | `ProblemScraperStrategy`, `ListScraperStrategy` |
-| **converters**         | Format transformation                | `HtmlToMarkdownConverter`, `ObsidianConverter`  |
-| **storage**            | Filesystem persistence               | `FileSystemStorage`                             |
-| **cli**                | CLI interface                        | Command implementations                         |
+| Package                | Purpose                              | Key Exports                                                               |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------- |
+| **core**               | Orchestration, batch processing      | `LeetCodeScraper`, `BatchScraper`                                         |
+| **auth**               | Cookie-based authentication          | `CookieFileAuth`                                                          |
+| **api-client**         | GraphQL requests with rate limiting  | `GraphQLClient`, `RateLimiter`                                            |
+| **browser-automation** | Playwright driver, pooling, sessions | `BrowserPool`, `SessionPoolManager`, `MetricsCollector`, `BrowserService` |
+| **scrapers**           | Strategy implementations             | `ProblemScraperStrategy`, `ListScraperStrategy`                           |
+| **converters**         | Format transformation                | `HtmlToMarkdownConverter`, `ObsidianConverter`                            |
+| **storage**            | Filesystem persistence               | `FileSystemStorage`                                                       |
+| **cli**                | CLI interface                        | Command implementations                                                   |
 
 ---
 
@@ -804,6 +804,41 @@ try {
 }
 ```
 
+**With Browser Pooling** (recommended for batch operations):
+
+```typescript
+import { SessionPoolManager, MetricsCollector } from '@lesca/browser-automation'
+
+const collector = new MetricsCollector()
+const manager = new SessionPoolManager(
+  { perSessionMaxSize: 3, acquireTimeout: 60000, retryOnFailure: true },
+  { headless: true },
+  { metricsCollector: collector }
+)
+
+// Acquire browser (reuses existing or creates new)
+const browser = await manager.acquireBrowser('my-session')
+
+try {
+  const page = await browser.newPage()
+  await page.goto(url)
+  // ... use browser
+} finally {
+  // Release back to pool (doesn't close browser)
+  await manager.releaseBrowser(browser, 'my-session')
+}
+
+// On shutdown
+await manager.drainAll()
+```
+
+**Benefits of Pooling**:
+
+- **~70% faster** batch operations (reuse warm browsers)
+- **Lower memory** via controlled concurrency
+- **Circuit breaker** protection against cascading failures
+- **Metrics & monitoring** for pool health
+
 ---
 
 ## Quick Reference
@@ -935,6 +970,61 @@ export class HtmlToMarkdownConverter implements Converter {
 - **Testability**: Can mock adapter for testing
 - **Flexibility**: Easy to swap Turndown for another library
 - **Maintainability**: All library-specific code in one place
+
+#### 5. **Browser Pooling** - Session-Based Pool Management
+
+```typescript
+// packages/browser-automation/src/session-pool-manager.ts
+export class SessionPoolManager implements ISessionPoolManager {
+  private sessionPools: Map<string, IBrowserPool> = new Map()
+  private metricsCollector: IMetricsCollector
+
+  async acquireBrowser(sessionName: string): Promise<Browser> {
+    const pool = this.getPool(sessionName)
+    return await pool.acquire() // Reuses existing browser or creates new
+  }
+
+  async releaseBrowser(browser: Browser, sessionName: string): Promise<void> {
+    const pool = this.sessionPools.get(sessionName)
+    await pool?.release(browser) // Returns browser to pool for reuse
+  }
+}
+
+// packages/browser-automation/src/pool.ts
+export class BrowserPool implements IBrowserPool {
+  private available: PooledBrowser[] = []
+  private circuitBreaker: CircuitBreaker
+
+  async acquire(): Promise<Browser> {
+    // 1. Check circuit breaker (blocks if too many failures)
+    // 2. Reuse idle browser from pool if available
+    // 3. Create new browser if pool not at capacity
+    // 4. Wait for release if pool exhausted
+  }
+}
+```
+
+**Architecture**:
+
+```
+SessionPoolManager (manages per-session pools)
+├── Session "auth-1" → BrowserPool (max: 2)
+│   ├── Browser 1 (active)
+│   └── Browser 2 (idle)
+├── Session "auth-2" → BrowserPool (max: 2)
+│   └── Browser 1 (active)
+├── MetricsCollector (event recording, statistics)
+└── CircuitBreaker (failure protection)
+```
+
+**Key Components**:
+
+- **BrowserPool**: Manages browser instance lifecycle with acquire/release semantics
+- **SessionPoolManager**: Coordinates per-session pools with timeout and retry logic
+- **MetricsCollector**: Records events, calculates timing stats and rates
+- **CircuitBreaker**: Prevents cascading failures by blocking after repeated errors
+
+**See**: [Browser Pooling Guide](./BROWSER_POOLING.md) for detailed documentation.
 
 ### Code Quality Standards
 
@@ -1109,6 +1199,7 @@ api:
   - [Installation](./INSTALLATION.md) - Setup instructions
   - [CLI Reference](./CLI_REFERENCE.md) - All commands
   - [Configuration](./CONFIGURATION.md) - Config options
+  - [Browser Pooling](./BROWSER_POOLING.md) - Pool management and monitoring
   - [Examples](./EXAMPLES.md) - Usage patterns
   - [Troubleshooting](./TROUBLESHOOTING.md) - Common issues
 

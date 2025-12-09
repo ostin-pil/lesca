@@ -1,8 +1,39 @@
+/**
+ * Browser Automation Interfaces
+ *
+ * This module defines the core interfaces and types for the browser-automation package.
+ * These interfaces provide contracts for browser pooling, session management, and metrics.
+ *
+ * @module browser-automation/interfaces
+ */
+
 import type { BrowserDriver, PoolStatistics } from '@lesca/shared/types'
 import type { Browser, BrowserContext, Cookie, LaunchOptions } from 'playwright'
 
+// ============================================================================
+// Session Management Types
+// ============================================================================
+
 /**
- * Session storage data structure
+ * Session storage data structure.
+ *
+ * Contains all browser session state that can be persisted and restored,
+ * including cookies, localStorage, sessionStorage, and metadata.
+ *
+ * @example
+ * ```typescript
+ * const session: SessionData = {
+ *   name: 'leetcode-auth',
+ *   cookies: await context.cookies(),
+ *   localStorage: { 'user.token': 'abc123' },
+ *   sessionStorage: {},
+ *   metadata: {
+ *     created: Date.now(),
+ *     lastUsed: Date.now(),
+ *     description: 'LeetCode authentication session'
+ *   }
+ * };
+ * ```
  */
 export interface SessionData {
   name: string
@@ -33,7 +64,12 @@ export interface SessionOptions {
 }
 
 /**
- * Interface for Session Manager
+ * Interface for Session Manager.
+ *
+ * Defines the contract for managing persistent browser sessions.
+ * Implementations handle saving, loading, and restoring browser state.
+ *
+ * @see {@link SessionManager} for the default implementation
  */
 export interface ISessionManager {
   createSession(
@@ -58,47 +94,85 @@ export interface ISessionManager {
   cleanupExpiredSessions(): Promise<number>
 }
 
+// ============================================================================
+// Browser Pool Types
+// ============================================================================
+
 /**
- * Browser pool configuration
+ * Browser pool configuration.
+ *
+ * Controls how the browser pool manages browser instances, including
+ * pool size limits, idle timeout, and page reuse behavior.
+ *
+ * @example
+ * ```typescript
+ * const config: BrowserPoolConfig = {
+ *   enabled: true,
+ *   minSize: 1,
+ *   maxSize: 5,
+ *   maxIdleTime: 300000,  // 5 minutes
+ *   reusePages: true
+ * };
+ * ```
  */
 export interface BrowserPoolConfig {
-  /** Enable browser pooling */
+  /** Enable browser pooling. When false, creates new browser for each acquire. */
   enabled?: boolean
-  /** Minimum number of browsers to keep ready */
+  /** Minimum number of browsers to keep ready (warm pool). Default: 0 */
   minSize?: number
-  /** Maximum number of concurrent browsers */
+  /** Maximum number of concurrent browsers. Default: 3 */
   maxSize?: number
-  /** Maximum idle time before eviction (ms) */
+  /** Maximum idle time before eviction in milliseconds. Default: 300000 (5 min) */
   maxIdleTime?: number
-  /** Reuse pages within browser */
+  /** Close all browser contexts on release for clean state. Default: true */
   reusePages?: boolean
 }
 
 /**
- * Browser pool statistics
+ * Browser pool statistics.
+ *
+ * Provides real-time and lifetime statistics about pool usage.
+ * Use for monitoring pool health and optimization.
+ *
+ * @example
+ * ```typescript
+ * const stats = pool.getStats();
+ * console.log(`Pool utilization: ${stats.active}/${stats.total}`);
+ * console.log(`Reuse ratio: ${stats.reused / stats.created}`);
+ * ```
  */
 export interface BrowserPoolStats {
-  /** Total browsers in pool */
+  /** Current total browsers in pool */
   total: number
-  /** Active (in-use) browsers */
+  /** Browsers currently in use (acquired but not released) */
   active: number
-  /** Idle (available) browsers */
+  /** Browsers available for immediate acquisition */
   idle: number
-  /** Browsers created (lifetime) */
+  /** Total browsers created since pool initialization (lifetime) */
   created: number
-  /** Browsers destroyed (lifetime) */
+  /** Total browsers destroyed since pool initialization (lifetime) */
   destroyed: number
-  /** Browsers reused (lifetime) */
+  /** Total times a browser was reused instead of created (lifetime) */
   reused: number
 }
 
+// ============================================================================
+// Circuit Breaker Types
+// ============================================================================
+
 /**
- * Circuit breaker state
+ * Circuit breaker state.
+ *
+ * - `'closed'`: Normal operation, all calls pass through
+ * - `'open'`: Failures exceeded threshold, calls are blocked
+ * - `'half-open'`: Testing recovery, limited calls allowed
  */
 export type CircuitState = 'closed' | 'open' | 'half-open'
 
 /**
- * Circuit breaker statistics
+ * Circuit breaker statistics.
+ *
+ * Provides insight into circuit breaker health and failure patterns.
  */
 export interface CircuitBreakerStats {
   state: CircuitState
@@ -112,27 +186,50 @@ export interface CircuitBreakerStats {
 }
 
 /**
- * Interface for Browser Pool
+ * Interface for Browser Pool.
+ *
+ * Defines the contract for managing a pool of reusable browser instances.
+ * Implementations handle browser lifecycle, health monitoring, and cleanup.
+ *
+ * @see {@link BrowserPool} for the default implementation
  */
 export interface IBrowserPool {
+  /** Acquire a browser instance from the pool */
   acquire(): Promise<Browser>
+  /** Release a browser back to the pool */
   release(browser: Browser): Promise<void>
+  /** Close all browsers and shutdown the pool */
   drain(): Promise<void>
+  /** Get current pool statistics */
   getStats(): BrowserPoolStats
+  /** Get pool configuration */
   getConfig(): Required<BrowserPoolConfig>
+  /** Get circuit breaker statistics */
   getCircuitBreakerStats(): CircuitBreakerStats
+  /** Reset circuit breaker to closed state */
   resetCircuitBreaker(): void
 }
 
 /**
- * Interface for Session Pool Manager
+ * Interface for Session Pool Manager.
+ *
+ * Defines the contract for managing per-session browser pools.
+ * Implementations coordinate multiple pools with shared resource limits.
+ *
+ * @see {@link SessionPoolManager} for the default implementation
  */
 export interface ISessionPoolManager {
+  /** Get or create a browser pool for a session */
   getPool(sessionName: string): IBrowserPool
+  /** Acquire a browser for a session with timeout and retry */
   acquireBrowser(sessionName: string): Promise<Browser>
+  /** Release a browser back to its session pool */
   releaseBrowser(browser: Browser, sessionName: string): Promise<void>
+  /** Get statistics for one or all sessions */
   getStatistics(sessionName?: string): PoolStatistics[]
+  /** Drain a specific session's pool */
   drainSessionPool(sessionName: string): Promise<void>
+  /** Drain all session pools */
   drainAll(): Promise<void>
 }
 
@@ -165,7 +262,22 @@ export interface IBrowserService {
 // ============================================================================
 
 /**
- * Pool metric event types
+ * Pool metric event types.
+ *
+ * Categorizes events by operation type for filtering and analysis.
+ *
+ * Pool events:
+ * - `'pool:acquire'`: Browser acquired from pool
+ * - `'pool:release'`: Browser released to pool
+ * - `'pool:failure'`: Pool operation failed
+ * - `'pool:exhausted'`: Pool at max capacity, waiting for browser
+ * - `'pool:browser-created'`: New browser instance created
+ * - `'pool:browser-destroyed'`: Browser instance closed
+ *
+ * Circuit breaker events:
+ * - `'circuit:trip'`: Circuit opened due to failures
+ * - `'circuit:reset'`: Circuit closed after recovery
+ * - `'circuit:half-open'`: Circuit entering half-open state
  */
 export type PoolEventType =
   | 'pool:acquire'
@@ -356,19 +468,24 @@ export interface MetricsCollectorConfig {
 }
 
 /**
- * Interface for Metrics Collector
+ * Interface for Metrics Collector.
+ *
+ * Defines the contract for collecting and aggregating pool metrics.
+ * Implementations handle event recording, aggregation, and subscription.
+ *
+ * @see {@link MetricsCollector} for the default implementation
  */
 export interface IMetricsCollector {
-  /** Record a metric event */
+  /** Record a metric event to the collector */
   record(event: MetricEvent): void
-  /** Get metrics for a specific session */
+  /** Get aggregated metrics for a specific session */
   getSessionMetrics(sessionName: string): SessionMetrics | undefined
-  /** Get summary of all metrics */
+  /** Get summary of all metrics across all sessions */
   getSummary(): MetricsSummary
-  /** Subscribe to metric events */
+  /** Subscribe to real-time metric events */
   on(event: 'metric', listener: (event: MetricEvent) => void): void
   /** Unsubscribe from metric events */
   off(event: 'metric', listener: (event: MetricEvent) => void): void
-  /** Reset all metrics */
+  /** Reset all collected metrics */
   reset(): void
 }

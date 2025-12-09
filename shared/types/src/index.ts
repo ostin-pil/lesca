@@ -689,6 +689,22 @@ export interface SessionPoolConfig {
 }
 
 /**
+ * Session cleanup scheduler configuration
+ */
+export interface SessionCleanupConfig {
+  /** Enable automatic session cleanup */
+  enabled: boolean
+  /** Time in ms before a session is considered expired (default: 7 days) */
+  maxSessionAge: number
+  /** Run cleanup on application startup */
+  cleanupOnStartup: boolean
+  /** Cleanup interval for background scheduler (ms, 0 = disabled) */
+  cleanupInterval: number
+  /** Maximum sessions to keep (0 = unlimited) */
+  maxSessions: number
+}
+
+/**
  * Pool statistics for monitoring
  */
 export interface PoolStatistics {

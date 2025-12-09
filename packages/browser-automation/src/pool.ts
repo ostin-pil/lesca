@@ -23,7 +23,43 @@ interface PooledBrowser {
 
 /**
  * Browser Pool
- * Manages browser instance reuse across multiple scraping operations
+ *
+ * Manages a pool of reusable Chromium browser instances for efficient scraping operations.
+ * Provides browser lifecycle management, connection health monitoring, and automatic cleanup.
+ *
+ * ## Features
+ * - **Browser Reuse**: Maintains a pool of warm browser instances to avoid cold-start latency
+ * - **Auto-scaling**: Dynamically creates browsers up to `maxSize` based on demand
+ * - **Idle Cleanup**: Automatically evicts browsers exceeding `maxIdleTime`
+ * - **Circuit Breaker**: Protects against cascading failures during browser launch issues
+ * - **Metrics Integration**: Records pool events for monitoring and diagnostics
+ *
+ * ## Usage
+ * ```typescript
+ * const pool = new BrowserPool({ maxSize: 3, maxIdleTime: 300000 });
+ *
+ * // Acquire a browser
+ * const browser = await pool.acquire();
+ *
+ * // Use browser for scraping...
+ *
+ * // Release back to pool
+ * await pool.release(browser);
+ *
+ * // Cleanup when done
+ * await pool.drain();
+ * ```
+ *
+ * ## Configuration
+ * - `enabled`: Enable/disable pooling (default: true)
+ * - `minSize`: Minimum browsers to keep ready (default: 0)
+ * - `maxSize`: Maximum concurrent browsers (default: 3)
+ * - `maxIdleTime`: Idle timeout before eviction in ms (default: 300000)
+ * - `reusePages`: Close all contexts on release (default: true)
+ *
+ * @see {@link BrowserPoolConfig} for configuration options
+ * @see {@link BrowserPoolStats} for pool statistics
+ * @see {@link CircuitBreaker} for failure protection
  */
 export class BrowserPool implements IBrowserPool {
   private pool: PooledBrowser[] = []
@@ -37,6 +73,35 @@ export class BrowserPool implements IBrowserPool {
   private metricsCollector?: IMetricsCollector
   private sessionName?: string
 
+  /**
+   * Creates a new BrowserPool instance.
+   *
+   * @param config - Pool configuration options
+   * @param config.enabled - Enable browser pooling (default: true)
+   * @param config.minSize - Minimum pool size to maintain (default: 0)
+   * @param config.maxSize - Maximum concurrent browsers (default: 3)
+   * @param config.maxIdleTime - Idle timeout in ms before eviction (default: 300000)
+   * @param config.reusePages - Close browser contexts on release (default: true)
+   * @param launchOptions - Playwright browser launch options
+   * @param options - Additional options
+   * @param options.metricsCollector - Metrics collector for event recording
+   * @param options.sessionName - Session identifier for metrics tagging
+   *
+   * @throws {BrowserError} If configuration is invalid (e.g., minSize > maxSize)
+   *
+   * @example
+   * ```typescript
+   * // Basic pool with defaults
+   * const pool = new BrowserPool();
+   *
+   * // Custom configuration
+   * const pool = new BrowserPool(
+   *   { maxSize: 5, maxIdleTime: 600000 },
+   *   { headless: true },
+   *   { metricsCollector: collector, sessionName: 'my-session' }
+   * );
+   * ```
+   */
   constructor(
     config: BrowserPoolConfig = {},
     launchOptions: LaunchOptions = {},
@@ -127,7 +192,32 @@ export class BrowserPool implements IBrowserPool {
   private pendingCreates = 0
 
   /**
-   * Acquire a browser from the pool
+   * Acquires a browser instance from the pool.
+   *
+   * If an idle browser is available, it will be reused. Otherwise, a new browser
+   * will be created (up to `maxSize`). If the pool is at capacity, the call will
+   * wait up to 60 seconds for an available browser.
+   *
+   * The browser is marked as "in use" until {@link release} is called.
+   *
+   * @returns A browser instance ready for use
+   *
+   * @throws {BrowserError} BROWSER_CRASH - If pool is shutting down
+   * @throws {BrowserError} BROWSER_LAUNCH_FAILED - If browser creation fails
+   * @throws {BrowserError} BROWSER_POOL_EXHAUSTED - If no browser available after timeout
+   * @throws {BrowserError} BROWSER_CIRCUIT_OPEN - If circuit breaker is open
+   *
+   * @example
+   * ```typescript
+   * const browser = await pool.acquire();
+   * try {
+   *   const page = await browser.newPage();
+   *   await page.goto('https://example.com');
+   *   // ... scrape content
+   * } finally {
+   *   await pool.release(browser);
+   * }
+   * ```
    */
   async acquire(): Promise<Browser> {
     const startTime = Date.now()
@@ -200,7 +290,25 @@ export class BrowserPool implements IBrowserPool {
   }
 
   /**
-   * Release a browser back to the pool
+   * Releases a browser back to the pool for reuse.
+   *
+   * The browser is marked as idle and available for future {@link acquire} calls.
+   * If `reusePages` is enabled (default), all browser contexts are closed to ensure
+   * a clean state for the next user.
+   *
+   * If the browser was not acquired from this pool, it will be closed directly.
+   *
+   * @param browser - The browser instance to release
+   *
+   * @example
+   * ```typescript
+   * const browser = await pool.acquire();
+   * try {
+   *   // Use browser...
+   * } finally {
+   *   await pool.release(browser);
+   * }
+   * ```
    */
   async release(browser: Browser): Promise<void> {
     const startTime = Date.now()
@@ -240,7 +348,19 @@ export class BrowserPool implements IBrowserPool {
   }
 
   /**
-   * Drain the pool (close all browsers)
+   * Drains the pool by closing all browser instances.
+   *
+   * This method should be called during application shutdown to ensure
+   * all browsers are properly closed and resources are released.
+   *
+   * After draining, the pool cannot be used again. Create a new BrowserPool
+   * instance if browser pooling is needed again.
+   *
+   * @example
+   * ```typescript
+   * // During application shutdown
+   * await pool.drain();
+   * ```
    */
   async drain(): Promise<void> {
     logger.info('Draining browser pool', { poolSize: this.pool.length })
@@ -263,14 +383,37 @@ export class BrowserPool implements IBrowserPool {
   }
 
   /**
-   * Get pool statistics
+   * Returns current pool statistics.
+   *
+   * @returns A snapshot of pool statistics including:
+   * - `total`: Current number of browsers in pool
+   * - `active`: Browsers currently in use
+   * - `idle`: Browsers available for reuse
+   * - `created`: Total browsers created (lifetime)
+   * - `destroyed`: Total browsers destroyed (lifetime)
+   * - `reused`: Total browser reuse count (lifetime)
+   *
+   * @example
+   * ```typescript
+   * const stats = pool.getStats();
+   * console.log(`Pool: ${stats.active}/${stats.total} active`);
+   * console.log(`Reuse rate: ${stats.reused / stats.created}`);
+   * ```
    */
   getStats(): BrowserPoolStats {
     return { ...this.stats }
   }
 
   /**
-   * Get pool configuration
+   * Returns the pool configuration.
+   *
+   * @returns The resolved configuration with all defaults applied
+   *
+   * @example
+   * ```typescript
+   * const config = pool.getConfig();
+   * console.log(`Max pool size: ${config.maxSize}`);
+   * ```
    */
   getConfig(): Required<BrowserPoolConfig> {
     return { ...this.config }
@@ -302,14 +445,38 @@ export class BrowserPool implements IBrowserPool {
   }
 
   /**
-   * Get circuit breaker statistics
+   * Returns circuit breaker statistics.
+   *
+   * The circuit breaker protects against cascading failures when browser
+   * launches repeatedly fail. Use this method to monitor circuit health.
+   *
+   * @returns Circuit breaker statistics including state, failure counts, and timing
+   *
+   * @example
+   * ```typescript
+   * const cbStats = pool.getCircuitBreakerStats();
+   * if (cbStats.state === 'open') {
+   *   console.log('Circuit open - browser launches are blocked');
+   * }
+   * ```
+   *
+   * @see {@link CircuitBreaker} for circuit breaker behavior details
    */
   getCircuitBreakerStats(): ReturnType<CircuitBreaker['getStats']> {
     return this.circuitBreaker.getStats()
   }
 
   /**
-   * Reset circuit breaker (for recovery scenarios)
+   * Manually resets the circuit breaker to closed state.
+   *
+   * Use this method for recovery scenarios where you know the underlying
+   * issue has been resolved and want to allow browser launches again.
+   *
+   * @example
+   * ```typescript
+   * // After fixing browser installation or network issues
+   * pool.resetCircuitBreaker();
+   * ```
    */
   resetCircuitBreaker(): void {
     this.circuitBreaker.reset()
@@ -616,14 +783,36 @@ export class BrowserPool implements IBrowserPool {
   }
 
   /**
-   * Set metrics collector (for dependency injection)
+   * Sets the metrics collector for event recording.
+   *
+   * This allows late-binding of a metrics collector after pool creation,
+   * useful for dependency injection scenarios.
+   *
+   * @param collector - The metrics collector to use for event recording
+   *
+   * @example
+   * ```typescript
+   * const collector = new MetricsCollector();
+   * pool.setMetricsCollector(collector);
+   * ```
    */
   setMetricsCollector(collector: IMetricsCollector): void {
     this.metricsCollector = collector
   }
 
   /**
-   * Set session name (for metrics identification)
+   * Sets the session name for metrics identification.
+   *
+   * All metric events will be tagged with this session name, allowing
+   * per-session analysis and filtering in the metrics collector.
+   *
+   * @param name - The session identifier for metrics tagging
+   *
+   * @example
+   * ```typescript
+   * pool.setSessionName('my-scrape-session');
+   * // All subsequent metrics will include sessionName: 'my-scrape-session'
+   * ```
    */
   setSessionName(name: string): void {
     this.sessionName = name

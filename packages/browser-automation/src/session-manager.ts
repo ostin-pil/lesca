@@ -10,11 +10,63 @@ import type { ISessionManager, SessionData, SessionOptions } from './interfaces'
 
 /**
  * Session Manager
- * Manages persistent browser sessions across scraping operations
+ *
+ * Manages persistent browser sessions across scraping operations.
+ * Sessions store cookies, localStorage, and sessionStorage data that can be
+ * saved to disk and restored for future browser sessions.
+ *
+ * ## Features
+ * - **Persistence**: Save browser session state (cookies, storage) to disk
+ * - **Restoration**: Restore sessions to new browser contexts
+ * - **Expiration**: Automatic expiration handling and cleanup
+ * - **Merging**: Combine multiple sessions with conflict resolution strategies
+ * - **Validation**: Check session health before use
+ *
+ * ## Session Storage
+ * Sessions are stored as JSON files in `~/.lesca/sessions/` by default.
+ * Each session file contains:
+ * - Cookies array
+ * - localStorage key-value pairs
+ * - sessionStorage key-value pairs
+ * - Metadata (created, lastUsed, expires, description)
+ *
+ * ## Usage
+ * ```typescript
+ * const sessionManager = new SessionManager();
+ *
+ * // Create session from browser context
+ * const context = await browser.newContext();
+ * await sessionManager.createSession('my-session', context);
+ *
+ * // Restore session to new context
+ * const newContext = await browser.newContext();
+ * await sessionManager.restoreSession('my-session', newContext);
+ *
+ * // List and manage sessions
+ * const sessions = await sessionManager.listSessions();
+ * await sessionManager.deleteSession('old-session');
+ * ```
+ *
+ * @see {@link SessionData} for session data structure
+ * @see {@link SessionOptions} for creation options
  */
 export class SessionManager implements ISessionManager {
   private sessionsDir: string
 
+  /**
+   * Creates a new SessionManager instance.
+   *
+   * @param baseDir - Custom directory for session storage. Defaults to `~/.lesca/sessions/`
+   *
+   * @example
+   * ```typescript
+   * // Use default location
+   * const manager = new SessionManager();
+   *
+   * // Use custom location
+   * const manager = new SessionManager('/custom/sessions/path');
+   * ```
+   */
   constructor(baseDir?: string) {
     this.sessionsDir = baseDir || resolve(homedir(), '.lesca', 'sessions')
   }
@@ -41,7 +93,28 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Create a new session from browser context
+   * Creates a new session from a browser context.
+   *
+   * Extracts cookies, localStorage, and sessionStorage from the browser context
+   * and saves them to disk. The session can be later restored to a new context.
+   *
+   * @param name - Unique session identifier (alphanumeric, hyphens, underscores)
+   * @param context - The Playwright browser context to capture
+   * @param options - Optional session configuration
+   * @param options.expires - Expiration timestamp (session will be deleted after this time)
+   * @param options.description - Human-readable description of the session
+   * @param options.userAgent - User agent associated with the session
+   *
+   * @returns The created session data
+   *
+   * @example
+   * ```typescript
+   * // Create a session that expires in 24 hours
+   * await sessionManager.createSession('leetcode-auth', context, {
+   *   expires: Date.now() + 24 * 60 * 60 * 1000,
+   *   description: 'LeetCode authentication session'
+   * });
+   * ```
    */
   async createSession(
     name: string,
@@ -121,7 +194,21 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Get an existing session
+   * Retrieves an existing session by name.
+   *
+   * Returns null if the session doesn't exist or has expired.
+   * Updates the `lastUsed` timestamp on successful retrieval.
+   *
+   * @param name - The session identifier to retrieve
+   * @returns The session data, or null if not found/expired
+   *
+   * @example
+   * ```typescript
+   * const session = await sessionManager.getSession('my-session');
+   * if (session) {
+   *   console.log(`Session has ${session.cookies.length} cookies`);
+   * }
+   * ```
    */
   async getSession(name: string): Promise<SessionData | null> {
     return await this.loadSession(name)
@@ -186,7 +273,24 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Save session data to disk
+   * Saves session data to disk.
+   *
+   * Overwrites any existing session with the same name.
+   *
+   * @param name - The session identifier
+   * @param sessionData - The session data to save
+   *
+   * @throws {BrowserError} If the file cannot be written
+   *
+   * @example
+   * ```typescript
+   * // Update session metadata
+   * const session = await sessionManager.getSession('my-session');
+   * if (session) {
+   *   session.metadata.description = 'Updated description';
+   *   await sessionManager.saveSession('my-session', session);
+   * }
+   * ```
    */
   async saveSession(name: string, sessionData: SessionData): Promise<void> {
     await this.ensureSessionsDir()
@@ -206,7 +310,25 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Restore session to browser context
+   * Restores a saved session to a browser context.
+   *
+   * Applies cookies, localStorage, and sessionStorage from the saved session
+   * to the provided browser context.
+   *
+   * @param name - The session identifier to restore
+   * @param context - The Playwright browser context to restore to
+   *
+   * @returns True if the session was restored, false if not found/expired
+   *
+   * @example
+   * ```typescript
+   * const context = await browser.newContext();
+   * const restored = await sessionManager.restoreSession('leetcode-auth', context);
+   * if (restored) {
+   *   // Context now has the session's cookies and storage
+   *   await context.newPage().goto('https://leetcode.com');
+   * }
+   * ```
    */
   async restoreSession(name: string, context: BrowserContext): Promise<boolean> {
     const sessionData = await this.getSession(name)
@@ -257,7 +379,20 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * List all saved sessions
+   * Lists all saved sessions.
+   *
+   * Returns only non-expired sessions. Expired sessions are automatically
+   * cleaned up during listing.
+   *
+   * @returns Array of session data for all valid sessions
+   *
+   * @example
+   * ```typescript
+   * const sessions = await sessionManager.listSessions();
+   * for (const session of sessions) {
+   *   console.log(`${session.name}: ${session.cookies.length} cookies`);
+   * }
+   * ```
    */
   async listSessions(): Promise<SessionData[]> {
     await this.ensureSessionsDir()
@@ -294,7 +429,19 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Delete a session
+   * Deletes a session by name.
+   *
+   * @param name - The session identifier to delete
+   *
+   * @returns True if the session was deleted, false if not found
+   *
+   * @example
+   * ```typescript
+   * const deleted = await sessionManager.deleteSession('old-session');
+   * if (deleted) {
+   *   console.log('Session deleted successfully');
+   * }
+   * ```
    */
   async deleteSession(name: string): Promise<boolean> {
     const sessionPath = this.getSessionPath(name)
@@ -316,7 +463,14 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Check if session exists
+   * Checks if a session exists on disk.
+   *
+   * Note: This only checks file existence, not expiration status.
+   * Use {@link getSession} to check if a session is valid and non-expired.
+   *
+   * @param name - The session identifier to check
+   *
+   * @returns True if the session file exists
    */
   async sessionExists(name: string): Promise<boolean> {
     const sessionPath = this.getSessionPath(name)
@@ -329,7 +483,18 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Rename session file
+   * Renames a session.
+   *
+   * @param oldName - The current session identifier
+   * @param newName - The new session identifier
+   *
+   * @throws {BrowserError} BROWSER_SESSION_NOT_FOUND - If the old session doesn't exist
+   * @throws {BrowserError} BROWSER_LAUNCH_FAILED - If the new name already exists
+   *
+   * @example
+   * ```typescript
+   * await sessionManager.renameSession('temp-session', 'production-session');
+   * ```
    */
   async renameSession(oldName: string, newName: string): Promise<void> {
     const oldPath = this.getSessionPath(oldName)
@@ -376,7 +541,15 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * List all active (non-expired) sessions
+   * Lists all active (non-expired) sessions, sorted by last used time.
+   *
+   * @returns Array of active sessions, most recently used first
+   *
+   * @example
+   * ```typescript
+   * const activeSessions = await sessionManager.listActiveSessions();
+   * console.log(`Found ${activeSessions.length} active sessions`);
+   * ```
    */
   async listActiveSessions(): Promise<SessionData[]> {
     const sessions: SessionData[] = []
@@ -413,7 +586,27 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Validate session before use
+   * Validates a session's health and usability.
+   *
+   * Checks for:
+   * - Session existence
+   * - Expiration status
+   * - Cookie presence
+   * - Metadata completeness
+   *
+   * Expired sessions are automatically deleted.
+   *
+   * @param name - The session identifier to validate
+   *
+   * @returns True if the session is valid and usable
+   *
+   * @example
+   * ```typescript
+   * if (await sessionManager.validateSession('my-session')) {
+   *   // Safe to restore
+   *   await sessionManager.restoreSession('my-session', context);
+   * }
+   * ```
    */
   async validateSession(name: string): Promise<boolean> {
     const session = await this.getSession(name)
@@ -444,7 +637,31 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Merge multiple sessions into a target session
+   * Merges multiple sessions into a target session.
+   *
+   * Combines cookies and storage from multiple source sessions into one.
+   * Useful for consolidating authentication state from different sources.
+   *
+   * @param sourceNames - Array of session identifiers to merge from
+   * @param targetName - The target session identifier to merge into
+   * @param strategy - Conflict resolution strategy:
+   *   - `'keep-existing'`: Keep target data, only add new keys from sources
+   *   - `'prefer-fresh'`: Prefer data from more recently used sessions
+   *   - `'merge-all'`: Combine all data, last source wins on conflicts
+   *
+   * @returns The merged session data
+   *
+   * @throws {BrowserError} BROWSER_SESSION_NOT_FOUND - If no valid source sessions found
+   *
+   * @example
+   * ```typescript
+   * // Merge two sessions, preferring fresher data
+   * const merged = await sessionManager.mergeSessions(
+   *   ['session-1', 'session-2'],
+   *   'combined-session',
+   *   'prefer-fresh'
+   * );
+   * ```
    */
   async mergeSessions(
     sourceNames: string[],
@@ -543,7 +760,18 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Clean up expired sessions
+   * Cleans up all expired sessions from disk.
+   *
+   * Scans the sessions directory and deletes any sessions that have
+   * exceeded their expiration time.
+   *
+   * @returns The number of sessions that were cleaned up
+   *
+   * @example
+   * ```typescript
+   * const cleanedCount = await sessionManager.cleanupExpiredSessions();
+   * console.log(`Cleaned up ${cleanedCount} expired sessions`);
+   * ```
    */
   async cleanupExpiredSessions(): Promise<number> {
     await this.ensureSessionsDir()

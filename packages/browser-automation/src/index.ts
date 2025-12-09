@@ -14,6 +14,7 @@ export { RequestInterceptor } from './interceptor'
 export { SelectorManager } from './selector-manager'
 export { SessionManager } from './session-manager'
 export { SessionPoolManager } from './session-pool-manager'
+export { SessionCleanupScheduler } from './session-cleanup-scheduler'
 export { BrowserService } from './browser-service'
 export { BrowserServiceFactory } from './browser-service-factory'
 
@@ -53,6 +54,7 @@ export type { CircuitBreakerConfig } from './circuit-breaker'
 export type { CookieValidationResult, MergeStrategy } from './cookie-manager'
 export type { LoginCredentials, LoginOptions, LoginResult } from './auth-helper'
 export type { LoginState } from './detectors'
+export type { CleanupResult } from './session-cleanup-scheduler'
 
 export {
   detectLoginState,

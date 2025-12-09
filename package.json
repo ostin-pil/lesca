@@ -28,6 +28,8 @@
     "test:coverage:all": "vitest run --coverage --config vitest.integration.config.ts",
     "check-coverage": "tsx scripts/check-coverage.ts",
     "benchmark": "tsx tests/benchmarks/scraping-performance.bench.ts && tsx tests/benchmarks/cache-performance.bench.ts",
+    "bench:pool": "tsx tests/benchmarks/browser-pool.bench.ts",
+    "bench:pool:quick": "tsx tests/benchmarks/browser-pool.bench.ts --quick",
     "typecheck": "tsc --noEmit",
     "prepare": "husky install"
   },
