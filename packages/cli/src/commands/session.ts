@@ -1,6 +1,88 @@
-import { SessionManager } from '@lesca/browser-automation'
+import { SessionManager, MetricsCollector } from '@lesca/browser-automation'
+import type { MetricsSummary, SessionMetrics } from '@lesca/browser-automation'
 import { logger } from '@lesca/shared/utils'
 import { Command } from 'commander'
+
+/**
+ * Global metrics collector instance (shared across commands)
+ * This allows stats to persist during a CLI session
+ */
+let globalMetricsCollector: MetricsCollector | undefined
+
+/**
+ * Get or create the global metrics collector
+ */
+export function getMetricsCollector(): MetricsCollector {
+  if (!globalMetricsCollector) {
+    globalMetricsCollector = new MetricsCollector()
+  }
+  return globalMetricsCollector
+}
+
+/**
+ * Format timing stats for display
+ */
+function formatTimingStats(stats: {
+  count: number
+  avgMs: number
+  minMs: number
+  maxMs: number
+}): string {
+  if (stats.count === 0) return 'No data'
+  return `avg: ${stats.avgMs.toFixed(1)}ms, min: ${stats.minMs.toFixed(1)}ms, max: ${stats.maxMs.toFixed(1)}ms (${stats.count} samples)`
+}
+
+/**
+ * Format session metrics for display
+ */
+function formatSessionMetrics(metrics: SessionMetrics): string {
+  const lines = [
+    `📦 Session: ${metrics.sessionName}`,
+    `   Pool: ${metrics.activeBrowsers} active, ${metrics.idleBrowsers} idle (${metrics.poolSize} total)`,
+    `   Acquisitions: ${metrics.totalAcquisitions} (${metrics.acquisitionsPerMinute.toFixed(1)}/min)`,
+    `   Releases: ${metrics.totalReleases}`,
+    `   Failures: ${metrics.totalFailures} (${(metrics.failureRate * 100).toFixed(1)}% rate)`,
+    `   Browsers: ${metrics.browsersCreated} created, ${metrics.browsersDestroyed} destroyed`,
+    `   Circuit: ${metrics.circuitState} (${metrics.circuitTrips} trips)`,
+    `   Acquire timing: ${formatTimingStats(metrics.acquireTiming)}`,
+    `   Release timing: ${formatTimingStats(metrics.releaseTiming)}`,
+    `   Browser create: ${formatTimingStats(metrics.browserCreateTiming)}`,
+  ]
+  return lines.join('\n')
+}
+
+/**
+ * Format metrics summary for display
+ */
+function formatMetricsSummary(summary: MetricsSummary): string {
+  const lines = [
+    '═══════════════════════════════════════════════════════════════',
+    '                    POOL METRICS SUMMARY',
+    '═══════════════════════════════════════════════════════════════',
+    '',
+    `Sessions: ${summary.totalSessions}`,
+    `Browsers: ${summary.totalActiveBrowsers} active, ${summary.totalIdleBrowsers} idle`,
+    `Global acquisition rate: ${summary.globalAcquisitionsPerMinute.toFixed(1)}/min`,
+    `Global failure rate: ${(summary.globalFailureRate * 100).toFixed(1)}%`,
+    `Circuit breakers: ${summary.circuitsOpen} open, ${summary.circuitsHalfOpen} half-open`,
+    '',
+  ]
+
+  if (summary.sessions.length > 0) {
+    lines.push('─────────────────────────────────────────────────────────────────')
+    lines.push('                    PER-SESSION DETAILS')
+    lines.push('─────────────────────────────────────────────────────────────────')
+    lines.push('')
+    for (const session of summary.sessions) {
+      lines.push(formatSessionMetrics(session))
+      lines.push('')
+    }
+  }
+
+  lines.push('═══════════════════════════════════════════════════════════════')
+
+  return lines.join('\n')
+}
 
 /**
  * Session management commands
@@ -91,4 +173,56 @@ SessionStorage Keys: ${Object.keys(session.sessionStorage).length}
 ${session.metadata.description ? `Description: ${session.metadata.description}` : ''}
     `.trim()
     )
+  })
+
+// Show pool statistics
+sessionCommand
+  .command('stats')
+  .description('Show browser pool statistics and metrics')
+  .option('-s, --session <name>', 'Show stats for specific session')
+  .option('--json', 'Output in JSON format')
+  .action((options: { session?: string; json?: boolean }) => {
+    const collector = getMetricsCollector()
+
+    if (options.session) {
+      const metrics = collector.getSessionMetrics(options.session)
+      if (!metrics) {
+        logger.warn(`No metrics found for session "${options.session}"`)
+        logger.info('Note: Pool metrics are only available during active scraping operations.')
+        return
+      }
+
+      if (options.json) {
+        // eslint-disable-next-line no-console -- JSON output for machine consumption
+        console.log(JSON.stringify(metrics, null, 2))
+      } else {
+        logger.info(formatSessionMetrics(metrics))
+      }
+    } else {
+      const summary = collector.getSummary()
+
+      if (summary.totalSessions === 0) {
+        logger.info('No pool metrics available.')
+        logger.info('Note: Pool metrics are collected during active scraping operations.')
+        logger.info('Use --session <name> to view metrics for a specific session.')
+        return
+      }
+
+      if (options.json) {
+        // eslint-disable-next-line no-console -- JSON output for machine consumption
+        console.log(JSON.stringify(summary, null, 2))
+      } else {
+        logger.info(formatMetricsSummary(summary))
+      }
+    }
+  })
+
+// Reset pool statistics
+sessionCommand
+  .command('stats-reset')
+  .description('Reset pool statistics')
+  .action(() => {
+    const collector = getMetricsCollector()
+    collector.reset()
+    logger.success('Pool statistics reset')
   })

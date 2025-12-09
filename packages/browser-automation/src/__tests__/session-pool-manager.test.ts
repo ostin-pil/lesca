@@ -103,7 +103,11 @@ describe('SessionPoolManager', () => {
           maxSize: defaultConfig.perSessionMaxSize,
           maxIdleTime: defaultConfig.perSessionIdleTime,
         }),
-        expect.anything()
+        expect.anything(),
+        expect.objectContaining({
+          sessionName,
+          metricsCollector: expect.any(Object),
+        })
       )
     })
 

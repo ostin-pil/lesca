@@ -3,7 +3,12 @@ import { logger } from '@lesca/shared/utils'
 import { chromium, type Browser, type LaunchOptions } from 'playwright'
 
 import { CircuitBreaker } from './circuit-breaker'
-import type { IBrowserPool, BrowserPoolConfig, BrowserPoolStats } from './interfaces'
+import type {
+  IBrowserPool,
+  IMetricsCollector,
+  BrowserPoolConfig,
+  BrowserPoolStats,
+} from './interfaces'
 
 /**
  * Pooled browser wrapper
@@ -29,8 +34,14 @@ export class BrowserPool implements IBrowserPool {
   private isShuttingDown = false
   private cleanupHandler?: (() => void) | undefined
   private circuitBreaker: CircuitBreaker
+  private metricsCollector?: IMetricsCollector
+  private sessionName?: string
 
-  constructor(config: BrowserPoolConfig = {}, launchOptions: LaunchOptions = {}) {
+  constructor(
+    config: BrowserPoolConfig = {},
+    launchOptions: LaunchOptions = {},
+    options?: { metricsCollector?: IMetricsCollector; sessionName?: string }
+  ) {
     this.config = {
       enabled: config.enabled ?? true,
       minSize: config.minSize ?? 0,
@@ -40,6 +51,12 @@ export class BrowserPool implements IBrowserPool {
     }
 
     this.launchOptions = launchOptions
+    if (options?.metricsCollector) {
+      this.metricsCollector = options.metricsCollector
+    }
+    if (options?.sessionName) {
+      this.sessionName = options.sessionName
+    }
 
     this.stats = {
       total: 0,
@@ -113,6 +130,8 @@ export class BrowserPool implements IBrowserPool {
    * Acquire a browser from the pool
    */
   async acquire(): Promise<Browser> {
+    const startTime = Date.now()
+
     if (!this.config.enabled) {
       // If pooling is disabled, create a new browser each time
       return await this.createBrowser()
@@ -127,7 +146,7 @@ export class BrowserPool implements IBrowserPool {
     if (idleBrowser) {
       if (!idleBrowser.browser.isConnected()) {
         logger.warn('Found disconnected browser in pool, removing it')
-        await this.removeBrowser(idleBrowser)
+        await this.removeBrowser(idleBrowser, 'disconnected')
         return await this.acquire() // Try again
       }
 
@@ -137,6 +156,8 @@ export class BrowserPool implements IBrowserPool {
 
       this.updateStats()
       this.stats.reused++
+
+      this.recordAcquire(startTime, true)
 
       logger.debug('Reused browser from pool', {
         usageCount: idleBrowser.usageCount,
@@ -161,6 +182,8 @@ export class BrowserPool implements IBrowserPool {
         this.pool.push(pooledBrowser)
         this.updateStats()
 
+        this.recordAcquire(startTime, false)
+
         logger.debug('Created new browser for pool', {
           poolSize: this.pool.length,
           maxSize: this.config.maxSize,
@@ -173,13 +196,15 @@ export class BrowserPool implements IBrowserPool {
     }
 
     logger.warn('Browser pool at max capacity, waiting for available browser')
-    return await this.waitForAvailableBrowser()
+    return await this.waitForAvailableBrowser(60000, startTime)
   }
 
   /**
    * Release a browser back to the pool
    */
   async release(browser: Browser): Promise<void> {
+    const startTime = Date.now()
+
     if (!this.config.enabled) {
       // If pooling is disabled, close the browser
       await browser.close()
@@ -206,6 +231,7 @@ export class BrowserPool implements IBrowserPool {
     }
 
     this.updateStats()
+    this.recordRelease(startTime)
 
     logger.debug('Released browser to pool', {
       poolSize: this.pool.length,
@@ -254,15 +280,20 @@ export class BrowserPool implements IBrowserPool {
    * Create a new browser instance (protected by circuit breaker)
    */
   private async createBrowser(): Promise<Browser> {
+    const startTime = Date.now()
+
     return this.circuitBreaker.execute(async () => {
       try {
         const browser = await chromium.launch(this.launchOptions)
         this.stats.created++
 
+        this.recordBrowserCreated(startTime)
+
         logger.debug('Created new browser instance')
 
         return browser
       } catch (error) {
+        this.recordFailure((error as Error).message)
         throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to create browser instance', {
           cause: error as Error,
         })
@@ -287,16 +318,22 @@ export class BrowserPool implements IBrowserPool {
   /**
    * Close a browser and remove from pool
    */
-  private async closeBrowser(pooledBrowser: PooledBrowser): Promise<void> {
+  private async closeBrowser(
+    pooledBrowser: PooledBrowser,
+    reason: 'idle' | 'drain' | 'error' | 'disconnected' = 'drain'
+  ): Promise<void> {
     try {
       if (pooledBrowser.browser.isConnected()) {
         await pooledBrowser.browser.close()
       }
       this.stats.destroyed++
 
+      this.recordBrowserDestroyed(reason)
+
       logger.debug('Closed browser', {
         usageCount: pooledBrowser.usageCount,
         age: Date.now() - pooledBrowser.createdAt,
+        reason,
       })
     } catch (error) {
       logger.warn('Error closing browser', { error })
@@ -306,8 +343,11 @@ export class BrowserPool implements IBrowserPool {
   /**
    * Remove browser from pool
    */
-  private async removeBrowser(pooledBrowser: PooledBrowser): Promise<void> {
-    await this.closeBrowser(pooledBrowser)
+  private async removeBrowser(
+    pooledBrowser: PooledBrowser,
+    reason: 'idle' | 'drain' | 'error' | 'disconnected' = 'drain'
+  ): Promise<void> {
+    await this.closeBrowser(pooledBrowser, reason)
     const index = this.pool.indexOf(pooledBrowser)
     if (index !== -1) {
       this.pool.splice(index, 1)
@@ -318,17 +358,35 @@ export class BrowserPool implements IBrowserPool {
   /**
    * Wait for an available browser
    */
-  private async waitForAvailableBrowser(timeout = 60000): Promise<Browser> {
-    const startTime = Date.now()
+  private async waitForAvailableBrowser(
+    timeout = 60000,
+    acquireStartTime?: number
+  ): Promise<Browser> {
+    const waitStartTime = Date.now()
 
-    while (Date.now() - startTime < timeout) {
+    // Record pool exhausted event
+    this.recordPoolExhausted(waitStartTime)
+
+    while (Date.now() - waitStartTime < timeout) {
       const idleBrowser = this.pool.find((pb) => !pb.inUse)
       if (idleBrowser) {
+        // Pass the original acquire start time if we have it
+        if (acquireStartTime !== undefined) {
+          idleBrowser.inUse = true
+          idleBrowser.lastUsedAt = Date.now()
+          idleBrowser.usageCount++
+          this.updateStats()
+          this.stats.reused++
+          this.recordAcquire(acquireStartTime, true)
+          return idleBrowser.browser
+        }
         return await this.acquire()
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
+
+    this.recordFailure('Pool exhausted after timeout')
 
     throw new BrowserError(
       'BROWSER_POOL_EXHAUSTED',
@@ -398,7 +456,7 @@ export class BrowserPool implements IBrowserPool {
         idleTime: now - pooledBrowser.lastUsedAt,
         usageCount: pooledBrowser.usageCount,
       })
-      await this.removeBrowser(pooledBrowser)
+      await this.removeBrowser(pooledBrowser, 'idle')
     }
 
     // Ensure we maintain minimum pool size
@@ -453,5 +511,121 @@ export class BrowserPool implements IBrowserPool {
       process.off('SIGTERM', this.cleanupHandler)
       this.cleanupHandler = undefined
     }
+  }
+
+  // ============================================================================
+  // Metrics Recording Methods
+  // ============================================================================
+
+  /**
+   * Build base event properties with optional sessionName
+   */
+  private buildBaseEvent(): { timestamp: number; sessionName?: string } {
+    const base: { timestamp: number; sessionName?: string } = {
+      timestamp: Date.now(),
+    }
+    if (this.sessionName) {
+      base.sessionName = this.sessionName
+    }
+    return base
+  }
+
+  /**
+   * Record acquire event
+   */
+  private recordAcquire(startTime: number, reused: boolean): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:acquire',
+      ...this.buildBaseEvent(),
+      durationMs: Date.now() - startTime,
+      reused,
+      poolSize: this.pool.length,
+    })
+  }
+
+  /**
+   * Record release event
+   */
+  private recordRelease(startTime: number): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:release',
+      ...this.buildBaseEvent(),
+      durationMs: Date.now() - startTime,
+      poolSize: this.pool.length,
+    })
+  }
+
+  /**
+   * Record failure event
+   */
+  private recordFailure(error: string): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:failure',
+      ...this.buildBaseEvent(),
+      error,
+    })
+  }
+
+  /**
+   * Record pool exhausted event
+   */
+  private recordPoolExhausted(startTime: number): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:exhausted',
+      ...this.buildBaseEvent(),
+      waitTimeMs: Date.now() - startTime,
+      poolSize: this.pool.length,
+      maxSize: this.config.maxSize,
+    })
+  }
+
+  /**
+   * Record browser created event
+   */
+  private recordBrowserCreated(startTime: number): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:browser-created',
+      ...this.buildBaseEvent(),
+      durationMs: Date.now() - startTime,
+      poolSize: this.pool.length,
+    })
+  }
+
+  /**
+   * Record browser destroyed event
+   */
+  private recordBrowserDestroyed(reason: 'idle' | 'drain' | 'error' | 'disconnected'): void {
+    if (!this.metricsCollector) return
+
+    this.metricsCollector.record({
+      type: 'pool:browser-destroyed',
+      ...this.buildBaseEvent(),
+      poolSize: this.pool.length,
+      reason,
+    })
+  }
+
+  /**
+   * Set metrics collector (for dependency injection)
+   */
+  setMetricsCollector(collector: IMetricsCollector): void {
+    this.metricsCollector = collector
+  }
+
+  /**
+   * Set session name (for metrics identification)
+   */
+  setSessionName(name: string): void {
+    this.sessionName = name
   }
 }

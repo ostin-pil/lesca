@@ -5,7 +5,8 @@ import type { PoolStatistics, SessionPoolConfig } from '@lesca/shared/types'
 import { logger } from '@lesca/shared/utils'
 import type { Browser, LaunchOptions } from 'playwright'
 
-import type { IBrowserPool, ISessionPoolManager } from './interfaces'
+import type { IBrowserPool, IMetricsCollector, ISessionPoolManager } from './interfaces'
+import { MetricsCollector } from './metrics-collector'
 import { BrowserPool as BrowserPoolImpl } from './pool'
 
 /**
@@ -42,8 +43,13 @@ export class SessionPoolManager implements ISessionPoolManager {
   private stats: Map<string, PoolStatistics> = new Map()
   private config: Required<SessionPoolConfig>
   private launchOptions: LaunchOptions
+  private metricsCollector: IMetricsCollector
 
-  constructor(config: SessionPoolConfig, launchOptions: LaunchOptions = {}) {
+  constructor(
+    config: SessionPoolConfig,
+    launchOptions: LaunchOptions = {},
+    options?: { metricsCollector?: IMetricsCollector }
+  ) {
     this.config = {
       strategy: config.strategy ?? 'per-session',
       perSessionMaxSize: config.perSessionMaxSize ?? 2,
@@ -53,6 +59,7 @@ export class SessionPoolManager implements ISessionPoolManager {
       maxRetries: config.maxRetries ?? 3,
     }
     this.launchOptions = launchOptions
+    this.metricsCollector = options?.metricsCollector ?? new MetricsCollector()
 
     // Validate configuration
     this.validateConfig()
@@ -116,7 +123,11 @@ export class SessionPoolManager implements ISessionPoolManager {
           maxSize: this.config.perSessionMaxSize,
           maxIdleTime: this.config.perSessionIdleTime,
         },
-        this.launchOptions
+        this.launchOptions,
+        {
+          metricsCollector: this.metricsCollector,
+          sessionName,
+        }
       )
       this.sessionPools.set(sessionName, pool)
       this.stats.set(sessionName, {
@@ -242,5 +253,12 @@ export class SessionPoolManager implements ISessionPoolManager {
     this.stats.clear()
 
     logger.info('All session pools drained')
+  }
+
+  /**
+   * Get metrics collector for monitoring
+   */
+  getMetricsCollector(): IMetricsCollector {
+    return this.metricsCollector
   }
 }

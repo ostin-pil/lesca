@@ -7,6 +7,7 @@ export { AuthHelper } from './auth-helper'
 export { BrowserPool } from './pool'
 export { CircuitBreaker } from './circuit-breaker'
 export { CookieManager } from './cookie-manager'
+export { MetricsCollector } from './metrics-collector'
 export { PerformanceMonitor } from './performance'
 export { PlaywrightDriver } from './playwright-driver'
 export { RequestInterceptor } from './interceptor'
@@ -21,6 +22,7 @@ export type {
   IBrowserPool,
   ISessionPoolManager,
   IBrowserService,
+  IMetricsCollector,
   BrowserServiceOptions,
   SessionData,
   SessionMetadata,
@@ -29,6 +31,23 @@ export type {
   BrowserPoolStats,
   CircuitState,
   CircuitBreakerStats,
+  // Metrics types
+  PoolEventType,
+  MetricEvent,
+  BaseMetricEvent,
+  PoolAcquireEvent,
+  PoolReleaseEvent,
+  PoolFailureEvent,
+  PoolExhaustedEvent,
+  BrowserCreatedEvent,
+  BrowserDestroyedEvent,
+  CircuitTripEvent,
+  CircuitResetEvent,
+  CircuitHalfOpenEvent,
+  TimingStats,
+  SessionMetrics,
+  MetricsSummary,
+  MetricsCollectorConfig,
 } from './interfaces'
 export type { CircuitBreakerConfig } from './circuit-breaker'
 export type { CookieValidationResult, MergeStrategy } from './cookie-manager'
