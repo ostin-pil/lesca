@@ -9,8 +9,18 @@ const mockSessionManagerInstance = {
   getSession: vi.fn(),
 }
 
+// Mock MetricsCollector instance
+const mockMetricsCollectorInstance = {
+  getSessionMetrics: vi.fn(),
+  getSummary: vi.fn(),
+  reset: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
+}
+
 vi.mock('@lesca/browser-automation', () => ({
   SessionManager: vi.fn(() => mockSessionManagerInstance),
+  MetricsCollector: vi.fn(() => mockMetricsCollectorInstance),
 }))
 
 vi.mock('@lesca/shared/utils', () => ({
@@ -37,6 +47,13 @@ describe('Session Command', () => {
     mockSessionManagerInstance.deleteSession.mockReset()
     mockSessionManagerInstance.renameSession.mockReset()
     mockSessionManagerInstance.getSession.mockReset()
+
+    // Reset metrics collector mock
+    mockMetricsCollectorInstance.getSessionMetrics.mockReset()
+    mockMetricsCollectorInstance.getSummary.mockReset()
+    mockMetricsCollectorInstance.reset.mockReset()
+    mockMetricsCollectorInstance.on.mockReset()
+    mockMetricsCollectorInstance.off.mockReset()
 
     // Create fresh program
     program = new Command()
@@ -228,6 +245,128 @@ describe('Session Command', () => {
       expect(logger.box).toHaveBeenCalledWith('Session: no-desc')
       // Description should not appear in output
       expect(logger.info).toHaveBeenCalled()
+    })
+  })
+
+  describe('stats subcommand', () => {
+    it('should display message when no metrics available', async () => {
+      mockMetricsCollectorInstance.getSummary.mockReturnValue({
+        totalSessions: 0,
+        sessions: [],
+        totalActiveBrowsers: 0,
+        totalIdleBrowsers: 0,
+        globalAcquisitionsPerMinute: 0,
+        globalFailureRate: 0,
+        circuitsOpen: 0,
+        circuitsHalfOpen: 0,
+      })
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats'])
+
+      expect(logger.info).toHaveBeenCalledWith('No pool metrics available.')
+    })
+
+    it('should display metrics summary when sessions exist', async () => {
+      mockMetricsCollectorInstance.getSummary.mockReturnValue({
+        totalSessions: 1,
+        sessions: [
+          {
+            sessionName: 'test-session',
+            poolSize: 2,
+            activeBrowsers: 1,
+            idleBrowsers: 1,
+            totalAcquisitions: 10,
+            totalReleases: 9,
+            totalFailures: 0,
+            browsersCreated: 2,
+            browsersDestroyed: 0,
+            circuitState: 'closed',
+            circuitTrips: 0,
+            acquisitionsPerMinute: 5,
+            failureRate: 0,
+            acquireTiming: { count: 10, avgMs: 50, minMs: 20, maxMs: 100 },
+            releaseTiming: { count: 9, avgMs: 5, minMs: 2, maxMs: 10 },
+            browserCreateTiming: { count: 2, avgMs: 2000, minMs: 1500, maxMs: 2500 },
+            firstEventAt: Date.now() - 60000,
+            lastEventAt: Date.now(),
+          },
+        ],
+        totalActiveBrowsers: 1,
+        totalIdleBrowsers: 1,
+        globalAcquisitionsPerMinute: 5,
+        globalFailureRate: 0,
+        circuitsOpen: 0,
+        circuitsHalfOpen: 0,
+      })
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('POOL METRICS SUMMARY'))
+    })
+
+    it('should display specific session metrics', async () => {
+      mockMetricsCollectorInstance.getSessionMetrics.mockReturnValue({
+        sessionName: 'my-session',
+        poolSize: 2,
+        activeBrowsers: 1,
+        idleBrowsers: 1,
+        totalAcquisitions: 5,
+        totalReleases: 4,
+        totalFailures: 0,
+        browsersCreated: 2,
+        browsersDestroyed: 0,
+        circuitState: 'closed',
+        circuitTrips: 0,
+        acquisitionsPerMinute: 2.5,
+        failureRate: 0,
+        acquireTiming: { count: 5, avgMs: 50, minMs: 20, maxMs: 100 },
+        releaseTiming: { count: 4, avgMs: 5, minMs: 2, maxMs: 10 },
+        browserCreateTiming: { count: 2, avgMs: 2000, minMs: 1500, maxMs: 2500 },
+        firstEventAt: Date.now() - 60000,
+        lastEventAt: Date.now(),
+      })
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats', '-s', 'my-session'])
+
+      expect(mockMetricsCollectorInstance.getSessionMetrics).toHaveBeenCalledWith('my-session')
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('my-session'))
+    })
+
+    it('should warn when specific session metrics not found', async () => {
+      mockMetricsCollectorInstance.getSessionMetrics.mockReturnValue(undefined)
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats', '-s', 'unknown-session'])
+
+      expect(mockMetricsCollectorInstance.getSessionMetrics).toHaveBeenCalledWith('unknown-session')
+      expect(logger.warn).toHaveBeenCalledWith('No metrics found for session "unknown-session"')
+    })
+
+    it('should output JSON format when --json flag is provided', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      mockMetricsCollectorInstance.getSummary.mockReturnValue({
+        totalSessions: 1,
+        sessions: [],
+        totalActiveBrowsers: 0,
+        totalIdleBrowsers: 0,
+        globalAcquisitionsPerMinute: 0,
+        globalFailureRate: 0,
+        circuitsOpen: 0,
+        circuitsHalfOpen: 0,
+      })
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats', '--json'])
+
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('"totalSessions": 1'))
+      consoleSpy.mockRestore()
+    })
+  })
+
+  describe('stats-reset subcommand', () => {
+    it('should reset pool statistics', async () => {
+      await program.parseAsync(['node', 'lesca', 'session', 'stats-reset'])
+
+      expect(mockMetricsCollectorInstance.reset).toHaveBeenCalled()
+      expect(logger.success).toHaveBeenCalledWith('Pool statistics reset')
     })
   })
 })

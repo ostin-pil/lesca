@@ -175,15 +175,102 @@ ${session.metadata.description ? `Description: ${session.metadata.description}` 
     )
   })
 
+/**
+ * Clear terminal screen
+ */
+function clearScreen(): void {
+  process.stdout.write('\x1B[2J\x1B[0f')
+}
+
+/**
+ * Display metrics with timestamp
+ */
+function displayMetricsWithTimestamp(collector: MetricsCollector, sessionName?: string): void {
+  const timestamp = new Date().toLocaleTimeString()
+
+  if (sessionName) {
+    const metrics = collector.getSessionMetrics(sessionName)
+    if (metrics) {
+      // eslint-disable-next-line no-console -- Terminal output for watch mode
+      console.log(`[${timestamp}] Watching session: ${sessionName}\n`)
+      // eslint-disable-next-line no-console -- Terminal output for watch mode
+      console.log(formatSessionMetrics(metrics))
+    } else {
+      // eslint-disable-next-line no-console -- Terminal output for watch mode
+      console.log(`[${timestamp}] Waiting for metrics from session: ${sessionName}...`)
+    }
+  } else {
+    const summary = collector.getSummary()
+    // eslint-disable-next-line no-console -- Terminal output for watch mode
+    console.log(`[${timestamp}] Pool Metrics (Press Ctrl+C to exit)\n`)
+    if (summary.totalSessions > 0) {
+      // eslint-disable-next-line no-console -- Terminal output for watch mode
+      console.log(formatMetricsSummary(summary))
+    } else {
+      // eslint-disable-next-line no-console -- Terminal output for watch mode
+      console.log('Waiting for pool activity...')
+    }
+  }
+}
+
 // Show pool statistics
 sessionCommand
   .command('stats')
   .description('Show browser pool statistics and metrics')
   .option('-s, --session <name>', 'Show stats for specific session')
   .option('--json', 'Output in JSON format')
-  .action((options: { session?: string; json?: boolean }) => {
+  .option('-w, --watch', 'Watch mode: continuously update metrics')
+  .option('-i, --interval <ms>', 'Update interval in milliseconds (default: 2000)', '2000')
+  .action((options: { session?: string; json?: boolean; watch?: boolean; interval?: string }) => {
     const collector = getMetricsCollector()
 
+    if (options.watch) {
+      // Watch mode: clear screen and display metrics at intervals
+      const intervalMs = parseInt(options.interval ?? '2000', 10)
+      let isRunning = true
+
+      // Handle Ctrl+C gracefully
+      const cleanup = (): void => {
+        isRunning = false
+        // eslint-disable-next-line no-console -- Terminal output for exit message
+        console.log('\nExiting watch mode...')
+        process.exit(0)
+      }
+      process.on('SIGINT', cleanup)
+      process.on('SIGTERM', cleanup)
+
+      // Initial display
+      clearScreen()
+      displayMetricsWithTimestamp(collector, options.session)
+
+      // Subscribe to metric events for real-time updates
+      collector.on('metric', () => {
+        if (isRunning) {
+          clearScreen()
+          displayMetricsWithTimestamp(collector, options.session)
+        }
+      })
+
+      // Periodic refresh (in case no events arrive)
+      const refreshInterval = setInterval(() => {
+        if (isRunning) {
+          clearScreen()
+          displayMetricsWithTimestamp(collector, options.session)
+        }
+      }, intervalMs)
+
+      // Keep process alive
+      process.stdin.resume()
+
+      // Cleanup on process exit
+      process.on('exit', () => {
+        clearInterval(refreshInterval)
+      })
+
+      return
+    }
+
+    // Non-watch mode: display once
     if (options.session) {
       const metrics = collector.getSessionMetrics(options.session)
       if (!metrics) {
