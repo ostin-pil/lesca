@@ -641,6 +641,56 @@ export interface BrowserDriver {
    * Close the browser
    */
   close(): Promise<void>
+
+  /**
+   * Click an element
+   */
+  click(selector: string): Promise<void>
+
+  /**
+   * Type text into an element
+   */
+  type(selector: string, text: string): Promise<void>
+
+  /**
+   * Wait for navigation to complete
+   */
+  waitForNavigation(timeout?: number): Promise<void>
+
+  /**
+   * Wait for specific network request
+   */
+  waitForRequest(urlPattern: string | RegExp, timeout?: number): Promise<void>
+
+  /**
+   * Wait for specific network response
+   */
+  waitForResponse(urlPattern: string | RegExp, timeout?: number): Promise<void>
+
+  /**
+   * Set cookie manager for auto-save functionality
+   */
+  setCookieManager(manager: unknown): void
+
+  /**
+   * Get cookie manager
+   */
+  getCookieManager(): unknown
+
+  /**
+   * Get captured responses from interceptor
+   */
+  getCapturedResponses(): Map<string, unknown>
+
+  /**
+   * Clear captured responses
+   */
+  clearCapturedResponses(): void
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics(): unknown
 }
 
 /**

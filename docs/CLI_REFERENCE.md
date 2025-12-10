@@ -304,12 +304,15 @@ npm run dev -- list [options]
 
 #### Options
 
-| Option                 | Short | Type   | Default | Description                                     |
-| ---------------------- | ----- | ------ | ------- | ----------------------------------------------- |
-| `--difficulty <level>` | `-d`  | string | All     | Filter by difficulty (`Easy`, `Medium`, `Hard`) |
-| `--tags <tags>`        | `-t`  | string | All     | Filter by tags (comma-separated)                |
-| `--limit <number>`     | `-l`  | number | `50`    | Limit number of problems displayed              |
-| `--offset <number>`    |       | number | `0`     | Offset for pagination                           |
+| Option                 | Short | Type   | Default | Description                                       |
+| ---------------------- | ----- | ------ | ------- | ------------------------------------------------- |
+| `--difficulty <level>` | `-d`  | string | All     | Filter by difficulty (`Easy`, `Medium`, `Hard`)   |
+| `--tags <tags>`        | `-t`  | string | All     | Filter by tags (comma-separated)                  |
+| `--limit <number>`     | `-l`  | number | `50`    | Limit number of problems displayed                |
+| `--status <status>`    |       | string |         | Filter by status (`todo`, `solved`, `attempted`)  |
+| `--list-id <id>`       |       | string |         | Filter by list ID                                 |
+| `--sort <field>`       |       | string | `id`    | Sort by field (`quality`, `acRate`, `difficulty`) |
+| `--offset <number>`    |       | number | `0`     | Offset for pagination                             |
 
 #### Examples
 
@@ -485,19 +488,22 @@ npm run dev -- scrape-list [options]
 
 #### Options
 
-| Option                   | Short | Type    | Default     | Description                                     |
-| ------------------------ | ----- | ------- | ----------- | ----------------------------------------------- |
-| `--output <dir>`         | `-o`  | string  | From config | Output directory                                |
-| `--format <format>`      | `-f`  | string  | From config | Output format                                   |
-| `--cookies <file>`       | `-c`  | string  | From config | Cookie file path                                |
-| `--cache-dir <dir>`      |       | string  | From config | Cache directory                                 |
-| `--no-cache`             |       | boolean | `false`     | Disable caching                                 |
-| `--difficulty <level>`   | `-d`  | string  | All         | Filter by difficulty (`Easy`, `Medium`, `Hard`) |
-| `--tags <tags>`          | `-t`  | string  | All         | Filter by tags (comma-separated)                |
-| `--limit <number>`       | `-l`  | number  | `10`        | Limit number of problems                        |
-| `--concurrency <number>` |       | number  | `3`         | Number of parallel scrapes (1-10)               |
-| `--resume`               |       | boolean | `false`     | Resume from previous progress                   |
-| `--no-auth`              |       | boolean | `false`     | Skip authentication                             |
+| Option                   | Short | Type    | Default     | Description                                       |
+| ------------------------ | ----- | ------- | ----------- | ------------------------------------------------- |
+| `--output <dir>`         | `-o`  | string  | From config | Output directory                                  |
+| `--format <format>`      | `-f`  | string  | From config | Output format                                     |
+| `--cookies <file>`       | `-c`  | string  | From config | Cookie file path                                  |
+| `--cache-dir <dir>`      |       | string  | From config | Cache directory                                   |
+| `--no-cache`             |       | boolean | `false`     | Disable caching                                   |
+| `--difficulty <level>`   | `-d`  | string  | All         | Filter by difficulty (`Easy`, `Medium`, `Hard`)   |
+| `--tags <tags>`          | `-t`  | string  | All         | Filter by tags (comma-separated)                  |
+| `--limit <number>`       | `-l`  | number  | `10`        | Limit number of problems                          |
+| `--status <status>`      |       | string  |             | Filter by status (`todo`, `solved`, `attempted`)  |
+| `--list-id <id>`         |       | string  |             | Filter by list ID                                 |
+| `--sort <field>`         |       | string  | `id`        | Sort by field (`quality`, `acRate`, `difficulty`) |
+| `--concurrency <number>` |       | number  | `3`         | Number of parallel scrapes (1-10)                 |
+| `--resume`               |       | boolean | `false`     | Resume from previous progress                     |
+| `--no-auth`              |       | boolean | `false`     | Skip authentication                               |
 
 #### Examples
 

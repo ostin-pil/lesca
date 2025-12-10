@@ -35,7 +35,10 @@ interface ScrapeListOptions {
   auth: boolean
   difficulty?: string
   tags: string
+  status?: string
+  listId?: string
   limit: string
+  sort: string
   concurrency: string
   resume?: boolean
   session?: string
@@ -51,7 +54,10 @@ export const scrapeListCommand = new Command('scrape-list')
   .option('--no-cache', 'Disable caching')
   .option('-d, --difficulty <level>', 'Filter by difficulty (Easy, Medium, Hard)')
   .option('-t, --tags <tags>', 'Filter by tags (comma-separated)', '')
+  .option('--status <status>', 'Filter by status (todo, solved, attempted)')
+  .option('--list-id <id>', 'Filter by list ID')
   .option('-l, --limit <number>', 'Limit number of problems')
+  .option('--sort <field>', 'Sort by field (quality, acRate, difficulty)', 'id')
   .option('--concurrency <number>', 'Number of parallel scrapes (overrides config)')
   .option('--resume', 'Resume from previous progress')
   .option('--no-auth', 'Skip authentication (public problems only)')
@@ -136,11 +142,29 @@ export const scrapeListCommand = new Command('scrape-list')
       if (options.tags) {
         filters.tags = options.tags.split(',').map((t: string) => t.trim())
       }
+      if (options.status) {
+        filters.status = options.status as 'todo' | 'solved' | 'attempted'
+      }
+      if (options.listId) {
+        filters.listId = options.listId
+      }
 
       const listRequest: ListScrapeRequest = {
         type: 'list',
         filters,
         limit: limit,
+      }
+
+      if (options.sort && options.sort !== 'id') {
+        const validSortFields = ['quality', 'acRate', 'difficulty']
+        if (validSortFields.includes(options.sort)) {
+          listRequest.sort = {
+            field: options.sort as 'quality' | 'acRate' | 'difficulty',
+            order: 'desc', // Default to descending for quality/acRate/difficulty
+          }
+        } else {
+          logger.warn(`Invalid sort field: ${options.sort}. Ignoring.`)
+        }
       }
 
       const listResult = await new ListScraperStrategy(graphqlClient).execute(listRequest)

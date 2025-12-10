@@ -16,6 +16,8 @@ import { handleCliError } from '../utils'
 interface ListOptions {
   difficulty?: string
   tags: string
+  status?: string
+  listId?: string
   limit: string
   sort: string
   cookies: string
@@ -29,6 +31,8 @@ export const listCommand = new Command('list')
   .description(chalk.white('List available LeetCode problems'))
   .option('-d, --difficulty <level>', 'Filter by difficulty (Easy, Medium, Hard)')
   .option('-t, --tags <tags>', 'Filter by tags (comma-separated)')
+  .option('--status <status>', 'Filter by status (todo, solved, attempted)')
+  .option('--list-id <id>', 'Filter by list ID')
   .option('-l, --limit <number>', 'Limit number of problems (default: 50)', '50')
   .option('--sort <field>', 'Sort by field (quality, acRate, difficulty)', 'id')
   .option('-c, --cookies <file>', 'Cookie file path (default: from config)')
@@ -109,6 +113,12 @@ ${chalk.bold('See also:')}
       }
       if (options.tags) {
         filters.tags = options.tags.split(',').map((t: string) => t.trim())
+      }
+      if (options.status) {
+        filters.status = options.status as 'todo' | 'solved' | 'attempted'
+      }
+      if (options.listId) {
+        filters.listId = options.listId
       }
 
       const listRequest: ListScrapeRequest = {
