@@ -67,3 +67,7 @@ test-output/
 
 # Claude (per file settings)
 .claude/settings.local.json
+
+# Temporary files
+coverage-report.json
+temp-lesca.config.yaml
