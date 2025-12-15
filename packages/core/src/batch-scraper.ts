@@ -3,6 +3,7 @@ import { writeFile, readFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 
 import { SystemError } from '@lesca/error'
+import { configManager } from '@lesca/shared/config'
 import type { ScrapeRequest, ScrapeResult } from '@lesca/shared/types'
 import { logger } from '@lesca/shared/utils'
 
@@ -85,9 +86,9 @@ export class BatchScraper {
     private options: BatchScrapingOptions = {}
   ) {
     this.options = {
-      concurrency: 3, // Default to 3 concurrent scrapes
+      concurrency: configManager.get<number>('scraping.concurrency') || 3,
       continueOnError: true,
-      delayBetweenBatches: 1000, // 1 second between batches
+      delayBetweenBatches: configManager.get<number>('scraping.delay') || 1000,
       resume: false,
       progressFile: resolve(process.cwd(), '.lesca-progress.json'),
       ...options,

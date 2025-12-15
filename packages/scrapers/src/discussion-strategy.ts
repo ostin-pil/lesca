@@ -1,6 +1,6 @@
 import { SelectorManager } from '@lesca/browser-automation'
 import { BrowserError, LescaError } from '@lesca/error'
-import { DEFAULT_BROWSER_TIMEOUT } from '@lesca/shared/config'
+import { configManager } from '@lesca/shared/config'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -51,7 +51,7 @@ export class DiscussionScraperStrategy implements ScraperStrategy {
       if (!this.browserDriver.getBrowser()) {
         await this.browserDriver.launch({
           headless: true,
-          timeout: request.timeout || DEFAULT_BROWSER_TIMEOUT,
+          timeout: request.timeout || configManager.get<number>('browser.timeout') || 30000,
           blockResources: ['image', 'font', 'media'],
         })
       }

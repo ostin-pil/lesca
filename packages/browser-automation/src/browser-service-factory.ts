@@ -1,3 +1,5 @@
+import { configManager } from '@lesca/shared/config'
+
 import { BrowserService } from './browser-service'
 import type { BrowserServiceOptions, ISessionManager, ISessionPoolManager } from './interfaces'
 import { SessionManager } from './session-manager'
@@ -16,9 +18,9 @@ export class BrowserServiceFactory {
     this.sessionManager = new SessionManager()
     this.sessionPoolManager = new SessionPoolManager({
       strategy: 'per-session',
-      perSessionMaxSize: 2,
-      perSessionIdleTime: 180000, // 3 minutes
-      acquireTimeout: 30000,
+      perSessionMaxSize: configManager.get<number>('browser.pool.maxSize') || 2,
+      perSessionIdleTime: configManager.get<number>('browser.pool.idleTimeout') || 180000,
+      acquireTimeout: configManager.get<number>('browser.pool.acquireTimeout') || 30000,
       retryOnFailure: true,
       maxRetries: 3,
     })
