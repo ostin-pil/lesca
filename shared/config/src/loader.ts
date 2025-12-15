@@ -29,11 +29,9 @@ export interface LoaderOptions {
  */
 export function loadConfigFile(path: string): PartialConfig {
   if (!existsSync(path)) {
-    throw new ConfigError(
-      'CONFIG_LOAD_FAILED',
-      `Configuration file not found: ${path}`,
-      { context: { path } }
-    )
+    throw new ConfigError('CONFIG_LOAD_FAILED', `Configuration file not found: ${path}`, {
+      context: { path },
+    })
   }
 
   const content = readFileSync(path, 'utf-8')
@@ -45,11 +43,9 @@ export function loadConfigFile(path: string): PartialConfig {
   } else if (ext === 'yaml' || ext === 'yml') {
     config = parseYaml(content)
   } else {
-    throw new ConfigError(
-      'CONFIG_INVALID_VALUE',
-      `Unsupported configuration file format: ${ext}`,
-      { context: { path, format: ext } }
-    )
+    throw new ConfigError('CONFIG_INVALID_VALUE', `Unsupported configuration file format: ${ext}`, {
+      context: { path, format: ext },
+    })
   }
 
   return validatePartialConfig(config)
@@ -80,11 +76,21 @@ export function loadEnvConfig(): PartialConfig {
   for (const [envKey, configPath] of Object.entries(ENV_MAPPINGS)) {
     const value = process.env[envKey]
     if (value !== undefined) {
-      // Parse boolean and numeric values
-      let parsedValue: string | boolean | number = value
+      // Parse boolean, numeric, and JSON values
+      let parsedValue: unknown = value
       if (value === 'true') parsedValue = true
       else if (value === 'false') parsedValue = false
       else if (!isNaN(Number(value))) parsedValue = Number(value)
+      else {
+        try {
+          // Try parsing as JSON (for arrays/objects)
+          if (value.startsWith('[') || value.startsWith('{')) {
+            parsedValue = JSON.parse(value)
+          }
+        } catch {
+          // Keep as string if JSON parse fails
+        }
+      }
 
       // Set the value in the config object using the path
       set(config, configPath, parsedValue)
@@ -100,10 +106,7 @@ export function loadEnvConfig(): PartialConfig {
  */
 export function mergeConfigs(...configs: PartialConfig[]): Config {
   const defaultConfig = getDefaultConfig()
-  const merged = configs.reduce(
-    (acc, config) => merge(acc, config),
-    defaultConfig
-  )
+  const merged = configs.reduce((acc, config) => merge(acc, config), defaultConfig)
 
   // Validate the final merged configuration
   return ConfigSchema.parse(merged)

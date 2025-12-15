@@ -105,6 +105,7 @@ const BrowserConfigSchema = z.object({
   enabled: z.boolean().default(true),
   headless: z.boolean().default(true),
   executable: z.string().optional(),
+  args: z.array(z.string()).default([]),
   timeout: z.number().min(5000).default(30000),
   viewport: z
     .object({

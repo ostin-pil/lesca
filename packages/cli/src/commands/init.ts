@@ -5,7 +5,6 @@ import { getDefaultPaths, ConfigManager } from '@lesca/shared/config'
 import { logger } from '@lesca/shared/utils'
 import chalk from 'chalk'
 import { Command } from 'commander'
-import inquirer from 'inquirer'
 import type { DistinctQuestion } from 'inquirer'
 import ora from 'ora'
 
@@ -41,6 +40,7 @@ interface InitOptions {
   outputDir?: string
   format?: string
   force?: boolean
+  nonInteractive?: boolean
 }
 
 interface InitAnswers {
@@ -58,6 +58,7 @@ export const initCommand = new Command('init')
   .option('--output-dir <path>', 'Default output directory', './output')
   .option('--format <format>', 'Default output format (markdown|obsidian)', 'markdown')
   .option('--force', 'Overwrite existing configuration')
+  .option('--non-interactive', 'Skip prompts and use defaults/flags')
   .action(async (options: InitOptions) => {
     // Show welcome banner
     showWelcomeBanner()
@@ -116,7 +117,12 @@ export const initCommand = new Command('init')
         },
       ]
 
-      const answers = (await inquirer.prompt(prompts)) as InitAnswers
+      let answers: InitAnswers = {}
+
+      if (!options.nonInteractive) {
+        const { default: inquirer } = await import('inquirer')
+        answers = (await inquirer.prompt(prompts)) as InitAnswers
+      }
 
       // Merge CLI options with prompted answers (prompts override CLI)
       const effectiveOptions: Required<InitOptions> = {

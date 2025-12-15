@@ -81,6 +81,7 @@ export function getDefaultConfig(): Config {
     browser: {
       enabled: true,
       headless: true,
+      args: [],
       timeout: 30000,
       viewport: {
         width: 1920,
@@ -204,6 +205,7 @@ export const ENV_MAPPINGS = {
   LESCA_BROWSER_ENABLED: 'browser.enabled',
   LESCA_BROWSER_HEADLESS: 'browser.headless',
   LESCA_BROWSER_EXECUTABLE: 'browser.executable',
+  LESCA_BROWSER_ARGS: 'browser.args',
 
   // Cache
   LESCA_CACHE_ENABLED: 'cache.enabled',
