@@ -140,6 +140,7 @@ export class GraphQLClient {
           dislikes
           content
           difficulty
+          isPaidOnly
           exampleTestcases
           hints
           mysqlSchemas

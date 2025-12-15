@@ -1,7 +1,7 @@
 import type { GraphQLClient } from '@lesca/api-client'
 import { SelectorManager } from '@lesca/browser-automation'
 import { GraphQLError, LescaError, ScrapingError, BrowserError } from '@lesca/error'
-import { DEFAULT_BROWSER_TIMEOUT } from '@lesca/shared/config'
+import { configManager } from '@lesca/shared/config'
 import type {
   ScraperStrategy,
   ScrapeRequest,
@@ -56,6 +56,22 @@ export class ProblemScraperStrategy implements ScraperStrategy {
       // 1. Try GraphQL first (faster, structured data)
       const problem = await this.graphqlClient.getProblem(problemRequest.titleSlug)
 
+      if (problem.isPaidOnly) {
+        if (!this.auth) {
+          throw new LescaError(
+            'AUTH_PREMIUM_REQUIRED',
+            `Problem "${problem.title}" is premium content. Please authenticate to access.`
+          )
+        }
+
+        if (!problemRequest.includePremium) {
+          throw new LescaError(
+            'AUTH_PREMIUM_REQUIRED',
+            `Problem "${problem.title}" is premium content. Use includePremium: true to attempt scraping.`
+          )
+        }
+      }
+
       this.validateProblem(problem)
 
       return {
@@ -68,6 +84,11 @@ export class ProblemScraperStrategy implements ScraperStrategy {
         },
       }
     } catch (error) {
+      // If it's a specific actionable error (e.g. premium content), rethrow it immediately
+      if (error instanceof LescaError && error.code === 'AUTH_PREMIUM_REQUIRED') {
+        throw error
+      }
+
       // 2. Fallback to browser automation if GraphQL fails
       // GraphQL might fail for premium problems or network issues
       logger.warn(
@@ -123,7 +144,7 @@ export class ProblemScraperStrategy implements ScraperStrategy {
     if (!this.browserDriver.getBrowser()) {
       await this.browserDriver.launch({
         headless: true,
-        timeout: request.timeout || DEFAULT_BROWSER_TIMEOUT,
+        timeout: request.timeout || configManager.get<number>('browser.timeout') || 30000,
         blockResources: ['image', 'font', 'media'],
       })
     }
