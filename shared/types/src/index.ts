@@ -800,6 +800,12 @@ export interface ApiClientConfig {
   rateLimiter: RateLimiterConfig
 }
 
+// ============================================================================
+// Plugin Interfaces
+// ============================================================================
+
+export * from './plugin'
+
 /**
  * Storage configuration
  */

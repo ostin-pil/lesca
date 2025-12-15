@@ -18,6 +18,8 @@ import type {
   EditorialContent,
 } from '@lesca/shared/types'
 
+import type { PluginManager } from './plugin-manager'
+
 /**
  * Main LeetCode scraper facade
  * Pure orchestration - no business logic
@@ -33,6 +35,7 @@ export class LeetCodeScraper {
       format?: 'markdown' | 'obsidian'
       outputPattern?: string // e.g., "{id}-{slug}.md"
       enhancements?: EnhancementConfig
+      pluginManager?: PluginManager
     } = {}
   ) {
     // Sort strategies by priority (highest first)
@@ -45,29 +48,45 @@ export class LeetCodeScraper {
    * Pure delegation - no branching logic
    */
   async scrape(request: ScrapeRequest): Promise<ScrapeResult> {
+    let currentRequest = request
+
     try {
+      // 0. Plugin hook: onScrape
+      if (this.options.pluginManager) {
+        currentRequest = await this.options.pluginManager.onScrape(request)
+      }
+
       // 1. Select strategy
-      const strategy = this.selectStrategy(request)
+      const strategy = this.selectStrategy(currentRequest)
 
       // 2. Execute scraping
-      const rawData = await strategy.execute(request)
+      const rawData = await strategy.execute(currentRequest)
 
       // 3. Process and convert
       const { markdown, filename } = await this.processData(rawData)
 
-      // 4. Save to storage
-      await this.storage.save(filename, markdown, {
+      // 4. Plugin hook: onSave
+      let contentToSave = markdown
+      if (this.options.pluginManager) {
+        const saved = await this.options.pluginManager.onSave(contentToSave)
+        if (typeof saved === 'string') {
+          contentToSave = saved
+        }
+      }
+
+      // 5. Save to storage
+      await this.storage.save(filename, contentToSave, {
         scrapedAt: rawData.metadata.scrapedAt.toISOString(),
         source: rawData.metadata.source,
       })
 
-      // 5. Return result
-      return {
+      // 6. Return result
+      const result: ScrapeResult = {
         success: true,
-        request,
+        request: currentRequest,
         data: {
           type: rawData.type,
-          content: markdown,
+          content: contentToSave,
           frontmatter: {},
           metadata: {
             originalData: rawData,
@@ -77,12 +96,26 @@ export class LeetCodeScraper {
         },
         filePath: filename,
       }
+
+      // 7. Plugin hook: onScrapeResult
+      if (this.options.pluginManager) {
+        return await this.options.pluginManager.onScrapeResult(result)
+      }
+
+      return result
     } catch (error) {
-      return {
+      const errorResult: ScrapeResult = {
         success: false,
-        request,
+        request: currentRequest,
         error: error instanceof Error ? error : new Error(String(error)),
       }
+
+      // Plugin hook: onScrapeResult (even for errors)
+      if (this.options.pluginManager) {
+        return await this.options.pluginManager.onScrapeResult(errorResult)
+      }
+
+      return errorResult
     }
   }
 
@@ -185,6 +218,12 @@ export class LeetCodeScraper {
       }
 
       return { markdown: finalMarkdown, filename }
+    }
+
+    if (rawData.type === 'list') {
+      const list = rawData.data as unknown
+      const filename = `problem-list-${new Date().toISOString().split('T')[0]}.json`
+      return { markdown: JSON.stringify(list, null, 2), filename }
     }
 
     throw new LescaError('SCRAPE_NO_STRATEGY', `Cannot process data type: ${rawData.type}`, {

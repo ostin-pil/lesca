@@ -18,12 +18,7 @@ export {
   getRecoverableErrorCodes,
 } from './codes'
 
-export type {
-  ErrorCode,
-  ErrorCategory,
-  ErrorRecovery,
-  ErrorCodeMetadata,
-} from './codes'
+export type { ErrorCode, ErrorCategory, ErrorRecovery, ErrorCodeMetadata } from './codes'
 
 // Export error classes
 export {
@@ -41,6 +36,7 @@ export {
   ConversionError,
   ConfigError,
   SystemError,
+  PluginError,
   isLescaError,
   wrapError,
 } from './errors'
@@ -57,8 +53,4 @@ export {
   createRetryableCheck,
 } from './recovery'
 
-export type {
-  RetryOptions,
-  CircuitBreakerState,
-  CircuitBreakerOptions,
-} from './recovery'
+export type { RetryOptions, CircuitBreakerState, CircuitBreakerOptions } from './recovery'

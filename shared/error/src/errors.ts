@@ -282,6 +282,9 @@ export class ConfigError extends LescaError {
 /**
  * System error
  */
+/**
+ * System error
+ */
 export class SystemError extends LescaError {
   constructor(
     code: Extract<
@@ -293,6 +296,20 @@ export class SystemError extends LescaError {
   ) {
     super(code, message, options)
     this.name = 'SystemError'
+  }
+}
+
+/**
+ * Plugin error
+ */
+export class PluginError extends LescaError {
+  constructor(
+    code: Extract<ErrorCode, 'PLUGIN_INVALID' | 'PLUGIN_LOAD_FAILED'>,
+    message?: string,
+    options?: { cause?: Error; context?: ErrorContext }
+  ) {
+    super(code, message, options)
+    this.name = 'PluginError'
   }
 }
 

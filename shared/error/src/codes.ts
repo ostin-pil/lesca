@@ -29,6 +29,7 @@ export type ErrorCategory =
   | 'configuration'
   | 'conversion'
   | 'system'
+  | 'plugin'
 
 /**
  * Error code metadata
@@ -647,6 +648,39 @@ export const ERROR_CODES = {
       'Validate configuration structure',
       'Reset to default configuration',
       'Check configuration file integrity',
+    ],
+  },
+
+  // ============================================================================
+  // Plugin Errors (PLUGIN_*)
+  // ============================================================================
+  PLUGIN_INVALID: {
+    code: 'PLUGIN_INVALID',
+    category: 'plugin' as ErrorCategory,
+    recovery: 'fatal' as ErrorRecovery,
+    description: 'Plugin module is invalid',
+    commonCauses: [
+      'Plugin does not implement Plugin interface',
+      'Missing name or version',
+      'Invalid export structure',
+    ],
+    resolution: [
+      'Check plugin implementation',
+      'Verify Plugin interface compliance',
+      'Check documentation for plugin development',
+    ],
+  },
+
+  PLUGIN_LOAD_FAILED: {
+    code: 'PLUGIN_LOAD_FAILED',
+    category: 'plugin' as ErrorCategory,
+    recovery: 'fatal' as ErrorRecovery,
+    description: 'Failed to load plugin',
+    commonCauses: ['Plugin module not found', 'Syntax error in plugin', 'Missing dependencies'],
+    resolution: [
+      'Check plugin path or package name',
+      'Install missing dependencies',
+      'Verify plugin code syntax',
     ],
   },
 

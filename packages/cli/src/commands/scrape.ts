@@ -9,7 +9,7 @@ import { Command } from 'commander'
 import ora from 'ora'
 
 import { GraphQLClient, RateLimiter } from '@/api-client/src/index'
-import { LeetCodeScraper } from '@/core/src/index'
+import { LeetCodeScraper, PluginManager } from '@/core/src/index'
 
 import { createBrowserService } from '../helpers'
 import { handleCliError } from '../utils'
@@ -168,9 +168,17 @@ ${chalk.bold('See also:')}
         spinner.info(`Using session: ${browserService.getSessionName()}`)
       }
 
+      // 8. Initialize Plugin Manager
+      const pluginManager = new PluginManager(
+        config.plugins.plugins.reduce((acc, p) => ({ ...acc, [p.name]: p.options }), {}),
+        config.plugins.plugins.map((p) => p.name)
+      )
+      await pluginManager.init()
+
       // 9. Create scraper
       const scraper = new LeetCodeScraper(strategies, storage, {
         format: format,
+        pluginManager,
       })
 
       // 10. Scrape the problem
@@ -199,8 +207,9 @@ ${chalk.bold('See also:')}
         process.exit(1)
       }
 
-      // Clean up: shutdown browser service
+      // Clean up: shutdown browser service and plugins
       await browserService.shutdown()
+      await pluginManager.cleanup()
     } catch (error) {
       spinner.fail('Unexpected error')
       handleCliError(chalk.red('Unexpected error during operation'), error)
