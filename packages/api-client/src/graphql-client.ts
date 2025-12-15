@@ -3,8 +3,9 @@ import { createHash } from 'crypto'
 import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
 import { getDefaultConfig } from '@lesca/shared/config'
 import type { Problem, ProblemList, ProblemListFilters, AuthCredentials } from '@lesca/shared/types'
-import { calculateQuality } from '@lesca/shared/utils'
+import { calculateQuality, logger } from '@lesca/shared/utils'
 import type { TieredCache } from '@lesca/shared/utils'
+import pRetry, { AbortError } from 'p-retry'
 
 interface GraphQLResponse<T> {
   data?: T
@@ -62,67 +63,114 @@ export class GraphQLClient {
       }
     }
 
-    try {
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ query, variables }),
-      })
-
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After')
-        throw new RateLimitError('Rate limit exceeded', {
-          ...(retryAfter ? { retryAfter: parseInt(retryAfter) } : {}),
+    const runQuery = async () => {
+      try {
+        const response = await fetch(this.endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ query, variables }),
         })
-      }
 
-      if (!response.ok) {
-        throw new GraphQLError(
-          'GQL_QUERY_FAILED',
-          `HTTP ${response.status}: ${response.statusText}`,
-          { statusCode: response.status }
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After')
+          throw new RateLimitError('Rate limit exceeded', {
+            ...(retryAfter ? { retryAfter: parseInt(retryAfter) } : {}),
+          })
+        }
+
+        if (!response.ok) {
+          const error = new GraphQLError(
+            'GQL_QUERY_FAILED',
+            `HTTP ${response.status}: ${response.statusText}`,
+            { statusCode: response.status }
+          )
+
+          // Don't retry 4xx errors (except 429 which is handled above)
+          if (response.status >= 400 && response.status < 500) {
+            throw new AbortError(error)
+          }
+
+          throw error
+        }
+
+        const result = (await response.json()) as GraphQLResponse<T>
+
+        if (result.errors && result.errors.length > 0) {
+          const errorMessages = result.errors.map((e) => e.message).join(', ')
+          // GraphQL errors might be recoverable or not, but usually they are application errors
+          // We'll abort retry for these unless we know specific ones are transient
+          throw new AbortError(
+            new GraphQLError('GQL_QUERY_FAILED', `GraphQL errors: ${errorMessages}`)
+          )
+        }
+
+        if (!result.data) {
+          throw new AbortError(
+            new GraphQLError('GQL_INVALID_RESPONSE', 'No data returned from GraphQL query')
+          )
+        }
+
+        return result.data
+      } catch (error) {
+        if (error instanceof AbortError) {
+          throw error
+        }
+
+        if (
+          error instanceof NetworkError ||
+          error instanceof RateLimitError ||
+          error instanceof GraphQLError
+        ) {
+          throw error
+        }
+
+        // Wrap unknown errors in GraphQLError but allow retry if it's likely network related
+        // If it's a fetch error (TypeError), it will be caught here
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw error // Retry fetch errors
+        }
+
+        // For other errors, wrap and abort
+        throw new AbortError(
+          new GraphQLError(
+            'GQL_QUERY_FAILED',
+            `Failed to execute GraphQL query: ${error instanceof Error ? error.message : String(error)}`,
+            { ...(error instanceof Error ? { cause: error } : {}) }
+          )
         )
       }
-
-      const result = (await response.json()) as GraphQLResponse<T>
-
-      if (result.errors && result.errors.length > 0) {
-        const errorMessages = result.errors.map((e) => e.message).join(', ')
-        throw new GraphQLError('GQL_QUERY_FAILED', `GraphQL errors: ${errorMessages}`)
-      }
-
-      if (!result.data) {
-        throw new GraphQLError('GQL_INVALID_RESPONSE', 'No data returned from GraphQL query')
-      }
-
-      if (this.cache && !options.noCache) {
-        const config = getDefaultConfig()
-        let ttl = options.ttl
-
-        if (!ttl) {
-          if (query.includes('question(')) {
-            ttl = config.cache.ttl.problem
-          } else if (query.includes('questionList')) {
-            ttl = config.cache.ttl.list
-          } else {
-            ttl = config.cache.ttl.problem // Default to problem TTL
-          }
-        }
-        await this.cache.set(cacheKey, result.data, ttl)
-      }
-
-      return result.data
-    } catch (error) {
-      if (error instanceof NetworkError) {
-        throw error
-      }
-
-      throw new GraphQLError(
-        'GQL_QUERY_FAILED',
-        `Failed to execute GraphQL query: ${error instanceof Error ? error.message : String(error)}`,
-        { ...(error instanceof Error ? { cause: error } : {}) }
-      )
     }
+
+    const data = await pRetry(runQuery, {
+      retries: 3,
+      minTimeout: 1000,
+      maxTimeout: 10000,
+      randomize: true,
+      onFailedAttempt: (error) => {
+        logger.warn(
+          `GraphQL query attempt ${error.attemptNumber} failed. Retrying in ${error.retriesLeft} attempts...`,
+          { error: error.message }
+        )
+      },
+    })
+
+    if (this.cache && !options.noCache) {
+      const config = getDefaultConfig()
+      let ttl = options.ttl
+
+      if (!ttl) {
+        if (query.includes('question(')) {
+          ttl = config.cache.ttl.problem
+        } else if (query.includes('questionList')) {
+          ttl = config.cache.ttl.list
+        } else {
+          ttl = config.cache.ttl.problem // Default to problem TTL
+        }
+      }
+      await this.cache.set(cacheKey, data, ttl)
+    }
+
+    return data
   }
 
   /**
