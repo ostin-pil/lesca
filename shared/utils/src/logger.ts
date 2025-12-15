@@ -6,6 +6,8 @@
 import { appendFileSync, existsSync, statSync, renameSync, unlinkSync, mkdirSync } from 'fs'
 import { dirname } from 'path'
 
+import chalk from 'chalk'
+
 import { sanitizeString, sanitizeObject, sanitizeError } from './sanitizer'
 
 /**
@@ -248,9 +250,6 @@ export class Logger {
     const icons = { error: '✗', warning: '⚠', info: 'ℹ', success: '✓' }
     const colors = { error: 'red', warning: 'yellow', info: 'blue', success: 'green' }
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
-    const chalk = require('chalk')
-
     /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     console.log()
     console.log(chalk[colors[variant]].bold(`${icons[variant]} ${title}`))
@@ -303,9 +302,6 @@ export class Logger {
   steps(title: string, items: string[]): void {
     if (!this.config.console) return
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
-    const chalk = require('chalk')
-
     /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     console.log()
     console.log(chalk.cyan.bold(title))
@@ -322,9 +318,6 @@ export class Logger {
    */
   banner(text: string, style?: 'box' | 'simple'): void {
     if (!this.config.console) return
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
-    const chalk = require('chalk')
 
     /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     if (style === 'box') {
@@ -348,9 +341,6 @@ export class Logger {
    */
   success(message: string, details?: string): void {
     if (!this.config.console) return
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
-    const chalk = require('chalk')
 
     /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     console.log(chalk.green(`✓ ${message}`))
