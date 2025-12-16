@@ -6,6 +6,12 @@ import { LescaError } from '@lesca/error'
 
 vi.mock('@lesca/shared/config', () => ({
   DEFAULT_BROWSER_TIMEOUT: 30000,
+  configManager: {
+    get: vi.fn().mockImplementation((key) => {
+      if (key === 'browser.timeout') return 30000
+      return undefined
+    }),
+  },
 }))
 
 vi.mock('@lesca/browser-automation', () => ({

@@ -29,6 +29,10 @@ const mockConfigManagerInstance = {
         captureResponses: false,
       },
     },
+    plugins: {
+      enabled: false,
+      plugins: [],
+    },
   }),
 }
 
@@ -85,6 +89,10 @@ const mockScraperInstance = {
 
 vi.mock('@/core/src/index', () => ({
   LeetCodeScraper: vi.fn(() => mockScraperInstance),
+  PluginManager: vi.fn(() => ({
+    init: vi.fn().mockResolvedValue(undefined),
+    cleanup: vi.fn().mockResolvedValue(undefined),
+  })),
 }))
 
 vi.mock('@lesca/scrapers', () => ({

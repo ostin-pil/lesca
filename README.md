@@ -20,6 +20,9 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 - ⚡ **Smart Rate Limiting**: Respectful, configurable API throttling
 - 💾 **Intelligent Caching**: Speed up re-scraping with tiered cache system
 - 🔧 **Highly Configurable**: YAML/JSON config with environment variable support
+- 🧩 **Plugin System**: Extend functionality with custom plugins
+- 🔒 **Premium Content**: Detects and handles premium-only problems gracefully
+- 🛡️ **Robust Error Handling**: Automatic retries and backoff for network stability
 
 ### Developer Experience
 

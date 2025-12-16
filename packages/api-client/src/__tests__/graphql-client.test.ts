@@ -207,34 +207,32 @@ describe('GraphQLClient', () => {
 
   describe('error handling', () => {
     it('should throw GraphQLError on HTTP errors', async () => {
-      fetchSpy.mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
-        headers: new Headers(),
-      } as Response)
+        headers: { get: () => null },
+      })
 
       const client = new GraphQLClient()
 
       await expect(client.query('{ test }')).rejects.toThrow(GraphQLError)
       await expect(client.query('{ test }')).rejects.toThrow('HTTP 500')
-    })
+    }, 30000)
 
     it('should throw RateLimitError on 429 status', async () => {
-      const headers = new Headers()
-      headers.set('Retry-After', '60')
-
-      fetchSpy.mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 429,
-        headers,
-      } as Response)
+        statusText: 'Too Many Requests',
+        headers: { get: () => '60' },
+      })
 
       const client = new GraphQLClient()
 
       await expect(client.query('{ test }')).rejects.toThrow(RateLimitError)
       await expect(client.query('{ test }')).rejects.toThrow('Rate limit exceeded')
-    })
+    }, 30000)
 
     it('should throw GraphQLError on GraphQL errors in response', async () => {
       const mockResponse = {

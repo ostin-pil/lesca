@@ -269,6 +269,25 @@ Logging configuration.
 - `output`: Output target (`console` | `file`)
 - `format`: Log format (`text` | `json`)
 
+### plugins
+
+Plugin configuration.
+
+- `enabled`: Enable plugin system
+- `paths`: List of local plugin paths or node modules
+- `settings`: Plugin-specific settings
+
+```yaml
+plugins:
+  enabled: true
+  paths:
+    - ./my-local-plugin
+    - lesca-plugin-analytics
+  settings:
+    my-local-plugin:
+      option: value
+```
+
 ## Examples
 
 ### Minimal Configuration
