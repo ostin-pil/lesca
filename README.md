@@ -9,6 +9,14 @@ A powerful, modular TypeScript-based LeetCode content scraper for creating perso
 
 ---
 
+## ⚠️ Legal Notice
+
+**Use at your own risk.** This tool violates LeetCode's Terms of Service regarding automated access. It is intended strictly for **personal, offline use** (e.g., studying while disconnected).
+
+- **Do not redistribute** scraped content.
+- **Read [LEGAL.md](./LEGAL.md)** carefully before use.
+- The authors are not responsible for account bans or other consequences.
+
 ## ✨ Features
 
 ### Core Functionality
