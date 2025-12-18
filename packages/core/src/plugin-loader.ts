@@ -14,6 +14,15 @@ export class PluginLoader {
    */
   async load(pluginName: string, cwd: string = process.cwd()): Promise<Plugin> {
     try {
+      // Security: Prevent path traversal attacks
+      if (pluginName.includes('..')) {
+        throw new PluginError(
+          'PLUGIN_INVALID',
+          `Invalid plugin path: "${pluginName}" contains path traversal sequence`,
+          { context: { pluginName } }
+        )
+      }
+
       let pluginModule: unknown
 
       // 1. Try resolving as a local path first
@@ -36,10 +45,13 @@ export class PluginLoader {
 
       // 3. Validate and extract plugin
       // Support both default export and named export 'plugin'
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const module = pluginModule as any
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const plugin = module.default || module.plugin || module
+      interface PluginModule {
+        default?: unknown
+        plugin?: unknown
+        [key: string]: unknown
+      }
+      const module = pluginModule as PluginModule
+      const plugin: unknown = module.default ?? module.plugin ?? module
 
       if (!this.isValidPlugin(plugin)) {
         throw new PluginError(

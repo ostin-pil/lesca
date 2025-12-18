@@ -1,4 +1,4 @@
-import type { ScrapeRequest, ScrapeResult } from './scraper'
+import type { ScrapeRequest, ScrapeResult } from '.'
 
 /**
  * Plugin context passed to onInit
@@ -46,20 +46,24 @@ export interface Plugin {
   /**
    * Called before a scrape request is executed
    * Can modify the request or throw to cancel
+   * Return the modified request, or nothing to use the original
    */
-  onScrape?(request: ScrapeRequest): Promise<ScrapeRequest> | ScrapeRequest
+  onScrape?(request: ScrapeRequest): Promise<ScrapeRequest | undefined> | ScrapeRequest | undefined
 
   /**
    * Called after a scrape request is completed (success or failure)
    * Can modify the result
+   * Return the modified result, or nothing to use the original
    */
-  onScrapeResult?(result: ScrapeResult): Promise<ScrapeResult> | ScrapeResult
+  onScrapeResult?(
+    result: ScrapeResult
+  ): Promise<ScrapeResult | undefined> | ScrapeResult | undefined
 
   /**
    * Called before data is saved to storage
    * Can modify the data
    */
-  onSave?(data: unknown): Promise<unknown> | unknown
+  onSave?(data: unknown): Promise<unknown>
 
   /**
    * Called when the application is shutting down

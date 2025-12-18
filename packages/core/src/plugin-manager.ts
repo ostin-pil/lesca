@@ -1,4 +1,3 @@
-import { LescaError } from '@lesca/error'
 import type { Plugin, PluginContext, ScrapeRequest, ScrapeResult } from '@lesca/shared/types'
 import { logger } from '@lesca/shared/utils'
 
@@ -92,7 +91,7 @@ export class PluginManager {
       try {
         if (plugin.onScrape) {
           const result = await plugin.onScrape(currentRequest)
-          if (result) {
+          if (result !== undefined) {
             currentRequest = result
           }
         }
@@ -118,7 +117,7 @@ export class PluginManager {
       try {
         if (plugin.onScrapeResult) {
           const modified = await plugin.onScrapeResult(currentResult)
-          if (modified) {
+          if (modified !== undefined) {
             currentResult = modified
           }
         }

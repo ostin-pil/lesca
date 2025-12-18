@@ -1,3 +1,8 @@
+````
+> [!WARNING]
+> This document is archived and reflects the state of the project at the end of Phase 1.3.
+> For current architecture and status, please refer to [ANALYSIS.md](../architecture/ANALYSIS.md).
+
 # Phase 1.3: Testing & Quality - Implementation Summary
 
 **Date:** November 17, 2025
@@ -28,15 +33,17 @@ Successfully implemented the complete testing infrastructure for Phase 1.3, esta
 "test:all": "npm run test:unit && npm run test:integration",
 "test:coverage": "vitest run --coverage --config vitest.unit.config.ts",
 "test:coverage:all": "vitest run --coverage --config vitest.integration.config.ts",
-```
+````
 
 **Features:**
+
 - Unit tests: < 5s timeout, retry flaky tests once
 - Integration tests: 30s timeout, sequential execution for stability
 - Separate coverage configs for each test type
 - JSON summary reporter for automated threshold checks
 
 **Current Results:**
+
 - ✅ 536 unit tests passing (3 skipped)
 - ✅ Unit test suite completes in ~17 seconds
 - ✅ All existing tests migrated to unit config
@@ -46,20 +53,24 @@ Successfully implemented the complete testing infrastructure for Phase 1.3, esta
 ### ✅ 2. Per-Package Coverage Enforcement
 
 **Files Created:**
+
 - `scripts/check-coverage.ts` - Coverage threshold enforcement script
 
 **Script Added:**
+
 ```json
 "check-coverage": "tsx scripts/check-coverage.ts"
 ```
 
 **Features:**
+
 - Validates per-package coverage against defined thresholds
 - Color-coded output (green/yellow/red)
 - Detailed failure reporting
 - Automatic calculation of package-level coverage from file-level data
 
 **Thresholds Defined:**
+
 ```typescript
 @lesca/core:              95%
 @lesca/scrapers:          92%
@@ -80,6 +91,7 @@ Overall target:           90%
 ### ✅ 3. Integration Test Infrastructure
 
 **Directories Created:**
+
 ```
 tests/
 ├── integration/          # End-to-end integration tests
@@ -100,11 +112,13 @@ tests/
 ```
 
 **Integration Tests Created:**
+
 1. **e2e-single-problem.test.ts** - Complete scraping pipeline test
 2. **e2e-batch-scraping.test.ts** - Concurrent batch operations
 3. **e2e-cache-persistence.test.ts** - Cache functionality (fully implemented and ready)
 
 **Status:**
+
 - Cache integration tests: ✅ Fully implemented (5 tests)
 - Scraping integration tests: 🚧 Skeleton created (TODO: implement with mocks)
 
@@ -113,11 +127,13 @@ tests/
 ### ✅ 4. Test Fixtures & Factories
 
 **Fixtures Created:**
+
 - `tests/fixtures/problems.ts` - Real-world LeetCode problem samples
   - Two Sum (Easy)
   - Add Two Numbers (Medium)
 
 **Factories Created:**
+
 - `tests/factories/problem-factory.ts` - Dynamic test data generation
   - `createProblem()` - Generate single problem
   - `createProblems(n)` - Generate batch of problems
@@ -126,6 +142,7 @@ tests/
   - `createDiscussionRequest()` - Generate discussion request
 
 **Features:**
+
 - Type-safe factories with sensible defaults
 - Flexible overrides for custom test scenarios
 - Reusable across unit and integration tests
@@ -135,21 +152,25 @@ tests/
 ### ✅ 5. Performance Benchmarks
 
 **Benchmarks Created:**
+
 - `scraping-performance.bench.ts` - HTML conversion, factory performance
 - `cache-performance.bench.ts` - Cache operations (set/get/miss)
 
 **Script Added:**
+
 ```json
 "benchmark": "tsx tests/benchmarks/scraping-performance.bench.ts && tsx tests/benchmarks/cache-performance.bench.ts"
 ```
 
 **Features:**
+
 - Statistical analysis (avg/min/max times, ops/sec)
 - Warm-up iterations before measurement
 - Performance budgets with automated checks
 - Detailed output with comparison baselines
 
 **Sample Output:**
+
 ```
 HTML to Markdown (small)
   Iterations:  1000
@@ -165,36 +186,39 @@ HTML to Markdown (small)
 
 ### Per-Package Status:
 
-| Package | Current | Target | Status | Gap |
-|---------|---------|--------|--------|-----|
-| @lesca/api-client | 96.34% | 90% | ✅ | +6.34% |
-| @lesca/auth | 93.50% | 90% | ✅ | +3.50% |
-| @lesca/browser-automation | 92.92% | 88% | ✅ | +4.92% |
-| @lesca/scrapers | 90.47% | 92% | 🟡 | -1.53% |
-| @lesca/storage | 89.19% | 95% | 🔴 | -5.81% |
-| @lesca/core | 81.85% | 95% | 🔴 | -13.15% |
-| @lesca/converters | 81.67% | 90% | 🔴 | -8.33% |
-| @lesca/shared/config | 80.17% | 90% | 🔴 | -9.83% |
-| @lesca/shared/utils | 67.93% | 90% | 🔴 | -22.07% |
-| @lesca/shared/error | 61.85% | 95% | 🔴 | -33.15% |
-| @lesca/cli | 0.00% | 85% | 🔴 | -85.00% |
+| Package                   | Current | Target | Status | Gap     |
+| ------------------------- | ------- | ------ | ------ | ------- |
+| @lesca/api-client         | 96.34%  | 90%    | ✅     | +6.34%  |
+| @lesca/auth               | 93.50%  | 90%    | ✅     | +3.50%  |
+| @lesca/browser-automation | 92.92%  | 88%    | ✅     | +4.92%  |
+| @lesca/scrapers           | 90.47%  | 92%    | 🟡     | -1.53%  |
+| @lesca/storage            | 89.19%  | 95%    | 🔴     | -5.81%  |
+| @lesca/core               | 81.85%  | 95%    | 🔴     | -13.15% |
+| @lesca/converters         | 81.67%  | 90%    | 🔴     | -8.33%  |
+| @lesca/shared/config      | 80.17%  | 90%    | 🔴     | -9.83%  |
+| @lesca/shared/utils       | 67.93%  | 90%    | 🔴     | -22.07% |
+| @lesca/shared/error       | 61.85%  | 95%    | 🔴     | -33.15% |
+| @lesca/cli                | 0.00%   | 85%    | 🔴     | -85.00% |
 
 ---
 
 ## What's Working
 
 ✅ **Test Infrastructure**
+
 - Fast/slow test split configured
 - Coverage reporting with json-summary
 - Automated threshold checks
 - All 536 unit tests passing
 
 ✅ **Three Packages Meeting Targets**
+
 - @lesca/api-client (96.34% / 90%)
 - @lesca/auth (93.50% / 90%)
 - @lesca/browser-automation (92.92% / 88%)
 
 ✅ **Integration Test Framework**
+
 - Directory structure created
 - Fixtures and factories ready
 - Cache integration tests fully working
@@ -205,11 +229,13 @@ HTML to Markdown (small)
 ## What Needs Work
 
 ### Priority 1: CLI Tests (0% → 85%)
+
 **Gap:** 85 percentage points
 **Estimated Effort:** 1-2 days
 **Why Critical:** CLI is the user-facing entry point
 
 **Action Items:**
+
 - Create `packages/cli/src/__tests__/commands/` directory
 - Test each command (scrape, batch, list, etc.)
 - Test error handling and user interaction
@@ -219,14 +245,17 @@ HTML to Markdown (small)
 ---
 
 ### Priority 2: Shared Error Package (61.85% → 95%)
+
 **Gap:** 33.15 percentage points
 **Estimated Effort:** 1 day
 **Low Coverage Areas:**
+
 - `errors.ts` (61.07%) - Error class constructors
 - `recovery.ts` (37.16%) - Retry/circuit breaker logic
 - `codes.ts` branch coverage (16.66%) - Error code definitions
 
 **Action Items:**
+
 - Test all error classes with context
 - Test retry logic with various scenarios
 - Test circuit breaker state transitions
@@ -235,14 +264,17 @@ HTML to Markdown (small)
 ---
 
 ### Priority 3: Shared Utils Package (67.93% → 90%)
+
 **Gap:** 22.07 percentage points
 **Estimated Effort:** 1 day
 **Low Coverage Areas:**
+
 - `logger.ts` (71.66%) - Logger methods, file output
 - `sanitizer.ts` (62.54%) - Sanitization edge cases
 - `cache.ts` (80.38%) - Cache eviction, expiry
 
 **Action Items:**
+
 - Test all logger output modes (console, file, JSON)
 - Test log rotation and file management
 - Test sanitizer with various data types
@@ -253,25 +285,30 @@ HTML to Markdown (small)
 ### Priority 4: Other Packages
 
 **@lesca/shared/config (80.17% → 90%)**
+
 - Test config validation edge cases
 - Test loader error scenarios
 - Test defaults and overrides
 
 **@lesca/converters (81.67% → 90%)**
+
 - Test enhancers (37.63% currently)
 - Test edge cases in HTML conversion
 - Test discussion/editorial converters
 
 **@lesca/core (81.85% → 95%)**
+
 - Test scraper error paths
 - Test batch scraper edge cases
 - Test strategy selection
 
 **@lesca/storage (89.19% → 95%)**
+
 - Test filesystem edge cases
 - Test concurrent operations
 
 **@lesca/scrapers (90.47% → 92%)**
+
 - Test list-strategy (69.81%)
 - Test error handling paths
 
@@ -320,12 +357,14 @@ HTML to Markdown (small)
 ### Test Configuration Details
 
 **Unit Tests (`vitest.unit.config.ts`):**
+
 - Includes: `packages/**/__tests__/**/*.test.ts`, `shared/**/*.test.ts`
 - Excludes: `tests/integration/**`, `**/*.integration.test.ts`, `**/*.e2e.test.ts`
 - Timeout: 5000ms
 - Retry: 1 (for flaky tests)
 
 **Integration Tests (`vitest.integration.config.ts`):**
+
 - Includes: `tests/integration/**/*.test.ts`, `**/*.integration.test.ts`, `**/*.e2e.test.ts`
 - Excludes: `tests/benchmarks/**`
 - Timeout: 30000ms
@@ -335,6 +374,7 @@ HTML to Markdown (small)
 ### Coverage Script Implementation
 
 The `check-coverage.ts` script:
+
 1. Reads `coverage/coverage-summary.json`
 2. Aggregates file-level coverage by package
 3. Calculates average of lines/statements/functions/branches
@@ -347,6 +387,7 @@ The `check-coverage.ts` script:
 ## Files Modified
 
 ### New Files (13)
+
 - `vitest.unit.config.ts`
 - `vitest.integration.config.ts`
 - `scripts/check-coverage.ts`
@@ -363,6 +404,7 @@ The `check-coverage.ts` script:
 - `tests/benchmarks/cache-performance.bench.ts`
 
 ### Modified Files (2)
+
 - `package.json` - Added test scripts
 - `vitest.config.ts` - Added @lesca/shared/error alias
 
@@ -372,16 +414,16 @@ The `check-coverage.ts` script:
 
 From Phase 1.3 requirements:
 
-| Criterion | Status | Notes |
-|-----------|--------|-------|
-| ✅ test:unit and test:integration scripts configured | **DONE** | Both working, 536 tests passing |
-| ✅ Unit tests run on PRs | **READY** | Fast unit tests complete in ~17s |
-| 🚧 Integration tests on release only | **READY** | Config ready, tests need implementation |
-| ✅ Coverage check script enforces thresholds | **DONE** | Working, identifies all gaps |
-| 🚧 Overall test coverage ≥ 90% | **IN PROGRESS** | Currently 66.01%, roadmap defined |
-| 🚧 At least 5 integration tests | **IN PROGRESS** | 5 cache tests done, 8 more planned |
-| ✅ Unit test suite completes in < 30 seconds | **DONE** | Currently ~17 seconds |
-| ⏳ Zero flaky tests | **TBD** | Retry logic in place, monitoring needed |
+| Criterion                                            | Status          | Notes                                   |
+| ---------------------------------------------------- | --------------- | --------------------------------------- |
+| ✅ test:unit and test:integration scripts configured | **DONE**        | Both working, 536 tests passing         |
+| ✅ Unit tests run on PRs                             | **READY**       | Fast unit tests complete in ~17s        |
+| 🚧 Integration tests on release only                 | **READY**       | Config ready, tests need implementation |
+| ✅ Coverage check script enforces thresholds         | **DONE**        | Working, identifies all gaps            |
+| 🚧 Overall test coverage ≥ 90%                       | **IN PROGRESS** | Currently 66.01%, roadmap defined       |
+| 🚧 At least 5 integration tests                      | **IN PROGRESS** | 5 cache tests done, 8 more planned      |
+| ✅ Unit test suite completes in < 30 seconds         | **DONE**        | Currently ~17 seconds                   |
+| ⏳ Zero flaky tests                                  | **TBD**         | Retry logic in place, monitoring needed |
 
 ---
 

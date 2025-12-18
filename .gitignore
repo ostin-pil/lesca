@@ -71,3 +71,4 @@ test-output/
 # Temporary files
 coverage-report.json
 temp-lesca.config.yaml
+benchmark-results.json
