@@ -369,4 +369,253 @@ describe('Session Command', () => {
       expect(logger.success).toHaveBeenCalledWith('Pool statistics reset')
     })
   })
+
+  describe('stats export subcommand', () => {
+    it('should export metrics to JSON file', async () => {
+      const mockWriteFileSync = vi.fn()
+      vi.doMock('fs', () => ({
+        writeFileSync: mockWriteFileSync,
+      }))
+
+      mockMetricsCollectorInstance.exportToJSON = vi.fn().mockReturnValue('{"test": true}')
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats', '-e', '/tmp/metrics.json'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Exporting metrics to JSON'))
+    })
+
+    it('should export metrics to CSV file', async () => {
+      const mockWriteFileSync = vi.fn()
+      vi.doMock('fs', () => ({
+        writeFileSync: mockWriteFileSync,
+      }))
+
+      mockMetricsCollectorInstance.exportToCSV = vi.fn().mockReturnValue('session,count\ntest,5')
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats', '-e', '/tmp/metrics.csv'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Exporting metrics to CSV'))
+    })
+
+    it('should handle export with include-history flag', async () => {
+      const mockWriteFileSync = vi.fn()
+      vi.doMock('fs', () => ({
+        writeFileSync: mockWriteFileSync,
+      }))
+
+      mockMetricsCollectorInstance.exportToJSON = vi.fn().mockReturnValue('{"history": []}')
+
+      await program.parseAsync([
+        'node',
+        'lesca',
+        'session',
+        'stats',
+        '-e',
+        '/tmp/metrics.json',
+        '--include-history',
+      ])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Exporting metrics to JSON'))
+    })
+  })
+
+  describe('stats with timing stats edge cases', () => {
+    it('should handle timing stats with zero count', async () => {
+      mockMetricsCollectorInstance.getSummary.mockReturnValue({
+        totalSessions: 1,
+        sessions: [
+          {
+            sessionName: 'empty-timing',
+            poolSize: 1,
+            activeBrowsers: 0,
+            idleBrowsers: 1,
+            totalAcquisitions: 0,
+            totalReleases: 0,
+            totalFailures: 0,
+            browsersCreated: 1,
+            browsersDestroyed: 0,
+            circuitState: 'closed',
+            circuitTrips: 0,
+            acquisitionsPerMinute: 0,
+            failureRate: 0,
+            acquireTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+            releaseTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+            browserCreateTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+            firstEventAt: Date.now(),
+            lastEventAt: Date.now(),
+          },
+        ],
+        totalActiveBrowsers: 0,
+        totalIdleBrowsers: 1,
+        globalAcquisitionsPerMinute: 0,
+        globalFailureRate: 0,
+        circuitsOpen: 0,
+        circuitsHalfOpen: 0,
+      })
+
+      await program.parseAsync(['node', 'lesca', 'session', 'stats'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('empty-timing'))
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('No data'))
+    })
+
+    it('should display specific session JSON output', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      mockMetricsCollectorInstance.getSessionMetrics.mockReturnValue({
+        sessionName: 'json-session',
+        poolSize: 1,
+        activeBrowsers: 0,
+        idleBrowsers: 1,
+        totalAcquisitions: 0,
+        totalReleases: 0,
+        totalFailures: 0,
+        browsersCreated: 1,
+        browsersDestroyed: 0,
+        circuitState: 'closed',
+        circuitTrips: 0,
+        acquisitionsPerMinute: 0,
+        failureRate: 0,
+        acquireTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+        releaseTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+        browserCreateTiming: { count: 0, avgMs: 0, minMs: 0, maxMs: 0 },
+        firstEventAt: Date.now(),
+        lastEventAt: Date.now(),
+      })
+
+      await program.parseAsync([
+        'node',
+        'lesca',
+        'session',
+        'stats',
+        '-s',
+        'json-session',
+        '--json',
+      ])
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('"sessionName": "json-session"')
+      )
+      consoleSpy.mockRestore()
+    })
+  })
+
+  describe('cleanup subcommand', () => {
+    const mockCleanupSchedulerInstance = {
+      cleanup: vi.fn(),
+    }
+
+    beforeEach(() => {
+      vi.doMock('@lesca/browser-automation', () => ({
+        SessionManager: vi.fn(() => mockSessionManagerInstance),
+        MetricsCollector: vi.fn(() => mockMetricsCollectorInstance),
+        SessionCleanupScheduler: vi.fn(() => mockCleanupSchedulerInstance),
+      }))
+      mockCleanupSchedulerInstance.cleanup.mockReset()
+    })
+
+    it('should run cleanup and report results', async () => {
+      mockCleanupSchedulerInstance.cleanup.mockResolvedValue({
+        cleaned: ['old-session-1', 'old-session-2'],
+        kept: ['active-session'],
+        errors: [],
+        dryRun: false,
+      })
+
+      // Re-import to get fresh command with mocked dependencies
+      vi.resetModules()
+      const { sessionCommand: freshCmd } = await import('../commands/session')
+      const freshProgram = new Command()
+      freshProgram.exitOverride()
+      freshProgram.addCommand(freshCmd)
+
+      await freshProgram.parseAsync(['node', 'lesca', 'session', 'cleanup'])
+
+      expect(logger.info).toHaveBeenCalled()
+    })
+
+    it('should run cleanup in dry-run mode', async () => {
+      mockCleanupSchedulerInstance.cleanup.mockResolvedValue({
+        cleaned: ['would-clean-session'],
+        kept: ['kept-session'],
+        errors: [],
+        dryRun: true,
+      })
+
+      vi.resetModules()
+      const { sessionCommand: freshCmd } = await import('../commands/session')
+      const freshProgram = new Command()
+      freshProgram.exitOverride()
+      freshProgram.addCommand(freshCmd)
+
+      await freshProgram.parseAsync(['node', 'lesca', 'session', 'cleanup', '--dry-run'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('dry-run mode'))
+    })
+
+    it('should report no sessions to clean when result is empty', async () => {
+      mockCleanupSchedulerInstance.cleanup.mockResolvedValue({
+        cleaned: [],
+        kept: [],
+        errors: [],
+        dryRun: false,
+      })
+
+      vi.resetModules()
+      const { sessionCommand: freshCmd } = await import('../commands/session')
+      const freshProgram = new Command()
+      freshProgram.exitOverride()
+      freshProgram.addCommand(freshCmd)
+
+      await freshProgram.parseAsync(['node', 'lesca', 'session', 'cleanup'])
+
+      expect(logger.info).toHaveBeenCalledWith('No sessions to clean up')
+    })
+
+    it('should report errors during cleanup', async () => {
+      mockCleanupSchedulerInstance.cleanup.mockResolvedValue({
+        cleaned: [],
+        kept: [],
+        errors: [{ session: 'corrupt-session', error: 'File corrupted' }],
+        dryRun: false,
+      })
+
+      vi.resetModules()
+      const { sessionCommand: freshCmd } = await import('../commands/session')
+      const freshProgram = new Command()
+      freshProgram.exitOverride()
+      freshProgram.addCommand(freshCmd)
+
+      await freshProgram.parseAsync(['node', 'lesca', 'session', 'cleanup'])
+
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Errors: 1'))
+    })
+
+    it('should respect max-age and max-sessions options', async () => {
+      mockCleanupSchedulerInstance.cleanup.mockResolvedValue({
+        cleaned: [],
+        kept: [],
+        errors: [],
+        dryRun: false,
+      })
+
+      vi.resetModules()
+      const { sessionCommand: freshCmd } = await import('../commands/session')
+      const freshProgram = new Command()
+      freshProgram.exitOverride()
+      freshProgram.addCommand(freshCmd)
+
+      await freshProgram.parseAsync([
+        'node',
+        'lesca',
+        'session',
+        'cleanup',
+        '--max-age',
+        '14',
+        '--max-sessions',
+        '5',
+      ])
+
+      expect(logger.info).toHaveBeenCalledWith('No sessions to clean up')
+    })
+  })
 })

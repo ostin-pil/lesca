@@ -247,44 +247,39 @@ export class Logger {
     if (!this.config.console) return
 
     const variant = options?.variant ?? 'info'
-    const icons = { error: '✗', warning: '⚠', info: 'ℹ', success: '✓' }
-    const colors = { error: 'red', warning: 'yellow', info: 'blue', success: 'green' }
+    const icons = { error: '✗', warning: '⚠', info: 'ℹ', success: '✓' } as const
+    const colorFns = {
+      error: chalk.red,
+      warning: chalk.yellow,
+      info: chalk.blue,
+      success: chalk.green,
+    } as const
 
-    /* eslint-disable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    /* eslint-disable no-console */
     console.log()
-    console.log(chalk[colors[variant]].bold(`${icons[variant]} ${title}`))
-    // eslint-disable-next-line no-console
+    console.log(colorFns[variant].bold(`${icons[variant]} ${title}`))
     console.log()
 
     if (options?.message) {
-      // eslint-disable-next-line no-console
       console.log(chalk.gray(`  ${options.message}`))
-      // eslint-disable-next-line no-console
       console.log()
     }
 
     if (options?.filePath) {
-      // eslint-disable-next-line no-console
       console.log(chalk.white(`  ${options.filePath}`))
-      // eslint-disable-next-line no-console
       console.log()
     }
 
     if (options?.steps) {
-      // eslint-disable-next-line no-console
       console.log(chalk.cyan.bold('  💡 To fix this:'))
       options.steps.forEach((step) => {
-        // eslint-disable-next-line no-console
         console.log(chalk.white(`  ${step}`))
       })
-      // eslint-disable-next-line no-console
       console.log()
     }
 
     if (options?.tip) {
-      // eslint-disable-next-line no-console
       console.log(chalk.gray(`  ${options.tip}`))
-      // eslint-disable-next-line no-console
       console.log()
     }
 
@@ -292,7 +287,7 @@ export class Logger {
       console.log(chalk.gray('  📚 Need help?'), chalk.blue(options.docLink))
       console.log()
     }
-    /* eslint-enable no-console, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    /* eslint-enable no-console */
   }
 
   /**

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ConfigManager } from '@lesca/shared/config'
 import { logger } from '@lesca/shared/utils'
 import {
+  createBrowserService,
   initializeConfig,
   handleCliError,
   parseTags,
@@ -15,7 +16,124 @@ import {
   validateProblemSlug,
 } from '../helpers'
 
+// Mock BrowserServiceFactory
+const mockBrowserService = {
+  launch: vi.fn(),
+  close: vi.fn(),
+}
+
+const mockBrowserServiceFactory = {
+  createService: vi.fn().mockReturnValue(mockBrowserService),
+}
+
+vi.mock('@lesca/browser-automation', () => ({
+  BrowserServiceFactory: {
+    getInstance: vi.fn(() => mockBrowserServiceFactory),
+  },
+}))
+
 describe('CLI Helpers', () => {
+  describe('createBrowserService', () => {
+    beforeEach(() => {
+      mockBrowserServiceFactory.createService.mockClear()
+    })
+
+    it('should create browser service with CLI session name', () => {
+      const mockConfig = {
+        get: vi.fn((key: string) => {
+          if (key === 'browser.session.enabled') return false
+          if (key === 'browser.session.name') return undefined
+          if (key === 'auth') return { cookies: [] }
+          return undefined
+        }),
+      } as unknown as ConfigManager
+
+      createBrowserService(mockConfig, 'cli-session', false)
+
+      expect(mockBrowserServiceFactory.createService).toHaveBeenCalledWith({
+        sessionName: 'cli-session',
+        persistOnShutdown: true,
+        autoRestore: true,
+        auth: { cookies: [] },
+      })
+    })
+
+    it('should use config session name when CLI session not provided', () => {
+      const mockConfig = {
+        get: vi.fn((key: string) => {
+          if (key === 'browser.session.enabled') return true
+          if (key === 'browser.session.name') return 'config-session'
+          if (key === 'auth') return { cookies: [] }
+          return undefined
+        }),
+      } as unknown as ConfigManager
+
+      createBrowserService(mockConfig, undefined, false)
+
+      expect(mockBrowserServiceFactory.createService).toHaveBeenCalledWith({
+        sessionName: 'config-session',
+        persistOnShutdown: true,
+        autoRestore: true,
+        auth: { cookies: [] },
+      })
+    })
+
+    it('should disable session persistence when noSessionPersist is true', () => {
+      const mockConfig = {
+        get: vi.fn((key: string) => {
+          if (key === 'browser.session.enabled') return false
+          if (key === 'auth') return null
+          return undefined
+        }),
+      } as unknown as ConfigManager
+
+      createBrowserService(mockConfig, undefined, true)
+
+      expect(mockBrowserServiceFactory.createService).toHaveBeenCalledWith({
+        persistOnShutdown: false,
+        autoRestore: true,
+      })
+    })
+
+    it('should not include sessionName when no session configured', () => {
+      const mockConfig = {
+        get: vi.fn((key: string) => {
+          if (key === 'browser.session.enabled') return false
+          if (key === 'browser.session.name') return undefined
+          if (key === 'auth') return undefined
+          return undefined
+        }),
+      } as unknown as ConfigManager
+
+      createBrowserService(mockConfig, undefined, false)
+
+      expect(mockBrowserServiceFactory.createService).toHaveBeenCalledWith({
+        persistOnShutdown: true,
+        autoRestore: true,
+      })
+    })
+
+    it('should prioritize CLI session over config session', () => {
+      const mockConfig = {
+        get: vi.fn((key: string) => {
+          if (key === 'browser.session.enabled') return true
+          if (key === 'browser.session.name') return 'config-session'
+          if (key === 'auth') return { cookies: [] }
+          return undefined
+        }),
+      } as unknown as ConfigManager
+
+      createBrowserService(mockConfig, 'cli-override', false)
+
+      expect(mockBrowserServiceFactory.createService).toHaveBeenCalledWith({
+        sessionName: 'cli-override',
+        persistOnShutdown: true,
+        autoRestore: true,
+        auth: { cookies: [] },
+      })
+    })
+  })
+
   describe('initializeConfig', () => {
     it('should initialize config with provided path', () => {
       const mockConfigManager = {
@@ -24,7 +142,9 @@ describe('CLI Helpers', () => {
 
       const result = initializeConfig(mockConfigManager, '/path/to/config.yaml')
 
-      expect(mockConfigManager.initialize).toHaveBeenCalledWith({ configPath: '/path/to/config.yaml' })
+      expect(mockConfigManager.initialize).toHaveBeenCalledWith({
+        configPath: '/path/to/config.yaml',
+      })
       expect(result).toEqual({ config: 'mock' })
     })
 
@@ -104,7 +224,9 @@ describe('CLI Helpers', () => {
     it('should handle non-Error values', () => {
       handleCliError('Operation failed', 'string error')
 
-      expect(logger.error).toHaveBeenCalledWith('Operation failed', undefined, { error: 'string error' })
+      expect(logger.error).toHaveBeenCalledWith('Operation failed', undefined, {
+        error: 'string error',
+      })
     })
 
     it('should handle no error parameter', () => {
@@ -116,7 +238,11 @@ describe('CLI Helpers', () => {
 
   describe('parseTags', () => {
     it('should parse comma-separated tags', () => {
-      expect(parseTags('array,hash-table,two-pointers')).toEqual(['array', 'hash-table', 'two-pointers'])
+      expect(parseTags('array,hash-table,two-pointers')).toEqual([
+        'array',
+        'hash-table',
+        'two-pointers',
+      ])
     })
 
     it('should trim whitespace from tags', () => {
@@ -213,8 +339,12 @@ describe('CLI Helpers', () => {
     })
 
     it('should reject invalid formats', () => {
-      expect(() => validateFormat('html')).toThrow("Invalid format: html. Must be 'markdown' or 'obsidian'")
-      expect(() => validateFormat('json')).toThrow("Invalid format: json. Must be 'markdown' or 'obsidian'")
+      expect(() => validateFormat('html')).toThrow(
+        "Invalid format: html. Must be 'markdown' or 'obsidian'"
+      )
+      expect(() => validateFormat('json')).toThrow(
+        "Invalid format: json. Must be 'markdown' or 'obsidian'"
+      )
       expect(() => validateFormat('')).toThrow("Invalid format: . Must be 'markdown' or 'obsidian'")
     })
   })

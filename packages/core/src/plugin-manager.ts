@@ -18,10 +18,27 @@ export class PluginManager {
     this.context = {
       config,
       logger: {
-        debug: (msg, ...args) => logger.debug(`[Plugin] ${msg}`, ...args),
-        info: (msg, ...args) => logger.info(`[Plugin] ${msg}`, ...args),
-        warn: (msg, ...args) => logger.warn(`[Plugin] ${msg}`, ...args),
-        error: (msg, ...args) => logger.error(`[Plugin] ${msg}`, ...args),
+        // Plugin context logger adapts the plugin's ...args to the Logger's specific signatures
+        debug: (msg: string, ...args: unknown[]) => {
+          const context = args[0] as Record<string, unknown> | undefined
+          logger.debug(`[Plugin] ${msg}`, context)
+        },
+        info: (msg: string, ...args: unknown[]) => {
+          const context = args[0] as Record<string, unknown> | undefined
+          logger.info(`[Plugin] ${msg}`, context)
+        },
+        warn: (msg: string, ...args: unknown[]) => {
+          const context = args[0] as Record<string, unknown> | undefined
+          logger.warn(`[Plugin] ${msg}`, context)
+        },
+        error: (msg: string, ...args: unknown[]) => {
+          // error() has different signature: (message, error?, context?)
+          const errorArg = args[0] instanceof Error ? args[0] : undefined
+          const context = (args[0] instanceof Error ? args[1] : args[0]) as
+            | Record<string, unknown>
+            | undefined
+          logger.error(`[Plugin] ${msg}`, errorArg, context)
+        },
       },
     }
     this.loader = new PluginLoader()

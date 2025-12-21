@@ -131,6 +131,7 @@ export const initCommand = new Command('init')
         outputDir: answers.outputDir || options.outputDir || './output',
         format: (answers.format || options.format || 'markdown') as 'markdown' | 'obsidian',
         force: answers.force ?? options.force ?? false,
+        nonInteractive: options.nonInteractive ?? false,
       }
 
       const configPath = resolve(effectiveOptions.configPath)

@@ -334,5 +334,149 @@ describe('CLI Commands', () => {
       const logger = (await import('@lesca/shared/utils')).logger
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('No problems found'))
     })
+
+    it('should handle JSON output mode', async () => {
+      program.addCommand(searchCommand)
+
+      const { ListScraperStrategy } = await import('@lesca/scrapers')
+      vi.mocked(ListScraperStrategy).mockImplementation(
+        () =>
+          ({
+            execute: vi.fn().mockResolvedValue({
+              type: 'list',
+              data: {
+                questions: [
+                  {
+                    questionFrontendId: '1',
+                    title: 'Test',
+                    titleSlug: 'test',
+                    difficulty: 'Easy',
+                    isPaidOnly: false,
+                    acRate: 50.0,
+                  },
+                ],
+              },
+            }),
+          }) as any
+      )
+
+      await program.parseAsync(['node', 'lesca', 'search', 'test', '--no-auth', '--json'])
+
+      const logger = (await import('@lesca/shared/utils')).logger
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('"titleSlug": "test"'))
+    })
+
+    it('should display Hard difficulty in red', async () => {
+      program.addCommand(searchCommand)
+
+      const { ListScraperStrategy } = await import('@lesca/scrapers')
+      vi.mocked(ListScraperStrategy).mockImplementation(
+        () =>
+          ({
+            execute: vi.fn().mockResolvedValue({
+              type: 'list',
+              data: {
+                questions: [
+                  {
+                    questionFrontendId: '123',
+                    title: 'Hard Problem',
+                    titleSlug: 'hard-problem',
+                    difficulty: 'Hard',
+                    isPaidOnly: false,
+                    acRate: 25.5,
+                  },
+                ],
+              },
+            }),
+          }) as any
+      )
+
+      await program.parseAsync(['node', 'lesca', 'search', 'hard', '--no-auth'])
+
+      const logger = (await import('@lesca/shared/utils')).logger
+      expect(logger.log).toHaveBeenCalled()
+    })
+
+    it('should filter by difficulty', async () => {
+      program.addCommand(searchCommand)
+      await program.parseAsync([
+        'node',
+        'lesca',
+        'search',
+        'tree',
+        '--difficulty',
+        'Medium',
+        '--no-auth',
+      ])
+
+      const logger = (await import('@lesca/shared/utils')).logger
+      expect(logger.log).toHaveBeenCalled()
+    })
+
+    it('should filter by tags', async () => {
+      program.addCommand(searchCommand)
+      await program.parseAsync([
+        'node',
+        'lesca',
+        'search',
+        'array',
+        '--tags',
+        'sorting,two-pointers',
+        '--no-auth',
+      ])
+
+      const logger = (await import('@lesca/shared/utils')).logger
+      expect(logger.log).toHaveBeenCalled()
+    })
+
+    it('should handle search errors gracefully', async () => {
+      program.addCommand(searchCommand)
+
+      const { ListScraperStrategy } = await import('@lesca/scrapers')
+      vi.mocked(ListScraperStrategy).mockImplementation(
+        () =>
+          ({
+            execute: vi.fn().mockRejectedValue(new Error('Network error')),
+          }) as any
+      )
+
+      await program.parseAsync(['node', 'lesca', 'search', 'error', '--no-auth'])
+
+      const { handleCliError } = await import('../utils')
+      expect(handleCliError).toHaveBeenCalledWith('Failed to search problems', expect.any(Error))
+    })
+
+    it('should continue without auth when auth fails', async () => {
+      program.addCommand(searchCommand)
+
+      // Enable auth method in config
+      mockConfigManager.getConfig.mockReturnValue({
+        auth: { method: 'cookie', cookiePath: 'cookies.json' },
+        api: {
+          rateLimit: {
+            minDelay: 1000,
+            maxDelay: 2000,
+            jitter: true,
+          },
+        },
+        storage: { path: './output' },
+        output: { format: 'markdown' },
+      })
+
+      // Make auth fail
+      const { CookieFileAuth } = await import('@lesca/auth')
+      vi.mocked(CookieFileAuth).mockImplementation(
+        () =>
+          ({
+            authenticate: vi.fn().mockRejectedValue(new Error('Auth failed')),
+            getCredentials: vi.fn(),
+          }) as any
+      )
+
+      await program.parseAsync(['node', 'lesca', 'search', 'test'])
+
+      const logger = (await import('@lesca/shared/utils')).logger
+      expect(logger.log).toHaveBeenCalled()
+    })
   })
 })

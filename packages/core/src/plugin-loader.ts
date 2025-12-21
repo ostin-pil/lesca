@@ -65,10 +65,14 @@ export class PluginLoader {
       if (error instanceof LescaError) {
         throw error
       }
+      const options: { cause?: Error } = {}
+      if (error instanceof Error) {
+        options.cause = error
+      }
       throw new PluginError(
         'PLUGIN_LOAD_FAILED',
         `Failed to load plugin "${pluginName}": ${error instanceof Error ? error.message : String(error)}`,
-        { cause: error instanceof Error ? error : undefined }
+        options
       )
     }
   }
