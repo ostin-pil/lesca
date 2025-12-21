@@ -8,8 +8,8 @@ Lesca is a local development tool designed for personal use. This document outli
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.2.x   | :white_check_mark: |
-| < 0.2   | :x:                |
+| 0.1.x   | :white_check_mark: |
+| < 0.1   | :x:                |
 
 ## Security Model
 
@@ -168,8 +168,9 @@ lesca --debug scrape two-sum
 If you discover a security vulnerability:
 
 1. **DO NOT** create a public GitHub issue
-2. **Email**: [Your Security Contact Email]
-   Subject: `[SECURITY] Lesca Vulnerability Report`
+2. **Use GitHub Security Advisories**: Navigate to the repository's Security tab and click "Report a vulnerability"
+   - Or email the repository owner directly
+   - Subject: `[SECURITY] Lesca Vulnerability Report`
 
 3. **Include**:
    - Description of the vulnerability
@@ -197,10 +198,28 @@ We appreciate security researchers and will:
 
 ## Security Audit
 
-Last security audit: December 2025
+### Latest Audit: December 2025
 
-**Findings**: 0 critical, 0 high, 1 medium, 2 low issues
-**Report**: See `docs/security_audit.md` (for contributors)
+**Summary**:
+
+- Code review of plugin system security
+- Path traversal validation verified
+- Cookie handling practices reviewed
+- Logging sanitization confirmed
+
+**Findings**:
+| Severity | Issue | Status |
+|----------|-------|--------|
+| Medium | Plugin system runs untrusted code | Documented, user consent required |
+| Low | Cookies stored in plaintext | Standard practice, documented |
+| Low | Dev dependency vulnerabilities | Non-production, tracked |
+
+**Recommendations Implemented**:
+
+- ✅ Path validation for plugin loading
+- ✅ Interface validation for plugins
+- ✅ Automatic log sanitization
+- ✅ Cookie file permission documentation
 
 ## Dependencies
 
@@ -210,7 +229,22 @@ We regularly monitor dependencies for vulnerabilities:
 - Dependabot alerts enabled
 - Regular dependency updates
 
-**Current Status**: ✅ 0 known vulnerabilities
+### Current Status (December 2025)
+
+| Severity | Count | Category         | Notes                     |
+| -------- | ----- | ---------------- | ------------------------- |
+| Critical | 0     | -                | -                         |
+| High     | 0     | -                | -                         |
+| Moderate | 6     | Dev dependencies | esbuild/vite/vitest chain |
+| Low      | 0     | -                | -                         |
+
+**Note**: The moderate vulnerabilities are in development dependencies only (vitest test framework). They affect the local development server and do not impact production usage of Lesca. These will be resolved when vitest releases a patched version.
+
+To check current status:
+
+```bash
+npm audit
+```
 
 ## Additional Resources
 
@@ -221,4 +255,4 @@ We regularly monitor dependencies for vulnerabilities:
 ---
 
 **Last Updated**: December 2025
-**Version**: v0.2.0
+**Version**: v0.1.0
