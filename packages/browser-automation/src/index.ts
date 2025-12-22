@@ -18,6 +18,30 @@ export { SessionCleanupScheduler } from './session-cleanup-scheduler'
 export { BrowserService } from './browser-service'
 export { BrowserServiceFactory } from './browser-service-factory'
 
+// Stealth module exports
+export { StealthManager } from './stealth'
+export type { ResolvedStealthConfig } from './stealth'
+export {
+  // User agent utilities
+  USER_AGENTS,
+  DEFAULT_USER_AGENT,
+  getRandomUserAgent,
+  removeHeadlessSignature,
+  getUserAgent,
+  getPlatformFromUserAgent,
+  // Timing utilities
+  calculateDelay,
+  humanDelay,
+  createDelayFunction,
+  createTypingDelay,
+  // Launch arguments
+  STEALTH_LAUNCH_ARGS,
+  getStealthLaunchArgs,
+  // Evasion scripts
+  getEvasionScripts,
+  getEnabledEvasionScripts,
+} from './stealth'
+
 export type {
   ISessionManager,
   IBrowserPool,

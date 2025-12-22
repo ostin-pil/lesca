@@ -11,6 +11,7 @@ import type { CookieManager } from './cookie-manager'
 import { RequestInterceptor } from './interceptor'
 import type { IBrowserPool, ISessionPoolManager } from './interfaces'
 import { PerformanceMonitor, type PerformanceMetrics } from './performance'
+import { StealthManager } from './stealth'
 
 /**
  * Playwright browser driver
@@ -25,6 +26,7 @@ export class PlaywrightDriver implements BrowserDriver {
   private cookieManager?: CookieManager
   private interceptor?: RequestInterceptor
   private performanceMonitor?: PerformanceMonitor
+  private stealthManager?: StealthManager
 
   constructor(
     private auth?: AuthCredentials,
@@ -54,9 +56,21 @@ export class PlaywrightDriver implements BrowserDriver {
       userAgent,
       blockResources = [],
       interception,
+      stealth,
     } = options
 
     try {
+      // Setup stealth manager if enabled
+      if (stealth?.enabled) {
+        this.stealthManager = new StealthManager(stealth)
+        logger.debug('Stealth mode enabled', {
+          evasions: this.stealthManager.getEnabledEvasions(),
+        })
+      }
+
+      // Get stealth launch args if configured
+      const stealthArgs = this.stealthManager?.getLaunchArgs() ?? []
+
       // Acquire browser from pool if available
       if (this.pool !== undefined) {
         if ('acquireBrowser' in this.pool) {
@@ -76,10 +90,11 @@ export class PlaywrightDriver implements BrowserDriver {
           logger.debug('Acquired browser from BrowserPool')
         }
       } else if (!this.browser) {
-        // No pool, create new browser
+        // No pool, create new browser with optional stealth args
         this.browser = await chromium.launch({
           headless,
           timeout,
+          ...(stealthArgs.length > 0 ? { args: stealthArgs } : {}),
         })
       }
 
@@ -87,14 +102,24 @@ export class PlaywrightDriver implements BrowserDriver {
         throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to acquire or create browser')
       }
 
+      // Determine user agent (stealth manager may modify it)
+      const defaultUserAgent =
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      const finalUserAgent = this.stealthManager
+        ? this.stealthManager.getUserAgent(userAgent ?? defaultUserAgent)
+        : (userAgent ?? defaultUserAgent)
+
       this.page = await this.browser.newPage({
         viewport,
-        userAgent:
-          userAgent ||
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        userAgent: finalUserAgent,
       })
 
       this.page.setDefaultTimeout(timeout)
+
+      // Apply stealth evasions to page BEFORE other setup
+      if (this.stealthManager) {
+        await this.stealthManager.applyToPage(this.page)
+      }
 
       // Setup Interceptor
       if (interception?.enabled || blockResources.length > 0) {

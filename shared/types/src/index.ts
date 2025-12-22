@@ -694,6 +694,84 @@ export interface BrowserDriver {
 }
 
 /**
+ * Stealth evasion configuration
+ * Controls which browser automation detection evasions to apply
+ */
+export interface StealthEvasionConfig {
+  /** Remove navigator.webdriver property (default: true) */
+  webdriver?: boolean
+  /** Emulate chrome.runtime and chrome.app objects (default: true) */
+  chromeRuntime?: boolean
+  /** Fix permissions.query and Notification.permission (default: true) */
+  chromePermissions?: boolean
+  /** Add realistic navigator.plugins and mimeTypes (default: true) */
+  plugins?: boolean
+  /** Ensure navigator.languages is properly populated (default: true) */
+  languages?: boolean
+  /** Fix iframe contentWindow access patterns (default: true) */
+  iframeContentWindow?: boolean
+  /** Hide WebGL vendor/renderer info (default: false) */
+  webglVendor?: boolean
+  /** Mask canvas fingerprinting (default: false) */
+  canvas?: boolean
+  /** Fix media codecs detection (default: false) */
+  mediaCodecs?: boolean
+}
+
+/**
+ * Stealth launch arguments configuration
+ */
+export interface StealthLaunchArgsConfig {
+  /** Suppress automation detection flags in Chrome (default: true) */
+  suppressAutomationFlags?: boolean
+  /** Additional Chrome arguments to apply */
+  additionalArgs?: string[]
+}
+
+/**
+ * Human-like timing configuration for stealth mode
+ */
+export interface StealthTimingConfig {
+  /** Enable human-like delays between actions (default: false) */
+  enabled?: boolean
+  /** Minimum delay between actions in ms (default: 50) */
+  minDelay?: number
+  /** Maximum delay between actions in ms (default: 200) */
+  maxDelay?: number
+  /** Add random jitter to delays (default: true) */
+  jitter?: boolean
+}
+
+/**
+ * User-agent configuration for stealth mode
+ */
+export interface StealthUserAgentConfig {
+  /** Use rotating user agents (default: false) */
+  rotate?: boolean
+  /** Custom user agent string (overrides rotation if set) */
+  custom?: string
+  /** Remove HeadlessChrome signature from user agent (default: true) */
+  removeHeadless?: boolean
+}
+
+/**
+ * Stealth mode configuration for browser automation
+ * Helps prevent bot detection by masking automation signatures
+ */
+export interface StealthConfig {
+  /** Enable stealth mode (default: false) */
+  enabled?: boolean
+  /** Evasion techniques to apply */
+  evasions?: StealthEvasionConfig
+  /** Browser launch argument configuration */
+  launchArgs?: StealthLaunchArgsConfig
+  /** Human-like timing configuration */
+  timing?: StealthTimingConfig
+  /** User-agent configuration */
+  userAgent?: StealthUserAgentConfig
+}
+
+/**
  * Browser launch options
  */
 export interface BrowserLaunchOptions {
@@ -715,6 +793,8 @@ export interface BrowserLaunchOptions {
     enabled?: boolean
     logMetrics?: boolean
   }
+  /** Stealth mode configuration for bot detection evasion */
+  stealth?: StealthConfig
 }
 
 /**
