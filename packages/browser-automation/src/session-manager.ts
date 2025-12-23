@@ -6,6 +6,11 @@ import { BrowserError } from '@lesca/error'
 import { logger } from '@lesca/shared/utils'
 import type { BrowserContext, Cookie } from 'playwright'
 
+import {
+  EncryptionService,
+  type EncryptionConfig,
+  type ResolvedEncryptionConfig,
+} from './encryption'
 import type { ISessionManager, SessionData, SessionOptions } from './interfaces'
 
 /**
@@ -52,23 +57,42 @@ import type { ISessionManager, SessionData, SessionOptions } from './interfaces'
  */
 export class SessionManager implements ISessionManager {
   private sessionsDir: string
+  private encryption?: EncryptionService
 
   /**
    * Creates a new SessionManager instance.
    *
    * @param baseDir - Custom directory for session storage. Defaults to `~/.lesca/sessions/`
+   * @param encryptionConfig - Optional encryption configuration for session files
    *
    * @example
    * ```typescript
-   * // Use default location
+   * // Use default location without encryption
    * const manager = new SessionManager();
    *
    * // Use custom location
    * const manager = new SessionManager('/custom/sessions/path');
+   *
+   * // Enable encryption
+   * const manager = new SessionManager(undefined, { enabled: true });
    * ```
    */
-  constructor(baseDir?: string) {
+  constructor(baseDir?: string, encryptionConfig?: Partial<EncryptionConfig>) {
     this.sessionsDir = baseDir || resolve(homedir(), '.lesca', 'sessions')
+    if (encryptionConfig) {
+      this.encryption = new EncryptionService(encryptionConfig)
+    }
+  }
+
+  /**
+   * Get the encryption configuration if enabled
+   */
+  getEncryptionConfig(): ResolvedEncryptionConfig | undefined {
+    if (!this.encryption) return undefined
+    return {
+      enabled: this.encryption.isEnabled(),
+      keyEnvVar: 'LESCA_ENCRYPTION_KEY',
+    }
   }
 
   /**
@@ -215,14 +239,21 @@ export class SessionManager implements ISessionManager {
   }
 
   /**
-   * Load session with corruption handling
+   * Load session with corruption handling and optional decryption
    */
   private async loadSession(name: string): Promise<SessionData | null> {
     const sessionPath = this.getSessionPath(name)
 
     try {
-      const data = await readFile(sessionPath, 'utf-8')
-      const sessionData = JSON.parse(data) as SessionData
+      const rawData = await readFile(sessionPath, 'utf-8')
+
+      // Decrypt if encrypted, otherwise parse directly
+      const jsonData =
+        this.encryption?.isEnabled() && this.encryption.isEncrypted(rawData)
+          ? this.encryption.decrypt(rawData)
+          : rawData
+
+      const sessionData = JSON.parse(jsonData) as SessionData
 
       // Validate schema
       if (!sessionData.name || !Array.isArray(sessionData.cookies)) {
@@ -296,11 +327,16 @@ export class SessionManager implements ISessionManager {
     await this.ensureSessionsDir()
 
     const sessionPath = this.getSessionPath(name)
-    const data = JSON.stringify(sessionData, null, 2)
+    const jsonData = JSON.stringify(sessionData, null, 2)
+
+    // Encrypt if encryption is enabled
+    const data = this.encryption?.isEnabled() ? this.encryption.encrypt(jsonData) : jsonData
 
     try {
       await writeFile(sessionPath, data, 'utf-8')
-      logger.debug(`Saved session: ${name} to ${sessionPath}`)
+      logger.debug(`Saved session: ${name} to ${sessionPath}`, {
+        encrypted: this.encryption?.isEnabled() ?? false,
+      })
     } catch (error) {
       throw new BrowserError('BROWSER_LAUNCH_FAILED', `Failed to save session: ${name}`, {
         cause: error as Error,
@@ -405,8 +441,15 @@ export class SessionManager implements ISessionManager {
       for (const file of sessionFiles) {
         try {
           const sessionPath = join(this.sessionsDir, file)
-          const data = await readFile(sessionPath, 'utf-8')
-          const sessionData = JSON.parse(data) as SessionData
+          const rawData = await readFile(sessionPath, 'utf-8')
+
+          // Decrypt if encrypted, otherwise parse directly
+          const jsonData =
+            this.encryption?.isEnabled() && this.encryption.isEncrypted(rawData)
+              ? this.encryption.decrypt(rawData)
+              : rawData
+
+          const sessionData = JSON.parse(jsonData) as SessionData
 
           // Filter out expired sessions
           if (!sessionData.metadata.expires || Date.now() <= sessionData.metadata.expires) {
@@ -784,8 +827,15 @@ export class SessionManager implements ISessionManager {
       for (const file of sessionFiles) {
         try {
           const sessionPath = join(this.sessionsDir, file)
-          const data = await readFile(sessionPath, 'utf-8')
-          const sessionData = JSON.parse(data) as SessionData
+          const rawData = await readFile(sessionPath, 'utf-8')
+
+          // Decrypt if encrypted, otherwise parse directly
+          const jsonData =
+            this.encryption?.isEnabled() && this.encryption.isEncrypted(rawData)
+              ? this.encryption.decrypt(rawData)
+              : rawData
+
+          const sessionData = JSON.parse(jsonData) as SessionData
 
           // Check if session is expired
           if (sessionData.metadata.expires && Date.now() > sessionData.metadata.expires) {

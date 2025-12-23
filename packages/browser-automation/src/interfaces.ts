@@ -11,6 +11,29 @@ import type { BrowserDriver, PoolStatistics } from '@lesca/shared/types'
 import type { Browser, BrowserContext, Cookie, LaunchOptions } from 'playwright'
 
 // ============================================================================
+// Encryption Types
+// ============================================================================
+
+/**
+ * Interface for Encryption Service.
+ *
+ * Defines the contract for encrypting/decrypting session and cookie data.
+ * Used to protect sensitive authentication tokens stored on disk.
+ *
+ * @see {@link EncryptionService} for the default implementation
+ */
+export interface IEncryptionService {
+  /** Check if encryption is enabled */
+  isEnabled(): boolean
+  /** Encrypt plaintext data */
+  encrypt(plaintext: string): string
+  /** Decrypt ciphertext data */
+  decrypt(ciphertext: string): string
+  /** Check if data is in encrypted format */
+  isEncrypted(data: string): boolean
+}
+
+// ============================================================================
 // Session Management Types
 // ============================================================================
 

@@ -433,6 +433,73 @@ export const ERROR_CODES = {
     resolution: ['Re-authenticate to create new session', 'Delete expired session and recreate'],
   },
 
+  BROWSER_ENCRYPTION_KEY_MISSING: {
+    code: 'BROWSER_ENCRYPTION_KEY_MISSING',
+    category: 'browser' as ErrorCategory,
+    recovery: 'user-action' as ErrorRecovery,
+    description: 'Encryption key not found',
+    commonCauses: [
+      'LESCA_ENCRYPTION_KEY environment variable not set',
+      'Environment not configured for encryption',
+    ],
+    resolution: [
+      'Set LESCA_ENCRYPTION_KEY environment variable',
+      "Generate key: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+      'Disable encryption if not needed',
+    ],
+  },
+
+  BROWSER_ENCRYPTION_KEY_INVALID: {
+    code: 'BROWSER_ENCRYPTION_KEY_INVALID',
+    category: 'browser' as ErrorCategory,
+    recovery: 'user-action' as ErrorRecovery,
+    description: 'Encryption key is invalid',
+    commonCauses: [
+      'Key is not 32 bytes (256 bits)',
+      'Key is not valid base64',
+      'Key was corrupted or truncated',
+    ],
+    resolution: [
+      'Generate new 32-byte key',
+      'Ensure key is base64-encoded',
+      'Verify key was copied correctly',
+    ],
+  },
+
+  BROWSER_DECRYPTION_FAILED: {
+    code: 'BROWSER_DECRYPTION_FAILED',
+    category: 'browser' as ErrorCategory,
+    recovery: 'recoverable' as ErrorRecovery,
+    description: 'Failed to decrypt session or cookie data',
+    commonCauses: [
+      'Wrong encryption key',
+      'Corrupted encrypted file',
+      'File format version mismatch',
+    ],
+    resolution: [
+      'Verify encryption key is correct',
+      'Delete and recreate session',
+      'Check for file corruption',
+    ],
+  },
+
+  BROWSER_DECRYPTION_AUTH_FAILED: {
+    code: 'BROWSER_DECRYPTION_AUTH_FAILED',
+    category: 'browser' as ErrorCategory,
+    recovery: 'fatal' as ErrorRecovery,
+    description: 'Decryption authentication failed - data may be tampered',
+    commonCauses: [
+      'File was modified outside of application',
+      'Wrong encryption key used',
+      'Data integrity compromised',
+    ],
+    resolution: [
+      'Delete compromised session file',
+      'Re-authenticate to create new session',
+      'Verify encryption key matches original',
+    ],
+  },
+
   // ============================================================================
   // Scraping Errors (SCRAPE_*)
   // ============================================================================

@@ -1,7 +1,9 @@
+import { randomBytes } from 'crypto'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { CookieManager } from '../cookie-manager'
+import { EncryptionService } from '../encryption'
 import { PlaywrightDriver } from '../playwright-driver'
-import { mkdir, rm, readFile } from 'fs/promises'
+import { mkdir, rm, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import type { Cookie } from 'playwright'
@@ -456,6 +458,139 @@ describe('CookieManager', () => {
       await expect(cookieManager.loadAndInject(mockDriver, 'test.json')).rejects.toThrow(
         'All cookies are expired or invalid'
       )
+    })
+  })
+})
+
+describe('CookieManager with encryption', () => {
+  let encryptedCookieManager: CookieManager
+  let mockDriver: PlaywrightDriver
+  let originalEnv: NodeJS.ProcessEnv
+  const validKey = randomBytes(32).toString('base64')
+
+  const mockCookies: Cookie[] = [
+    {
+      name: 'LEETCODE_SESSION',
+      value: 'secret-session-value',
+      domain: '.leetcode.com',
+      path: '/',
+      expires: Date.now() / 1000 + 3600,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+    },
+    {
+      name: 'csrftoken',
+      value: 'secret-csrf-token',
+      domain: '.leetcode.com',
+      path: '/',
+      expires: Date.now() / 1000 + 3600,
+      httpOnly: false,
+      secure: true,
+      sameSite: 'Lax',
+    },
+  ]
+
+  beforeEach(() => {
+    originalEnv = { ...process.env }
+    process.env['LESCA_ENCRYPTION_KEY'] = validKey
+
+    encryptedCookieManager = new CookieManager({ enabled: true })
+
+    mockDriver = {
+      getPage: vi.fn(() => ({
+        context: vi.fn(() => ({
+          cookies: vi.fn().mockResolvedValue(mockCookies),
+          addCookies: vi.fn().mockResolvedValue(undefined),
+          clearCookies: vi.fn().mockResolvedValue(undefined),
+        })),
+      })),
+    } as unknown as PlaywrightDriver
+
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
+  describe('saveCookies with encryption', () => {
+    it('should encrypt cookies when saving', async () => {
+      let savedContent = ''
+      vi.mocked(writeFile).mockImplementation(async (_path, content) => {
+        savedContent = content as string
+      })
+
+      await encryptedCookieManager.saveCookies(mockDriver, '/test/cookies.json')
+
+      // Verify the saved content is encrypted
+      const parsed = JSON.parse(savedContent)
+      expect(parsed.version).toBe(1)
+      expect(parsed.algorithm).toBe('aes-256-gcm')
+      expect(parsed.iv).toBeDefined()
+      expect(parsed.authTag).toBeDefined()
+      expect(parsed.data).toBeDefined()
+
+      // Should NOT contain plain cookie data
+      expect(savedContent).not.toContain('LEETCODE_SESSION')
+      expect(savedContent).not.toContain('secret-session-value')
+    })
+  })
+
+  describe('loadCookies with encryption', () => {
+    it('should decrypt cookies when loading', async () => {
+      // Create encrypted cookie data
+      const encryptionService = new EncryptionService({ enabled: true })
+      const cookieData = {
+        cookies: mockCookies,
+        csrfToken: 'secret-csrf-token',
+        savedAt: new Date().toISOString(),
+      }
+      const encryptedContent = encryptionService.encrypt(JSON.stringify(cookieData))
+
+      vi.mocked(readFile).mockResolvedValue(encryptedContent)
+
+      const cookies = await encryptedCookieManager.loadCookies('/test/cookies.json')
+
+      expect(cookies).toHaveLength(2)
+      expect(cookies[0]?.name).toBe('LEETCODE_SESSION')
+      expect(cookies[0]?.value).toBe('secret-session-value')
+    })
+
+    it('should load plain JSON cookies for backward compatibility', async () => {
+      const plainCookieData = {
+        cookies: mockCookies,
+        csrfToken: 'secret-csrf-token',
+        savedAt: new Date().toISOString(),
+      }
+
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify(plainCookieData))
+
+      const cookies = await encryptedCookieManager.loadCookies('/test/cookies.json')
+
+      expect(cookies).toHaveLength(2)
+      expect(cookies[0]?.value).toBe('secret-session-value')
+    })
+  })
+
+  describe('encryption disabled', () => {
+    it('should save plain JSON when encryption is disabled', async () => {
+      const plainCookieManager = new CookieManager()
+      let savedContent = ''
+      vi.mocked(writeFile).mockImplementation(async (_path, content) => {
+        savedContent = content as string
+      })
+
+      await plainCookieManager.saveCookies(mockDriver, '/test/cookies.json')
+
+      // Should be plain JSON, not encrypted
+      expect(savedContent).toContain('LEETCODE_SESSION')
+      expect(savedContent).toContain('secret-session-value')
+
+      // Should NOT have encryption fields
+      const parsed = JSON.parse(savedContent)
+      expect(parsed.version).toBeUndefined()
+      expect(parsed.algorithm).toBeUndefined()
     })
   })
 })

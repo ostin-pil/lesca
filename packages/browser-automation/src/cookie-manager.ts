@@ -5,6 +5,7 @@ import { BrowserError } from '@lesca/error'
 import { logger } from '@lesca/shared/utils'
 import type { Cookie } from 'playwright'
 
+import { EncryptionService, type EncryptionConfig } from './encryption'
 import type { PlaywrightDriver } from './playwright-driver'
 
 /**
@@ -38,6 +39,27 @@ interface CookieFile {
 export class CookieManager {
   private autoSaveEnabled = false
   private autoSavePath?: string
+  private encryption?: EncryptionService
+
+  /**
+   * Creates a new CookieManager instance.
+   *
+   * @param encryptionConfig - Optional encryption configuration for cookie files
+   *
+   * @example
+   * ```typescript
+   * // Without encryption
+   * const manager = new CookieManager();
+   *
+   * // With encryption
+   * const manager = new CookieManager({ enabled: true });
+   * ```
+   */
+  constructor(encryptionConfig?: Partial<EncryptionConfig>) {
+    if (encryptionConfig) {
+      this.encryption = new EncryptionService(encryptionConfig)
+    }
+  }
 
   /**
    * Extract and save cookies from browser driver
@@ -67,9 +89,14 @@ export class CookieManager {
 
       await mkdir(dirname(path), { recursive: true })
 
-      await writeFile(path, JSON.stringify(data, null, 2), 'utf-8')
+      const jsonData = JSON.stringify(data, null, 2)
+      const content = this.encryption?.isEnabled() ? this.encryption.encrypt(jsonData) : jsonData
 
-      logger.info(`Saved ${cookies.length} cookies to ${path}`)
+      await writeFile(path, content, 'utf-8')
+
+      logger.info(`Saved ${cookies.length} cookies to ${path}`, {
+        encrypted: this.encryption?.isEnabled() ?? false,
+      })
     } catch (error) {
       throw new BrowserError('BROWSER_LAUNCH_FAILED', 'Failed to save cookies', {
         cause: error as Error,
@@ -85,7 +112,10 @@ export class CookieManager {
     logger.debug('Loading cookies from file', { path })
 
     try {
-      const content = await readFile(path, 'utf-8')
+      const rawContent = await readFile(path, 'utf-8')
+      const content = this.encryption?.isEncrypted(rawContent)
+        ? this.encryption.decrypt(rawContent)
+        : rawContent
       const data = JSON.parse(content) as CookieFile
 
       if (!data.cookies || !Array.isArray(data.cookies)) {

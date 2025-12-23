@@ -184,6 +184,10 @@ export class BrowserError extends LescaError {
       | 'BROWSER_SESSION_CORRUPTED'
       | 'BROWSER_SESSION_NOT_FOUND'
       | 'BROWSER_SESSION_EXPIRED'
+      | 'BROWSER_ENCRYPTION_KEY_MISSING'
+      | 'BROWSER_ENCRYPTION_KEY_INVALID'
+      | 'BROWSER_DECRYPTION_FAILED'
+      | 'BROWSER_DECRYPTION_AUTH_FAILED'
     >,
     message?: string,
     options?: { cause?: Error; context?: ErrorContext }

@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { SessionManager } from '../session-manager'
 import { mkdir, rm, readFile } from 'fs/promises'
@@ -916,5 +917,170 @@ describe('SessionManager', () => {
         expect(sessions[0].metadata.lastUsed).toBeGreaterThanOrEqual(sessions[1].metadata.lastUsed)
       }
     })
+  })
+})
+
+describe('SessionManager with encryption', () => {
+  let encryptedSessionManager: SessionManager
+  let testSessionsDir: string
+  let mockContext: BrowserContext
+  let originalEnv: NodeJS.ProcessEnv
+  const validKey = randomBytes(32).toString('base64')
+
+  beforeEach(async () => {
+    originalEnv = { ...process.env }
+    process.env['LESCA_ENCRYPTION_KEY'] = validKey
+
+    testSessionsDir = join(tmpdir(), `lesca-test-encrypted-sessions-${Date.now()}`)
+    await mkdir(testSessionsDir, { recursive: true })
+
+    encryptedSessionManager = new SessionManager(testSessionsDir, { enabled: true })
+
+    mockContext = {
+      cookies: vi.fn().mockResolvedValue([
+        {
+          name: 'LEETCODE_SESSION',
+          value: 'test-session-value',
+          domain: '.leetcode.com',
+          path: '/',
+          expires: Date.now() / 1000 + 3600,
+          httpOnly: true,
+          secure: true,
+          sameSite: 'Lax' as const,
+        },
+        {
+          name: 'csrftoken',
+          value: 'test-csrf-token',
+          domain: '.leetcode.com',
+          path: '/',
+          expires: Date.now() / 1000 + 3600,
+          httpOnly: false,
+          secure: true,
+          sameSite: 'Lax' as const,
+        },
+      ] as Cookie[]),
+      pages: vi.fn().mockReturnValue([
+        {
+          evaluate: vi
+            .fn()
+            .mockResolvedValueOnce({ 'user-preference': 'dark-mode' })
+            .mockResolvedValueOnce({ 'session-id': 'abc123' }),
+        },
+      ]),
+      addCookies: vi.fn().mockResolvedValue(undefined),
+    } as unknown as BrowserContext
+  })
+
+  afterEach(async () => {
+    process.env = originalEnv
+    try {
+      await rm(testSessionsDir, { recursive: true, force: true })
+    } catch {
+      // Ignore cleanup errors
+    }
+  })
+
+  it('should create encrypted session file', async () => {
+    await encryptedSessionManager.createSession('encrypted-session', mockContext)
+
+    const sessionPath = join(testSessionsDir, 'encrypted-session.json')
+    const content = await readFile(sessionPath, 'utf-8')
+    const parsed = JSON.parse(content)
+
+    // Should be encrypted format
+    expect(parsed.version).toBe(1)
+    expect(parsed.algorithm).toBe('aes-256-gcm')
+    expect(parsed.iv).toBeDefined()
+    expect(parsed.authTag).toBeDefined()
+    expect(parsed.data).toBeDefined()
+
+    // Should NOT contain plain session data
+    expect(content).not.toContain('LEETCODE_SESSION')
+    expect(content).not.toContain('test-session-value')
+  })
+
+  it('should load and decrypt session', async () => {
+    await encryptedSessionManager.createSession('encrypted-session', mockContext)
+
+    const session = await encryptedSessionManager.getSession('encrypted-session')
+
+    expect(session).not.toBeNull()
+    expect(session?.name).toBe('encrypted-session')
+    expect(session?.cookies).toHaveLength(2)
+    expect(session?.cookies[0]?.name).toBe('LEETCODE_SESSION')
+    expect(session?.cookies[0]?.value).toBe('test-session-value')
+  })
+
+  it('should list encrypted sessions', async () => {
+    await encryptedSessionManager.createSession('encrypted-1', mockContext)
+    await encryptedSessionManager.createSession('encrypted-2', mockContext)
+
+    const sessions = await encryptedSessionManager.listSessions()
+
+    expect(sessions).toHaveLength(2)
+    expect(sessions.map((s) => s.name)).toContain('encrypted-1')
+    expect(sessions.map((s) => s.name)).toContain('encrypted-2')
+  })
+
+  it('should restore encrypted session to browser context', async () => {
+    await encryptedSessionManager.createSession('encrypted-session', mockContext)
+
+    const restored = await encryptedSessionManager.restoreSession('encrypted-session', mockContext)
+
+    expect(restored).toBe(true)
+    expect(mockContext.addCookies).toHaveBeenCalled()
+  })
+
+  it('should handle plain JSON sessions for backward compatibility', async () => {
+    // Create a plain session without encryption
+    const plainSessionManager = new SessionManager(testSessionsDir)
+    await plainSessionManager.createSession('plain-session', mockContext)
+
+    // Load with encrypted manager - should still work
+    const session = await encryptedSessionManager.getSession('plain-session')
+
+    expect(session).not.toBeNull()
+    expect(session?.name).toBe('plain-session')
+  })
+
+  it('should cleanup encrypted expired sessions', async () => {
+    const pastTime = Date.now() - 3600000 // 1 hour ago
+    const futureTime = Date.now() + 3600000
+
+    await encryptedSessionManager.createSession('expired-encrypted', mockContext, {
+      expires: pastTime,
+    })
+    await encryptedSessionManager.createSession('valid-encrypted', mockContext, {
+      expires: futureTime,
+    })
+
+    const cleanedCount = await encryptedSessionManager.cleanupExpiredSessions()
+
+    expect(cleanedCount).toBe(1)
+
+    const sessions = await encryptedSessionManager.listSessions()
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0]?.name).toBe('valid-encrypted')
+  })
+
+  it('should fail decryption with wrong key', async () => {
+    await encryptedSessionManager.createSession('encrypted-session', mockContext)
+
+    // Change the key
+    process.env['LESCA_ENCRYPTION_KEY'] = randomBytes(32).toString('base64')
+    const wrongKeyManager = new SessionManager(testSessionsDir, { enabled: true })
+
+    // Should return null (treats decryption failure as corrupted session)
+    const session = await wrongKeyManager.getSession('encrypted-session')
+    expect(session).toBeNull()
+  })
+
+  it('should fail when encryption key is missing', async () => {
+    delete process.env['LESCA_ENCRYPTION_KEY']
+    const noKeyManager = new SessionManager(testSessionsDir, { enabled: true })
+
+    await expect(noKeyManager.createSession('test', mockContext)).rejects.toThrow(
+      'Encryption key not found'
+    )
   })
 })

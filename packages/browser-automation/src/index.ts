@@ -18,6 +18,10 @@ export { SessionCleanupScheduler } from './session-cleanup-scheduler'
 export { BrowserService } from './browser-service'
 export { BrowserServiceFactory } from './browser-service-factory'
 
+// Encryption module exports
+export { EncryptionService, resolveEncryptionConfig } from './encryption'
+export type { EncryptionConfig, EncryptedPayload, ResolvedEncryptionConfig } from './encryption'
+
 // Stealth module exports
 export { StealthManager } from './stealth'
 export type { ResolvedStealthConfig } from './stealth'
@@ -48,6 +52,7 @@ export type {
   ISessionPoolManager,
   IBrowserService,
   IMetricsCollector,
+  IEncryptionService,
   BrowserServiceOptions,
   SessionData,
   SessionMetadata,
