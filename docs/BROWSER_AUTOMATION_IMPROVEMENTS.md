@@ -1,7 +1,7 @@
 # Browser Automation Improvements
 
 > Analysis Date: December 2025
-> Status: Phase 1 Complete (Stealth Mode)
+> Status: Phase 2 Complete (Stealth Mode + Cookie Encryption)
 
 This document captures the analysis and improvement opportunities for the browser automation package, focusing on session persistence and CAPTCHA handling.
 
@@ -521,8 +521,8 @@ interface StorageBackend {
 | Phase | Improvements                | Rationale                                       | Status  |
 | ----- | --------------------------- | ----------------------------------------------- | ------- |
 | 1     | Stealth Mode                | Reduces CAPTCHA triggers - prevention over cure | ✅ Done |
-| 2     | Cookie Encryption           | Quick security win, protects sensitive data     | ⏳ Next |
-| 3     | Rate Limit Intelligence     | Improves reliability and recovery               | Pending |
+| 2     | Cookie Encryption           | Quick security win, protects sensitive data     | ✅ Done |
+| 3     | Rate Limit Intelligence     | Improves reliability and recovery               | ⏳ Next |
 | 4     | Session Context             | Better security, detects anomalies              | Pending |
 | 5     | CAPTCHA Service Integration | Automated solving when needed                   | Pending |
 | 6     | 2FA Support                 | Complete authentication coverage                | Pending |
@@ -536,7 +536,7 @@ interface StorageBackend {
 ### Medium Effort (1-3 days each)
 
 1. ~~Full stealth mode implementation~~ ✅ Done
-2. Cookie/session encryption
+2. ~~Cookie/session encryption~~ ✅ Done
 3. Rate limit intelligence
 4. Session context awareness
 
@@ -553,7 +553,7 @@ Current test files have good unit coverage but lack:
 - Integration tests with real LeetCode authentication
 - CAPTCHA solving integration tests
 - Concurrent session access tests
-- Encryption/decryption tests
+- ~~Encryption/decryption tests~~ ✅ Added (35 tests for EncryptionService)
 - IP rotation/fingerprint change tests
 - Rate-limit recovery tests
 
@@ -569,14 +569,32 @@ Implemented stealth mode with:
 - Human-like timing utilities
 - Full test coverage (56 tests)
 
-### Suggested Next: Cookie Encryption (Phase 2)
+### ✅ Completed: Cookie Encryption (Phase 2)
 
-Start with **Cookie Encryption** as it:
+Implemented AES-256-GCM encryption with:
 
-- Quick security win - protects sensitive auth tokens
-- Builds on existing CookieManager
-- Can use Node.js built-in crypto module
+- EncryptionService with encrypt/decrypt/isEncrypted methods
+- SessionManager and CookieManager encryption support (opt-in)
+- Key from `LESCA_ENCRYPTION_KEY` environment variable
+- Backward compatible with existing plain JSON files
+- Format versioning for future migration
+- Full test coverage (35 encryption tests + integration tests)
+
+### Suggested Next: Rate Limit Intelligence (Phase 3)
+
+Start with **Rate Limit Intelligence** as it:
+
+- Improves reliability and recovery for scraping operations
+- Handles LeetCode's rate limiting gracefully
+- Adds exponential backoff with configurable strategy
 - Medium implementation effort
+
+Key features to implement:
+
+- Exponential backoff on rate-limit detection
+- Parse and honor Retry-After headers
+- Per-endpoint rate limit tracking
+- Session rotation on persistent limits
 
 ---
 
