@@ -10,6 +10,8 @@
 import type { BrowserDriver, PoolStatistics } from '@lesca/shared/types'
 import type { Browser, BrowserContext, Cookie, LaunchOptions } from 'playwright'
 
+import type { EndpointState, RateLimitDecision } from './rate-limit/types'
+
 // ============================================================================
 // Encryption Types
 // ============================================================================
@@ -511,4 +513,56 @@ export interface IMetricsCollector {
   off(event: 'metric', listener: (event: MetricEvent) => void): void
   /** Reset all collected metrics */
   reset(): void
+}
+
+// ============================================================================
+// Rate Limit Types
+// ============================================================================
+
+// Re-export rate limit types for convenience
+export type { EndpointState, RateLimitDecision }
+
+/**
+ * Interface for Rate Limit Manager.
+ *
+ * Defines the contract for intelligent rate limit handling with backoff,
+ * per-endpoint tracking, and session rotation.
+ *
+ * @see {@link RateLimitManager} for the default implementation
+ */
+export interface IRateLimitManager {
+  /**
+   * Get a decision about whether to proceed with a request.
+   * Returns delay recommendation and session suggestion.
+   */
+  getDecision(endpoint: string, sessionId?: string): RateLimitDecision
+
+  /**
+   * Record a successful request for an endpoint.
+   */
+  recordSuccess(endpoint: string, sessionId?: string): void
+
+  /**
+   * Record a rate limit response for an endpoint.
+   * @param retryAfter - Optional Retry-After header value
+   */
+  recordRateLimited(endpoint: string, retryAfter?: string | number | null, sessionId?: string): void
+
+  /**
+   * Execute a function with automatic retry on rate limit.
+   * @throws RateLimitError if max retries exceeded
+   */
+  executeWithRetry<T>(fn: () => Promise<T>, endpoint: string, sessionId?: string): Promise<T>
+
+  /** Register a session for rotation */
+  registerSession(sessionId: string): void
+
+  /** Unregister a session from rotation */
+  unregisterSession(sessionId: string): void
+
+  /** Check if rate limit handling is enabled */
+  isEnabled(): boolean
+
+  /** Get all endpoint states */
+  getEndpointStates(): EndpointState[]
 }

@@ -46,6 +46,29 @@ export {
   getEnabledEvasionScripts,
 } from './stealth'
 
+// Rate limit module exports
+export { RateLimitManager, resolveRateLimitConfig } from './rate-limit'
+export {
+  createBackoffStrategy,
+  parseRetryAfter,
+  EndpointStateCollection,
+  SessionRotator,
+  normalizeEndpoint,
+} from './rate-limit'
+export type {
+  RateLimitConfig,
+  RateLimitDecision,
+  EndpointState,
+  BackoffConfig,
+  BackoffStrategyType,
+  SessionRotationConfig,
+  DistributionStrategy,
+  ResolvedRateLimitConfig,
+  SessionInfo,
+  BackoffCalculator,
+  DecisionReason,
+} from './rate-limit'
+
 export type {
   ISessionManager,
   IBrowserPool,
@@ -53,6 +76,7 @@ export type {
   IBrowserService,
   IMetricsCollector,
   IEncryptionService,
+  IRateLimitManager,
   BrowserServiceOptions,
   SessionData,
   SessionMetadata,

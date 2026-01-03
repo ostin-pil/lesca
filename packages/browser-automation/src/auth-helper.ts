@@ -4,6 +4,7 @@ import type { Cookie } from 'playwright'
 
 import type { CookieManager } from './cookie-manager'
 import { detectLoginState, detectCaptcha, type LoginState } from './detectors'
+import type { IRateLimitManager } from './interfaces'
 import type { PlaywrightDriver } from './playwright-driver'
 
 /**
@@ -39,17 +40,42 @@ export interface LoginResult {
 }
 
 /**
+ * Auth Helper Options
+ */
+export interface AuthHelperOptions {
+  /** Cookie manager for persistence */
+  cookieManager?: CookieManager
+  /** Rate limit manager for intelligent rate limit handling */
+  rateLimitManager?: IRateLimitManager
+  /** Session name for rate limit tracking */
+  sessionName?: string
+}
+
+/**
  * Auth Helper
  * Provides interactive login flows and authentication state management
  */
 export class AuthHelper {
   private readonly loginUrl = 'https://leetcode.com/accounts/login/'
   private readonly profileUrl = 'https://leetcode.com/profile/'
+  private cookieManager?: CookieManager
+  private rateLimitManager?: IRateLimitManager
+  private sessionName?: string
 
   constructor(
     private driver: PlaywrightDriver,
-    private cookieManager?: CookieManager
-  ) {}
+    options?: AuthHelperOptions
+  ) {
+    if (options?.cookieManager) {
+      this.cookieManager = options.cookieManager
+    }
+    if (options?.rateLimitManager) {
+      this.rateLimitManager = options.rateLimitManager
+    }
+    if (options?.sessionName) {
+      this.sessionName = options.sessionName
+    }
+  }
 
   /**
    * Perform interactive login to LeetCode
@@ -90,6 +116,11 @@ export class AuthHelper {
       if (state === 'logged-in') {
         logger.info('Login successful')
 
+        // Record success with rate limit manager
+        if (this.rateLimitManager) {
+          this.rateLimitManager.recordSuccess(this.loginUrl, this.sessionName)
+        }
+
         if (waitForSelector) {
           await this.driver.waitForSelector(waitForSelector, timeout)
         }
@@ -115,6 +146,11 @@ export class AuthHelper {
           message: 'CAPTCHA required. Please solve it and try again.',
         }
       } else if (state === 'rate-limited') {
+        // Record rate limit with manager
+        if (this.rateLimitManager) {
+          this.rateLimitManager.recordRateLimited(this.loginUrl, undefined, this.sessionName)
+        }
+
         return {
           success: false,
           state: 'rate-limited',
@@ -252,6 +288,17 @@ export class AuthHelper {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       logger.info(`Login attempt ${attempt}/${maxRetries}`)
 
+      // Check rate limit decision before attempting
+      if (this.rateLimitManager) {
+        const decision = this.rateLimitManager.getDecision(this.loginUrl, this.sessionName)
+        if (decision.delayMs > 0) {
+          logger.debug(`Rate limit: waiting ${decision.delayMs}ms before login attempt`, {
+            reason: decision.reason,
+          })
+          await new Promise((resolve) => setTimeout(resolve, decision.delayMs))
+        }
+      }
+
       try {
         const result = await this.login(credentials, options)
 
@@ -287,5 +334,19 @@ export class AuthHelper {
         message: 'All login attempts failed',
       }
     )
+  }
+
+  /**
+   * Get the rate limit manager (if configured)
+   */
+  getRateLimitManager(): IRateLimitManager | undefined {
+    return this.rateLimitManager
+  }
+
+  /**
+   * Set rate limit manager for intelligent rate limit handling
+   */
+  setRateLimitManager(manager: IRateLimitManager): void {
+    this.rateLimitManager = manager
   }
 }

@@ -5,7 +5,12 @@ import type { PoolStatistics, SessionPoolConfig } from '@lesca/shared/types'
 import { logger } from '@lesca/shared/utils'
 import type { Browser, LaunchOptions } from 'playwright'
 
-import type { IBrowserPool, IMetricsCollector, ISessionPoolManager } from './interfaces'
+import type {
+  IBrowserPool,
+  IMetricsCollector,
+  IRateLimitManager,
+  ISessionPoolManager,
+} from './interfaces'
 import { MetricsCollector } from './metrics-collector'
 import { BrowserPool as BrowserPoolImpl } from './pool'
 
@@ -83,6 +88,7 @@ export class SessionPoolManager implements ISessionPoolManager {
   private config: Required<SessionPoolConfig>
   private launchOptions: LaunchOptions
   private metricsCollector: IMetricsCollector
+  private rateLimitManager?: IRateLimitManager
 
   /**
    * Creates a new SessionPoolManager instance.
@@ -97,6 +103,7 @@ export class SessionPoolManager implements ISessionPoolManager {
    * @param launchOptions - Playwright browser launch options
    * @param options - Additional options
    * @param options.metricsCollector - Custom metrics collector (creates new if not provided)
+   * @param options.rateLimitManager - Rate limit manager for session registration
    *
    * @throws {BrowserError} If configuration is invalid
    *
@@ -111,7 +118,7 @@ export class SessionPoolManager implements ISessionPoolManager {
   constructor(
     config: SessionPoolConfig,
     launchOptions: LaunchOptions = {},
-    options?: { metricsCollector?: IMetricsCollector }
+    options?: { metricsCollector?: IMetricsCollector; rateLimitManager?: IRateLimitManager }
   ) {
     this.config = {
       strategy: config.strategy ?? 'per-session',
@@ -123,6 +130,9 @@ export class SessionPoolManager implements ISessionPoolManager {
     }
     this.launchOptions = launchOptions
     this.metricsCollector = options?.metricsCollector ?? new MetricsCollector()
+    if (options?.rateLimitManager) {
+      this.rateLimitManager = options.rateLimitManager
+    }
 
     // Validate configuration
     this.validateConfig()
@@ -215,6 +225,11 @@ export class SessionPoolManager implements ISessionPoolManager {
         releaseCount: 0,
         failureCount: 0,
       })
+
+      // Register session with rate limit manager if available
+      if (this.rateLimitManager) {
+        this.rateLimitManager.registerSession(sessionName)
+      }
 
       logger.debug(`Created new browser pool for session "${sessionName}"`)
     }
@@ -373,6 +388,12 @@ export class SessionPoolManager implements ISessionPoolManager {
       await pool.drain()
       this.sessionPools.delete(sessionName)
       this.stats.delete(sessionName)
+
+      // Unregister session from rate limit manager if available
+      if (this.rateLimitManager) {
+        this.rateLimitManager.unregisterSession(sessionName)
+      }
+
       logger.debug(`Drained pool for session "${sessionName}"`)
     }
   }
@@ -425,5 +446,14 @@ export class SessionPoolManager implements ISessionPoolManager {
    */
   getMetricsCollector(): IMetricsCollector {
     return this.metricsCollector
+  }
+
+  /**
+   * Gets the rate limit manager (if configured).
+   *
+   * @returns The rate limit manager instance or undefined
+   */
+  getRateLimitManager(): IRateLimitManager | undefined {
+    return this.rateLimitManager
   }
 }

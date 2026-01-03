@@ -43,7 +43,7 @@ export const loginCommand = new Command('login')
       // Initialize browser driver
       driver = new PlaywrightDriver()
       const cookieManager = new CookieManager()
-      const authHelper = new AuthHelper(driver, cookieManager)
+      const authHelper = new AuthHelper(driver, { cookieManager })
 
       spinner.text = 'Launching browser...'
       await driver.launch({

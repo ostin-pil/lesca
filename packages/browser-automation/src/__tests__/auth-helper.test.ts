@@ -50,7 +50,7 @@ describe('AuthHelper', () => {
       clearCookies: vi.fn().mockResolvedValue(undefined),
     } as unknown as CookieManager
 
-    authHelper = new AuthHelper(mockDriver, mockCookieManager)
+    authHelper = new AuthHelper(mockDriver, { cookieManager: mockCookieManager })
 
     // Reset mocks
     vi.clearAllMocks()

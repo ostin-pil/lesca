@@ -9,7 +9,7 @@ import { chromium, type Browser, type Page, type Cookie } from 'playwright'
 
 import type { CookieManager } from './cookie-manager'
 import { RequestInterceptor } from './interceptor'
-import type { IBrowserPool, ISessionPoolManager } from './interfaces'
+import type { IBrowserPool, IRateLimitManager, ISessionPoolManager } from './interfaces'
 import { PerformanceMonitor, type PerformanceMetrics } from './performance'
 import { StealthManager } from './stealth'
 
@@ -27,6 +27,7 @@ export class PlaywrightDriver implements BrowserDriver {
   private interceptor?: RequestInterceptor
   private performanceMonitor?: PerformanceMonitor
   private stealthManager?: StealthManager
+  private rateLimitManager?: IRateLimitManager
 
   constructor(
     private auth?: AuthCredentials,
@@ -160,12 +161,27 @@ export class PlaywrightDriver implements BrowserDriver {
   async navigate(url: string, retries = 3): Promise<void> {
     this.ensureLaunched()
 
+    // Check rate limit decision before navigating
+    if (this.rateLimitManager) {
+      const decision = this.rateLimitManager.getDecision(url, this.sessionName)
+      if (decision.delayMs > 0) {
+        logger.debug(`Rate limit: waiting ${decision.delayMs}ms before navigation`, { url })
+        await new Promise((resolve) => setTimeout(resolve, decision.delayMs))
+      }
+    }
+
     let lastError: Error | undefined
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         await this.page!.goto(url, {
           waitUntil: 'domcontentloaded',
         })
+
+        // Record successful navigation
+        if (this.rateLimitManager) {
+          this.rateLimitManager.recordSuccess(url, this.sessionName)
+        }
+
         return
       } catch (error) {
         lastError = error as Error
@@ -487,6 +503,20 @@ export class PlaywrightDriver implements BrowserDriver {
    */
   getCookieManager(): CookieManager | undefined {
     return this.cookieManager
+  }
+
+  /**
+   * Set rate limit manager for intelligent rate limit handling
+   */
+  setRateLimitManager(manager: IRateLimitManager): void {
+    this.rateLimitManager = manager
+  }
+
+  /**
+   * Get rate limit manager
+   */
+  getRateLimitManager(): IRateLimitManager | undefined {
+    return this.rateLimitManager
   }
 
   /**

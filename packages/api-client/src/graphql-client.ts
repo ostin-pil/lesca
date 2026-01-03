@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 
+import type { IRateLimitManager } from '@lesca/browser-automation'
 import { GraphQLError, RateLimitError, NetworkError } from '@lesca/error'
 import { getDefaultConfig } from '@lesca/shared/config'
 import type { Problem, ProblemList, ProblemListFilters, AuthCredentials } from '@lesca/shared/types'
@@ -17,6 +18,26 @@ interface GraphQLResponse<T> {
 }
 
 /**
+ * GraphQL Client Options
+ */
+export interface GraphQLClientOptions {
+  auth?: AuthCredentials
+  rateLimiter?: RateLimiter
+  cache?: TieredCache
+  rateLimitManager?: IRateLimitManager
+}
+
+/**
+ * Helper to check if an object is GraphQLClientOptions
+ */
+function isGraphQLClientOptions(obj: unknown): obj is GraphQLClientOptions {
+  if (!obj || typeof obj !== 'object') return false
+  // GraphQLClientOptions has optional 'auth', 'rateLimiter', 'cache', 'rateLimitManager'
+  // AuthCredentials has 'cookies' array - use this to distinguish
+  return !('cookies' in obj)
+}
+
+/**
  * GraphQL Client for LeetCode API
  * Handles all communication with LeetCode's GraphQL endpoint
  */
@@ -25,11 +46,51 @@ export class GraphQLClient {
   private readonly userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
+  private auth?: AuthCredentials
+  private rateLimiter?: RateLimiter
+  private cache?: TieredCache
+  private rateLimitManager?: IRateLimitManager
+
+  /**
+   * Create a new GraphQL client
+   *
+   * @param authOrOptions - Either AuthCredentials (legacy) or GraphQLClientOptions
+   * @param rateLimiter - Rate limiter (legacy, ignored if options object is used)
+   * @param cache - Cache (legacy, ignored if options object is used)
+   */
   constructor(
-    private auth?: AuthCredentials,
-    private rateLimiter?: RateLimiter,
-    private cache?: TieredCache
-  ) {}
+    authOrOptions?: AuthCredentials | GraphQLClientOptions,
+    rateLimiter?: RateLimiter,
+    cache?: TieredCache
+  ) {
+    // Support both legacy positional args and new options object
+    if (authOrOptions && isGraphQLClientOptions(authOrOptions)) {
+      // New options format
+      if (authOrOptions.auth) {
+        this.auth = authOrOptions.auth
+      }
+      if (authOrOptions.rateLimiter) {
+        this.rateLimiter = authOrOptions.rateLimiter
+      }
+      if (authOrOptions.cache) {
+        this.cache = authOrOptions.cache
+      }
+      if (authOrOptions.rateLimitManager) {
+        this.rateLimitManager = authOrOptions.rateLimitManager
+      }
+    } else {
+      // Legacy positional format
+      if (authOrOptions) {
+        this.auth = authOrOptions
+      }
+      if (rateLimiter) {
+        this.rateLimiter = rateLimiter
+      }
+      if (cache) {
+        this.cache = cache
+      }
+    }
+  }
 
   async query<T>(
     query: string,
@@ -44,6 +105,17 @@ export class GraphQLClient {
       const cached = await this.cache.get<T>(cacheKey)
       if (cached) {
         return cached
+      }
+    }
+
+    // Check rate limit decision before proceeding
+    if (this.rateLimitManager) {
+      const decision = this.rateLimitManager.getDecision(this.endpoint)
+      if (decision.delayMs > 0) {
+        logger.debug(`Rate limit: waiting ${decision.delayMs}ms before GraphQL query`, {
+          reason: decision.reason,
+        })
+        await new Promise((resolve) => setTimeout(resolve, decision.delayMs))
       }
     }
 
@@ -73,6 +145,15 @@ export class GraphQLClient {
 
         if (response.status === 429) {
           const retryAfter = response.headers.get('Retry-After')
+
+          // Record rate limit with manager
+          if (this.rateLimitManager) {
+            this.rateLimitManager.recordRateLimited(
+              this.endpoint,
+              retryAfter ? parseInt(retryAfter) : undefined
+            )
+          }
+
           throw new RateLimitError('Rate limit exceeded', {
             ...(retryAfter ? { retryAfter: parseInt(retryAfter) } : {}),
           })
@@ -108,6 +189,11 @@ export class GraphQLClient {
           throw new AbortError(
             new GraphQLError('GQL_INVALID_RESPONSE', 'No data returned from GraphQL query')
           )
+        }
+
+        // Record success with rate limit manager
+        if (this.rateLimitManager) {
+          this.rateLimitManager.recordSuccess(this.endpoint)
         }
 
         return result.data
@@ -396,7 +482,21 @@ export class GraphQLClient {
    * Clear authentication credentials
    */
   clearAuth() {
-    this.auth = undefined
+    delete this.auth
+  }
+
+  /**
+   * Set rate limit manager for intelligent rate limit handling
+   */
+  setRateLimitManager(manager: IRateLimitManager) {
+    this.rateLimitManager = manager
+  }
+
+  /**
+   * Get rate limit manager (if configured)
+   */
+  getRateLimitManager(): IRateLimitManager | undefined {
+    return this.rateLimitManager
   }
 }
 

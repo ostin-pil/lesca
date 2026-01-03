@@ -4,3 +4,4 @@
  */
 
 export { GraphQLClient, RateLimiter } from './graphql-client'
+export type { GraphQLClientOptions } from './graphql-client'
