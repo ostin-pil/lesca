@@ -221,8 +221,6 @@ See [Architecture Review](./ARCHITECTURE_REVIEW.md) for detailed analysis.
 
 ## 🧪 Testing
 
-Lesca has comprehensive test coverage with **631 passing tests** (68.43% coverage).
-
 ```bash
 # Run unit tests (fast - runs on every PR)
 npm test
@@ -247,24 +245,6 @@ npm run check-coverage
 # Run performance benchmarks
 npm run benchmark
 ```
-
-### Test Coverage by Package
-
-| Package                | Coverage | Tests | Status         |
-| ---------------------- | -------- | ----- | -------------- |
-| **api-client**         | 98.45%   | 28    | ✅ Complete    |
-| **auth**               | 95.75%   | 41    | ✅ Complete    |
-| **browser-automation** | 96.48%   | 65    | ✅ Complete    |
-| **cli**                | 15.62%   | 61    | 🚧 In Progress |
-| **converters**         | 85.97%   | 154   | ✅ Complete    |
-| **core**               | 81.72%   | 29    | ✅ Complete    |
-| **scrapers**           | 90.87%   | 105   | ✅ Complete    |
-| **storage**            | 91.02%   | 35    | ✅ Complete    |
-| **shared/utils**       | 80.22%   | 23    | ✅ Complete    |
-| **shared/config**      | 93.09%   | 28    | ✅ Complete    |
-| **shared/error**       | 100%     | 34    | ✅ Complete    |
-
-**Total: 631 tests passing • 68.43% coverage**
 
 ### Test Infrastructure
 
@@ -453,23 +433,3 @@ See [Troubleshooting Guide](./docs/TROUBLESHOOTING.md) for common issues.
 ## 💬 Support
 
 - **Documentation**: Start with [User Guide](./docs/USER_GUIDE.md)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/lesca/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/lesca/discussions)
-
----
-
-## 📊 Project Stats
-
-- **Language**: TypeScript
-- **Tests**: 631 passing
-- **Coverage**: 68.43%
-- **Packages**: 11
-- **Lines of Code**: ~15,000
-- **Dependencies**: Minimal, well-maintained
-- **License**: MIT
-
----
-
-**Built with ❤️ for the LeetCode community**
-
-[⭐ Star this repo](https://github.com/yourusername/lesca) if you find it useful!
